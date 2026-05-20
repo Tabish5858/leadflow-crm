@@ -13,18 +13,24 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Helper: get workspace data (used in rules)
+    function getWorkspace(workspaceId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
+    }
+
     // Helper: check if user is a workspace member
     function isWorkspaceMember(workspaceId) {
       return isAuthenticated() &&
-        exists(/databases/$(database)/documents/workspaces/$(workspaceId)) &&
-        get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.memberIds
-          .hasAny([request.auth.uid]);
+        getWorkspace(workspaceId).memberIds.hasAny([request.auth.uid]);
     }
 
     // Helper: check user role in workspace
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
     function hasRole(workspaceId, role) {
-      return isWorkspaceMember(workspaceId) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+      return isWorkspaceMember(workspaceId) && getUserRole() == role;
     }
 
     // Users collection — users can only read/write their own doc
@@ -33,38 +39,40 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Workspaces — members can read, owners/admins can update, owners can delete
+    // Workspaces — owner can do everything, members can read
     match /workspaces/{workspaceId} {
-      allow read: if isWorkspaceMember(workspaceId);
+      allow read: if isWorkspaceMember(workspaceId) ||
+        getWorkspace(workspaceId).ownerId == request.auth.uid;
       allow create: if isAuthenticated();
-      allow update: if hasRole(workspaceId, 'owner') || hasRole(workspaceId, 'admin');
-      allow delete: if hasRole(workspaceId, 'owner');
+      allow update: if getWorkspace(workspaceId).ownerId == request.auth.uid ||
+        hasRole(workspaceId, 'admin');
+      allow delete: if getWorkspace(workspaceId).ownerId == request.auth.uid;
     }
 
-    // Leads — workspace members can read/create/update, admins/owners can delete
+    // Leads — workspace members can read/create/update, owners/admins can delete
     match /leads/{leadId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
       allow update: if isWorkspaceMember(resource.data.workspaceId);
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
-        hasRole(resource.data.workspaceId, 'owner');
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Activities — workspace members can read/create, admins/owners can update/delete
+    // Activities — workspace members can read/create, owners/admins can update/delete
     match /activities/{activityId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
       allow update, delete: if hasRole(resource.data.workspaceId, 'admin') ||
-        hasRole(resource.data.workspaceId, 'owner');
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Tasks — workspace members can read/create/update, admins/owners can delete
+    // Tasks — workspace members can read/create/update, owners/admins can delete
     match /tasks/{taskId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
       allow update: if isWorkspaceMember(resource.data.workspaceId);
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
-        hasRole(resource.data.workspaceId, 'owner');
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
     // Time entries — workspace members can read/create, owners can delete
@@ -74,14 +82,14 @@ service cloud.firestore {
       allow update: if isWorkspaceMember(resource.data.workspaceId) &&
         resource.data.userId == request.auth.uid;
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
-        hasRole(resource.data.workspaceId, 'owner');
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Automations — workspace members can read, admins/owners can manage
+    // Automations — workspace members can read, owners/admins can manage
     match /automations/{automationId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create, update, delete: if hasRole(resource.data.workspaceId, 'admin') ||
-        hasRole(resource.data.workspaceId, 'owner');
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
     // Notifications — users can only read/write their own
