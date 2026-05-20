@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { getLeadStats } from "@/lib/firebase/firestore";
 import { StatCard } from "@/components/shared/stat-card";
 import { SkeletonCardGrid } from "@/components/skeletons/skeleton-card";
@@ -20,20 +20,18 @@ interface Stats {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { activeWorkspace } = useWorkspace();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) return;
-      getLeadStats(user.uid)
-        .then((data) => {
-          setStats(data);
-        })
-        .finally(() => setLoading(false));
-    });
-    return () => unsubscribe();
-  }, []);
+    if (!activeWorkspace) return;
+    getLeadStats(activeWorkspace.id)
+      .then((data) => {
+        setStats(data);
+      })
+      .finally(() => setLoading(false));
+  }, [activeWorkspace?.id, activeWorkspace]);
 
   const activeDeals = stats
     ? (stats.byStatus["new"] || 0) +

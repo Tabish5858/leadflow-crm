@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { useTimeTrackingStore } from "@/lib/stores/timeTrackingStore";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/sonner";
 
 export default function TimeTrackerPage() {
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const { user, activeWorkspace } = useWorkspace();
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     leadId: "",
@@ -61,16 +61,9 @@ export default function TimeTrackerPage() {
   const { leads } = useLeadStore();
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => {
-      if (u) setWorkspaceId(u.uid);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!workspaceId) return;
-    initialize(workspaceId);
-  }, [workspaceId, initialize]);
+    if (!activeWorkspace) return;
+    initialize(activeWorkspace.id);
+  }, [activeWorkspace?.id, initialize, activeWorkspace]);
 
   // Timer tick
   const [displayElapsed, setDisplayElapsed] = useState(0);
@@ -86,9 +79,8 @@ export default function TimeTrackerPage() {
   }, [timer.isRunning, timer.startTime, timer.elapsed]);
 
   const handleStopTimer = async () => {
-    const u = auth.currentUser;
-    if (!u || !workspaceId) return;
-    const id = await stopTimer(workspaceId, u.uid);
+    if (!user || !activeWorkspace) return;
+    const id = await stopTimer(activeWorkspace.id, user.id);
     if (id) {
       toast.success("Time entry saved");
     } else {
@@ -98,8 +90,7 @@ export default function TimeTrackerPage() {
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const u = auth.currentUser;
-    if (!u || !workspaceId || !manualEntry.description) {
+    if (!user || !activeWorkspace || !manualEntry.description) {
       toast.error("Description is required");
       return;
     }
@@ -119,7 +110,7 @@ export default function TimeTrackerPage() {
       new Date(date.getTime() + duration * 1000)
     );
 
-    await addManualEntry(workspaceId, u.uid, {
+    await addManualEntry(activeWorkspace.id, user.id, {
       leadId: manualEntry.leadId || null,
       description: manualEntry.description,
       startTime,

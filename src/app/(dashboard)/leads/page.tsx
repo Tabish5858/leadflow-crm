@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,8 +64,7 @@ const statusLabelMap: Record<string, LeadStatusType> = {
 };
 
 export default function LeadsPage() {
-  const [user, setUser] = useState<string | null>(null);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const { user, activeWorkspace } = useWorkspace();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -86,20 +85,10 @@ export default function LeadsPage() {
   } = useLeadStore();
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => {
-      if (u) {
-        setUser(u.uid);
-        setWorkspaceId(u.uid);
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!workspaceId) return;
-    initialize(workspaceId);
-    refreshStats(workspaceId);
-  }, [workspaceId, initialize, refreshStats]);
+    if (!activeWorkspace) return;
+    initialize(activeWorkspace.id);
+    refreshStats(activeWorkspace.id);
+  }, [activeWorkspace?.id, initialize, refreshStats, activeWorkspace]);
 
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
@@ -350,8 +339,8 @@ export default function LeadsPage() {
           </DialogHeader>
           <LeadForm
             onSuccess={handleCreateSuccess}
-            userId={user || ""}
-            workspaceId={workspaceId || ""}
+            userId={user?.id || ""}
+            workspaceId={activeWorkspace?.id || ""}
           />
         </DialogContent>
       </Dialog>

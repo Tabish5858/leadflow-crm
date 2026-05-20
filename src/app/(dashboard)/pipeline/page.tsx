@@ -1,30 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
+import { useEffect } from "react";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { KanbanBoard } from "@/components/pipeline/kanban-board";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PipelinePage() {
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const { activeWorkspace } = useWorkspace();
   const { loading, initialize, refreshStats } = useLeadStore();
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => {
-      if (u) {
-        setWorkspaceId(u.uid);
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!workspaceId) return;
-    initialize(workspaceId);
-    refreshStats(workspaceId);
-  }, [workspaceId, initialize, refreshStats]);
+    if (!activeWorkspace) return;
+    initialize(activeWorkspace.id);
+    refreshStats(activeWorkspace.id);
+  }, [activeWorkspace?.id, initialize, refreshStats, activeWorkspace]);
 
   if (loading) {
     return (

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, getDoc } from "firebase/firestore";
-import type { User } from "@/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -28,6 +27,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { WorkspaceProvider, useWorkspace } from "@/contexts/workspace-context";
+import { WorkspaceSwitcher } from "@/components/workspace/workspace-switcher";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -70,15 +71,11 @@ function SidebarSkeleton() {
   );
 }
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, activeWorkspace, loading: wsLoading } = useWorkspace();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,8 +87,9 @@ export default function DashboardLayout({
       try {
         const userRef = doc(db, "users", firebaseUser.uid);
         const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          setUser(userSnap.data() as User);
+        if (!userSnap.exists()) {
+          router.push("/register");
+          return;
         }
       } catch {
         // User doc might not exist yet
@@ -109,7 +107,7 @@ export default function DashboardLayout({
 
   const currentPage = navItems.find((item) => item.href === pathname);
 
-  if (loading) {
+  if (loading || wsLoading) {
     return (
       <div className="flex h-screen">
         <SidebarSkeleton />
@@ -141,6 +139,9 @@ export default function DashboardLayout({
         </div>
 
         <Separator />
+
+        {/* Workspace Switcher */}
+        <WorkspaceSwitcher />
 
         {/* Navigation */}
         <nav className="flex-1 space-y-0.5 p-3">
@@ -223,6 +224,10 @@ export default function DashboardLayout({
             <span>LeadFlow</span>
             <ChevronRight className="h-3.5 w-3.5" />
             <span className="font-medium text-foreground">
+              {activeWorkspace?.name || "Workspace"}
+            </span>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">
               {currentPage?.label || "Dashboard"}
             </span>
           </div>
@@ -242,5 +247,17 @@ export default function DashboardLayout({
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <WorkspaceProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </WorkspaceProvider>
   );
 }

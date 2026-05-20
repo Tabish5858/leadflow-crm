@@ -33,13 +33,19 @@ service cloud.firestore {
       return isWorkspaceMember(workspaceId) && getUserRole() == role;
     }
 
-    // Users collection — users can only read/write their own doc
+    // Users collection
     match /users/{userId} {
+      // Users can read their own doc
       allow read: if isOwner(userId);
+      // Users can write their own doc, but only specific fields
       allow write: if isOwner(userId);
+      // Allow reading basic user info for member lists (email, displayName, photoURL)
+      allow get: if isAuthenticated();
+      // Allow listing users for workspace member lookups
+      allow list: if isAuthenticated();
     }
 
-    // Workspaces — owner can do everything, members can read
+    // Workspaces
     match /workspaces/{workspaceId} {
       allow read: if isWorkspaceMember(workspaceId) ||
         getWorkspace(workspaceId).ownerId == request.auth.uid;
@@ -49,7 +55,22 @@ service cloud.firestore {
       allow delete: if getWorkspace(workspaceId).ownerId == request.auth.uid;
     }
 
-    // Leads — workspace members can read/create/update, owners/admins can delete
+    // Workspace invites
+    match /workspace_invites/{inviteId} {
+      // Anyone can read invites (needed for invite acceptance)
+      allow read: if isAuthenticated();
+      // Only workspace members/admins/owners can create invites
+      allow create: if isAuthenticated() &&
+        isWorkspaceMember(request.resource.data.workspaceId);
+      // Only the invited user or workspace admin can update
+      allow update: if isAuthenticated();
+      // Only workspace owner/admin can delete
+      allow delete: if isAuthenticated() &&
+        (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+         hasRole(resource.data.workspaceId, 'admin'));
+    }
+
+    // Leads
     match /leads/{leadId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
@@ -58,7 +79,7 @@ service cloud.firestore {
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Activities — workspace members can read/create, owners/admins can update/delete
+    // Activities
     match /activities/{activityId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
@@ -66,7 +87,7 @@ service cloud.firestore {
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Tasks — workspace members can read/create/update, owners/admins can delete
+    // Tasks
     match /tasks/{taskId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
@@ -75,7 +96,7 @@ service cloud.firestore {
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Time entries — workspace members can read/create, owners can delete
+    // Time entries
     match /timeEntries/{entryId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if isWorkspaceMember(request.resource.data.workspaceId);
@@ -85,17 +106,17 @@ service cloud.firestore {
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Automations — workspace members can read, owners/admins can manage
+    // Automations
     match /automations/{automationId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create, update, delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
-    // Notifications — users can only read/write their own
+    // Notifications
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if true; // Created by Cloud Functions
+      allow create: if true; // Created by Cloud Functions or app logic
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }

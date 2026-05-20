@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { StatCard } from "@/components/shared/stat-card";
 import { SkeletonCardGrid } from "@/components/skeletons/skeleton-card";
@@ -57,21 +57,14 @@ const CHART_COLORS = {
 };
 
 export default function AnalyticsPage() {
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const { activeWorkspace } = useWorkspace();
   const { leads, loading, initialize } = useLeadStore();
   const [dateRange, setDateRange] = useState(30);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((u) => {
-      if (u) setWorkspaceId(u.uid);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!workspaceId) return;
-    initialize(workspaceId);
-  }, [workspaceId, initialize]);
+    if (!activeWorkspace) return;
+    initialize(activeWorkspace.id);
+  }, [activeWorkspace?.id, initialize, activeWorkspace]);
 
   // Filter leads by date range
   const cutoff = new Date();

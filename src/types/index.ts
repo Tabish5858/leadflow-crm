@@ -17,6 +17,8 @@ export interface User {
     followUpReminders: boolean;
     digestFrequency: "daily" | "weekly" | "none";
   };
+  workspaceIds: string[];
+  activeWorkspaceId: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   lastActiveAt: Timestamp;
@@ -41,6 +43,27 @@ export interface Workspace {
   updatedAt: Timestamp;
   ownerId: string;
   memberIds: string[];
+  inviteCode: string | null;
+}
+
+export interface WorkspaceMember {
+  userId: string;
+  email: string;
+  displayName: string;
+  photoURL: string | null;
+  role: "owner" | "admin" | "member" | "viewer";
+  joinedAt: Timestamp;
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  invitedBy: string;
+  role: "admin" | "member" | "viewer";
+  status: "pending" | "accepted" | "expired";
+  expiresAt: Timestamp;
+  createdAt: Timestamp;
 }
 
 export interface PipelineStage {

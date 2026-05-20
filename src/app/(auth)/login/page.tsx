@@ -9,6 +9,16 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { DEFAULT_PIPELINE_STAGES } from "@/lib/firebase/workspaces";
+
+function generateInviteCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +63,7 @@ export default function LoginPage() {
       const userRef = doc(db, "users", result.user.uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
+        const workspaceId = crypto.randomUUID();
         await setDoc(userRef, {
           id: result.user.uid,
           email: result.user.email,
@@ -68,9 +79,31 @@ export default function LoginPage() {
             followUpReminders: true,
             digestFrequency: "daily",
           },
+          workspaceIds: [workspaceId],
+          activeWorkspaceId: workspaceId,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
           lastActiveAt: Timestamp.now(),
+        });
+
+        // Create default workspace
+        const displayName = result.user.displayName || "User";
+        await setDoc(doc(db, "workspaces", workspaceId), {
+          id: workspaceId,
+          name: `${displayName}'s Workspace`,
+          logoUrl: null,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          currency: "USD",
+          dateFormat: "MM/DD/YYYY",
+          weekStart: "monday",
+          pipeline: { stages: DEFAULT_PIPELINE_STAGES },
+          customFields: [],
+          niches: [],
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          ownerId: result.user.uid,
+          memberIds: [result.user.uid],
+          inviteCode: generateInviteCode(),
         });
       }
       toast.success("Logged in with Google");

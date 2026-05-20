@@ -5,6 +5,16 @@ import Link from "next/link";
 import { auth, db } from "@/lib/firebase/client";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { DEFAULT_PIPELINE_STAGES } from "@/lib/firebase/workspaces";
+
+function generateInviteCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +49,7 @@ export default function RegisterPage() {
       await updateProfile(cred.user, { displayName: formData.name });
 
       // Create user document
+      const workspaceId = crypto.randomUUID();
       await setDoc(doc(db, "users", cred.user.uid), {
         id: cred.user.uid,
         email: formData.email,
@@ -54,13 +65,14 @@ export default function RegisterPage() {
           followUpReminders: true,
           digestFrequency: "daily",
         },
+        workspaceIds: [workspaceId],
+        activeWorkspaceId: workspaceId,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         lastActiveAt: Timestamp.now(),
       });
 
       // Create default workspace
-      const workspaceId = cred.user.uid;
       await setDoc(doc(db, "workspaces", workspaceId), {
         id: workspaceId,
         name: `${formData.name}'s Workspace`,
@@ -70,15 +82,7 @@ export default function RegisterPage() {
         dateFormat: "MM/DD/YYYY",
         weekStart: "monday",
         pipeline: {
-          stages: [
-            { id: "new", name: "New", color: "#3b82f6", probability: 0, order: 0 },
-            { id: "contacted", name: "Contacted", color: "#eab308", probability: 10, order: 1 },
-            { id: "qualified", name: "Qualified", color: "#f97316", probability: 25, order: 2 },
-            { id: "proposal", name: "Proposal", color: "#a855f7", probability: 50, order: 3 },
-            { id: "negotiation", name: "Negotiation", color: "#ef4444", probability: 75, order: 4 },
-            { id: "won", name: "Won", color: "#22c55e", probability: 100, order: 5 },
-            { id: "lost", name: "Lost", color: "#6b7280", probability: 0, order: 6 },
-          ],
+          stages: DEFAULT_PIPELINE_STAGES,
         },
         customFields: [],
         niches: [],
@@ -86,6 +90,7 @@ export default function RegisterPage() {
         updatedAt: Timestamp.now(),
         ownerId: cred.user.uid,
         memberIds: [cred.user.uid],
+        inviteCode: generateInviteCode(),
       });
 
       toast.success("Account created successfully");
