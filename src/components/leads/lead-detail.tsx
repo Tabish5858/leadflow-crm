@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { getLead } from "@/lib/firebase/firestore";
+import { logStatusChange } from "@/lib/firebase/activities";
 import type { Lead } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -15,9 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLeadStore } from "@/lib/stores/leadStore";
+import { useWorkspace } from "@/contexts/workspace-context";
 import { DEFAULT_PIPELINE_STAGES } from "@/lib/constants";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ActivityTimeline } from "@/components/leads/activity-timeline";
 import {
   Mail,
   Phone,
@@ -26,6 +30,8 @@ import {
   Linkedin,
   MapPin,
   DollarSign,
+  Clock,
+  User,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
@@ -83,6 +89,7 @@ function LeadDetailSkeleton() {
 }
 
 export function LeadDetail({ leadId }: LeadDetailProps) {
+  const { user, activeWorkspace } = useWorkspace();
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const updateStatus = useLeadStore((s) => s.updateStatus);
@@ -96,13 +103,23 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
       .finally(() => setLoading(false));
   }, [leadId]);
 
-  const handleStatusChange = (status: string) => {
+  const handleStatusChange = async (status: string) => {
     if (!lead) return;
+    const fromStatus = lead.status;
     updateStatus(lead.id, status);
     setLead({ ...lead, status });
-    const stageName = DEFAULT_PIPELINE_STAGES.find(
-      (s) => s.id === status
-    )?.name;
+
+    // Log activity
+    if (activeWorkspace && user) {
+      try {
+        await logStatusChange(lead.id, activeWorkspace.id, user.id, fromStatus, status);
+      } catch {
+        // Activity logging is non-critical
+      }
+    }
+
+    const stages = activeWorkspace?.pipeline?.stages || DEFAULT_PIPELINE_STAGES;
+    const stageName = stages.find((s) => s.id === status)?.name;
     toast.success(`Moved to ${stageName}`);
   };
 
@@ -159,7 +176,7 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {DEFAULT_PIPELINE_STAGES.map((stage) => (
+            {(activeWorkspace?.pipeline?.stages || DEFAULT_PIPELINE_STAGES).map((stage) => (
               <SelectItem key={stage.id} value={stage.id}>
                 {stage.name}
               </SelectItem>
@@ -170,98 +187,122 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
 
       <Separator />
 
-      {/* Contact Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email} />
-        {lead.phone && (
-          <InfoItem icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone} />
-        )}
-        {lead.company && (
-          <InfoItem icon={<Building2 className="h-4 w-4" />} label="Company" value={lead.company} />
-        )}
-        {lead.website && (
-          <InfoItem
-            icon={<Globe className="h-4 w-4" />}
-            label="Website"
-            value={lead.website}
-            isLink
-          />
-        )}
-        {lead.linkedin && (
-          <InfoItem
-            icon={<Linkedin className="h-4 w-4" />}
-            label="LinkedIn"
-            value="Profile"
-            href={lead.linkedin}
-            isLink
-          />
-        )}
-        {(lead.city || lead.country) && (
-          <InfoItem
-            icon={<MapPin className="h-4 w-4" />}
-            label="Location"
-            value={`${lead.city}${lead.city && lead.country ? ", " : ""}${lead.country}`}
-          />
-        )}
-        {lead.value && (
-          <InfoItem
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Deal Value"
-            value={formatCurrency(lead.value, lead.currency)}
-          />
-        )}
-      </div>
+      {/* Tabs: Details & Activity */}
+      <Tabs defaultValue="details">
+        <TabsList>
+          <TabsTrigger value="details">
+            <User className="h-3.5 w-3.5" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="activity">
+            <Clock className="h-3.5 w-3.5" />
+            Activity
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Notes */}
-      {lead.notes && (
-        <>
-          <Separator />
-          <div>
-            <h3 className="text-sm font-medium mb-2">Notes</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap rounded-lg bg-muted/30 p-3">
-              {lead.notes}
+        <TabsContent value="details" className="mt-4">
+          {/* Contact Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email} />
+            {lead.phone && (
+              <InfoItem icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone} />
+            )}
+            {lead.company && (
+              <InfoItem icon={<Building2 className="h-4 w-4" />} label="Company" value={lead.company} />
+            )}
+            {lead.website && (
+              <InfoItem
+                icon={<Globe className="h-4 w-4" />}
+                label="Website"
+                value={lead.website}
+                isLink
+              />
+            )}
+            {lead.linkedin && (
+              <InfoItem
+                icon={<Linkedin className="h-4 w-4" />}
+                label="LinkedIn"
+                value="Profile"
+                href={lead.linkedin}
+                isLink
+              />
+            )}
+            {(lead.city || lead.country) && (
+              <InfoItem
+                icon={<MapPin className="h-4 w-4" />}
+                label="Location"
+                value={`${lead.city}${lead.city && lead.country ? ", " : ""}${lead.country}`}
+              />
+            )}
+            {lead.value && (
+              <InfoItem
+                icon={<DollarSign className="h-4 w-4" />}
+                label="Deal Value"
+                value={formatCurrency(lead.value, lead.currency)}
+              />
+            )}
+          </div>
+
+          {/* Notes */}
+          {lead.notes && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <h3 className="text-sm font-medium mb-2">Notes</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap rounded-lg bg-muted/30 p-3">
+                  {lead.notes}
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Tags */}
+          {lead.tags.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <h3 className="text-sm font-medium mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {lead.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Metadata */}
+          <Separator className="my-4" />
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>
+              Created:{" "}
+              {lead.createdAt?.toDate().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+            <p>
+              Updated:{" "}
+              {lead.updatedAt?.toDate().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </p>
           </div>
-        </>
-      )}
+        </TabsContent>
 
-      {/* Tags */}
-      {lead.tags.length > 0 && (
-        <>
-          <Separator />
-          <div>
-            <h3 className="text-sm font-medium mb-2">Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {lead.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Metadata */}
-      <Separator />
-      <div className="text-xs text-muted-foreground space-y-1">
-        <p>
-          Created:{" "}
-          {lead.createdAt?.toDate().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
-        <p>
-          Updated:{" "}
-          {lead.updatedAt?.toDate().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
-      </div>
+        <TabsContent value="activity" className="mt-4">
+          <ActivityTimeline
+            leadId={lead.id}
+            userId={user?.id || ""}
+            userName={user?.displayName || "User"}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
