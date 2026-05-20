@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { LeadForm } from "@/components/leads/lead-form";
 import { LeadDetail } from "@/components/leads/lead-detail";
+import { CsvImportDialog } from "@/components/leads/csv-import-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SkeletonTable } from "@/components/skeletons/skeleton-table";
@@ -32,6 +33,7 @@ import {
   MoreHorizontal,
   ExternalLink,
   Users,
+  Upload,
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, getInitials } from "@/lib/utils";
 import { DEFAULT_PIPELINE_STAGES } from "@/lib/constants";
@@ -67,6 +69,7 @@ const statusLabelMap: Record<string, LeadStatusType> = {
 export default function LeadsPage() {
   const { user, activeWorkspace } = useWorkspace();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -115,6 +118,23 @@ export default function LeadsPage() {
     toast.success("Lead created successfully");
   };
 
+  const handleImportLeads = async (
+    leadData: Omit<import("@/types").Lead, "id" | "createdAt" | "updatedAt">[]
+  ) => {
+    if (!activeWorkspace || !user) return;
+    const { createLead } = await import("@/lib/firebase/firestore");
+    for (const data of leadData) {
+      await createLead({
+        ...data,
+        workspaceId: activeWorkspace.id,
+        createdBy: user.id,
+      });
+    }
+    // Refresh leads
+    initialize(activeWorkspace.id);
+    refreshStats(activeWorkspace.id);
+  };
+
   const filteredByStatus =
     statusFilter === "all"
       ? filteredLeads
@@ -130,10 +150,16 @@ export default function LeadsPage() {
         title="Leads"
         description={`${leads.length} total lead${leads.length !== 1 ? "s" : ""}`}
         actions={
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Lead
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowCsvImport(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Lead
+            </Button>
+          </div>
         }
       />
 
@@ -357,6 +383,14 @@ export default function LeadsPage() {
           {selectedLead && <LeadDetail leadId={selectedLead} />}
         </DialogContent>
       </Dialog>
+
+      {/* CSV Import Dialog */}
+      <CsvImportDialog
+        open={showCsvImport}
+        onOpenChange={setShowCsvImport}
+        onImport={handleImportLeads}
+        existingLeads={leads}
+      />
     </div>
   );
 }
