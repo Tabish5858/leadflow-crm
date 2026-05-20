@@ -4,9 +4,9 @@
 
 | Version | Supported |
 |---------|-----------|
-| Latest release | ✅ |
-| Previous release | ✅ |
-| Older versions | ❌ |
+| Latest release | Yes |
+| Previous release | Yes |
+| Older versions | No |
 
 ## Reporting a Vulnerability
 

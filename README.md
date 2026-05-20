@@ -133,4 +133,4 @@ See [PRD.md](PRD.md) for the full product requirements.
 
 ---
 
-Built with ❤️ for freelancers and small teams everywhere.
+Built for freelancers and small teams everywhere.

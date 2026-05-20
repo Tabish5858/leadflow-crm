@@ -1,4 +1,4 @@
-name: "📋 Task"
+name: "Task"
 description: "Internal task or chore (for maintainers)"
 title: "[Task]: "
 labels: ["chore"]
