@@ -42,6 +42,8 @@ import {
   MoreHorizontal,
   KanbanSquare,
   ListFilter,
+  UserCog,
+  Pencil,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
@@ -53,6 +55,7 @@ import {
   deleteWorkspace,
   regenerateInviteCode,
   createInvite,
+  updateMemberRole,
 } from "@/lib/firebase/workspaces";
 import type { WorkspaceMember, PipelineStage, CustomField } from "@/types";
 import { PipelineEditor } from "@/components/settings/pipeline-editor";
@@ -173,6 +176,21 @@ export default function SettingsPage() {
       setMembers((prev) => prev.filter((m) => m.userId !== memberId));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to remove member");
+    }
+  };
+
+  const handleChangeRole = async (memberId: string, newRole: "admin" | "member" | "viewer") => {
+    if (!activeWorkspace || !firebaseUser) return;
+    try {
+      await updateMemberRole(activeWorkspace.id, memberId, newRole);
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.userId === memberId ? { ...m, role: newRole } : m
+        )
+      );
+      toast.success("Role updated");
+    } catch {
+      toast.error("Failed to update role");
     }
   };
 
@@ -484,32 +502,118 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">
-                          {member.role}
-                        </span>
-                        {isOwner && member.userId !== activeWorkspace.ownerId && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => handleRemoveMember(member.userId)}
-                              >
-                                Remove from workspace
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
+                       <div className="flex items-center gap-2">
+                         {isOwner && member.userId !== activeWorkspace.ownerId ? (
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                               <button className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize hover:bg-muted/80">
+                                 {member.role}
+                                 <Pencil className="h-3 w-3" />
+                               </button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end">
+                               <DropdownMenuItem
+                                 onClick={() => handleChangeRole(member.userId, "admin")}
+                               >
+                                 <Crown className="mr-2 h-3.5 w-3.5" />
+                                 Admin
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 onClick={() => handleChangeRole(member.userId, "member")}
+                               >
+                                 <Users className="mr-2 h-3.5 w-3.5" />
+                                 Member
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 onClick={() => handleChangeRole(member.userId, "viewer")}
+                               >
+                                 <Shield className="mr-2 h-3.5 w-3.5" />
+                                 Viewer
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 className="text-destructive"
+                                 onClick={() => handleRemoveMember(member.userId)}
+                               >
+                                 Remove from workspace
+                               </DropdownMenuItem>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         ) : (
+                           <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">
+                             {member.role}
+                           </span>
+                         )}
+                         {!isOwner && member.userId !== activeWorkspace.ownerId && (
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8">
+                                 <MoreHorizontal className="h-4 w-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end">
+                               <DropdownMenuItem
+                                 className="text-destructive"
+                                 onClick={() => handleRemoveMember(member.userId)}
+                               >
+                                 Remove from workspace
+                               </DropdownMenuItem>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         )}
+                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCog className="h-4 w-4" />
+                Role Permissions
+              </CardTitle>
+              <CardDescription>
+                What each role can do in this workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="pb-3 text-left font-medium text-muted-foreground">Permission</th>
+                      <th className="pb-3 text-center font-medium text-muted-foreground">Owner</th>
+                      <th className="pb-3 text-center font-medium text-muted-foreground">Admin</th>
+                      <th className="pb-3 text-center font-medium text-muted-foreground">Member</th>
+                      <th className="pb-3 text-center font-medium text-muted-foreground">Viewer</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[
+                      ["View leads", true, true, true, true],
+                      ["Create leads", true, true, true, false],
+                      ["Edit leads", true, true, true, false],
+                      ["Delete leads", true, true, false, false],
+                      ["View analytics", true, true, true, true],
+                      ["Export data", true, true, true, false],
+                      ["Manage pipeline", true, true, false, false],
+                      ["Manage custom fields", true, true, false, false],
+                      ["Manage members", true, true, false, false],
+                      ["Delete workspace", true, false, false, false],
+                    ].map(([permission, owner, admin, member, viewer]) => (
+                      <tr key={permission as string} className="hover:bg-muted/20">
+                        <td className="py-2.5">{permission as string}</td>
+                        <td className="py-2.5 text-center">{(owner as boolean) ? "✓" : "—"}</td>
+                        <td className="py-2.5 text-center">{(admin as boolean) ? "✓" : "—"}</td>
+                        <td className="py-2.5 text-center">{(member as boolean) ? "✓" : "—"}</td>
+                        <td className="py-2.5 text-center">{(viewer as boolean) ? "✓" : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </div>
