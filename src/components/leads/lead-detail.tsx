@@ -256,6 +256,62 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
             </>
           )}
 
+          {/* Custom Fields */}
+          {activeWorkspace?.customFields && activeWorkspace.customFields.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <h3 className="text-sm font-medium mb-2">Custom Fields</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {activeWorkspace.customFields
+                    .sort((a, b) => a.order - b.order)
+                    .map((field) => {
+                      const value = lead.customFields?.[field.id];
+                      if (!value) return null;
+
+                      let displayValue: React.ReactNode = String(value);
+
+                      if (field.type === "multiselect" && Array.isArray(value)) {
+                        displayValue = (
+                          <div className="flex flex-wrap gap-1">
+                            {value.map((v: string) => (
+                              <Badge key={v} variant="secondary" className="text-xs">
+                                {v}
+                              </Badge>
+                            ))}
+                          </div>
+                        );
+                      } else if (field.type === "date") {
+                        displayValue = new Date(value as string).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        });
+                      } else if (field.type === "url" || field.type === "email") {
+                        displayValue = (
+                          <a
+                            href={field.type === "email" ? `mailto:${value}` : (value as string)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {value as string}
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <div key={field.id}>
+                          <p className="text-xs text-muted-foreground">{field.name}</p>
+                          <p className="text-sm font-medium">{displayValue}</p>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Tags */}
           {lead.tags.length > 0 && (
             <>

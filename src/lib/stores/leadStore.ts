@@ -26,7 +26,7 @@ interface LeadState {
 
   // Actions
   initialize: (workspaceId: string) => void;
-  addLead: (workspaceId: string, userId: string, data: LeadFormData) => Promise<void>;
+  addLead: (workspaceId: string, userId: string, data: LeadFormData, customFields?: Record<string, unknown>) => Promise<void>;
   editLead: (id: string, data: Partial<LeadFormData>) => Promise<void>;
   removeLead: (id: string) => Promise<void>;
   removeLeads: (ids: string[]) => Promise<void>;
@@ -61,7 +61,7 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ unsubscribe: unsub });
   },
 
-  addLead: async (workspaceId: string, userId: string, data: LeadFormData) => {
+  addLead: async (workspaceId: string, userId: string, data: LeadFormData, customFields?: Record<string, unknown>) => {
     set({ loading: true, error: null });
     try {
       await createLead({
@@ -84,7 +84,7 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         assignedTo: null,
         tags: data.tags || [],
         notes: data.notes || null,
-        customFields: {},
+        customFields: customFields || {},
         socialProfiles: {},
         avatarUrl: null,
         attachments: [],

@@ -371,6 +371,7 @@ export default function LeadsPage() {
             onSuccess={handleCreateSuccess}
             userId={user?.id || ""}
             workspaceId={activeWorkspace?.id || ""}
+            customFields={activeWorkspace?.customFields || []}
           />
         </DialogContent>
       </Dialog>

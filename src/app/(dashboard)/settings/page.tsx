@@ -41,6 +41,7 @@ import {
   Crown,
   MoreHorizontal,
   KanbanSquare,
+  ListFilter,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
@@ -53,8 +54,9 @@ import {
   regenerateInviteCode,
   createInvite,
 } from "@/lib/firebase/workspaces";
-import type { WorkspaceMember, PipelineStage } from "@/types";
+import type { WorkspaceMember, PipelineStage, CustomField } from "@/types";
 import { PipelineEditor } from "@/components/settings/pipeline-editor";
+import { CustomFieldsEditor } from "@/components/settings/custom-fields-editor";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import {
   DropdownMenu,
@@ -63,7 +65,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type Tab = "workspace" | "members" | "pipeline" | "preferences";
+type Tab = "workspace" | "members" | "pipeline" | "custom-fields" | "preferences";
 
 export default function SettingsPage() {
   const { user, activeWorkspace, workspaces, switchWorkspace, refreshWorkspaces } = useWorkspace();
@@ -86,12 +88,14 @@ export default function SettingsPage() {
   const { stats, refreshStats } = useLeadStore();
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
   const [savingPipeline, setSavingPipeline] = useState(false);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   useEffect(() => {
     if (activeWorkspace) {
       setWorkspaceName(activeWorkspace.name);
       setInviteCode(activeWorkspace.inviteCode || "");
       setPipelineStages(activeWorkspace.pipeline?.stages || []);
+      setCustomFields(activeWorkspace.customFields || []);
     }
   }, [activeWorkspace]);
 
@@ -233,6 +237,17 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveCustomFields = async (fields: CustomField[]) => {
+    if (!activeWorkspace) return;
+    try {
+      await updateWorkspace(activeWorkspace.id, { customFields: fields });
+      setCustomFields(fields);
+      refreshWorkspaces();
+    } catch {
+      toast.error("Failed to save custom fields");
+    }
+  };
+
   if (!activeWorkspace) {
     return (
       <div className="space-y-6">
@@ -248,6 +263,7 @@ export default function SettingsPage() {
     { id: "workspace", label: "Workspace", icon: <Building2 className="h-4 w-4" /> },
     { id: "members", label: "Members", icon: <Users className="h-4 w-4" /> },
     { id: "pipeline", label: "Pipeline", icon: <KanbanSquare className="h-4 w-4" /> },
+    { id: "custom-fields", label: "Custom Fields", icon: <ListFilter className="h-4 w-4" /> },
     { id: "preferences", label: "Preferences", icon: <Shield className="h-4 w-4" /> },
   ];
 
@@ -506,6 +522,16 @@ export default function SettingsPage() {
             stages={pipelineStages}
             leadCounts={stats.byStatus}
             onSave={handleSavePipeline}
+          />
+        </div>
+      )}
+
+      {/* Custom Fields Tab */}
+      {activeTab === "custom-fields" && (
+        <div className="space-y-6">
+          <CustomFieldsEditor
+            fields={customFields}
+            onSave={handleSaveCustomFields}
           />
         </div>
       )}

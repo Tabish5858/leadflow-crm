@@ -17,17 +17,21 @@ import {
 import { DEFAULT_PIPELINE_STAGES, LEAD_SOURCES, NICHES } from "@/lib/constants";
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
+import type { CustomField } from "@/types";
+import { Separator } from "@/components/ui/separator";
 
 interface LeadFormProps {
   onSuccess: () => void;
   userId: string;
   workspaceId: string;
   defaultValues?: Partial<LeadFormData>;
+  customFields?: CustomField[];
 }
 
-export function LeadForm({ onSuccess, userId, workspaceId, defaultValues }: LeadFormProps) {
+export function LeadForm({ onSuccess, userId, workspaceId, defaultValues, customFields = [] }: LeadFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const addLead = useLeadStore((s) => s.addLead);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const form = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
@@ -55,7 +59,16 @@ export function LeadForm({ onSuccess, userId, workspaceId, defaultValues }: Lead
   const onSubmit = async (data: LeadFormData) => {
     setSubmitting(true);
     try {
-      await addLead(workspaceId, userId, data);
+      // Validate required custom fields
+      for (const field of customFields) {
+        if (field.required && !customFieldValues[field.id]) {
+          toast.error(`${field.name} is required`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      await addLead(workspaceId, userId, data, customFieldValues);
       onSuccess();
     } catch {
       toast.error("Failed to create lead");
@@ -211,6 +224,121 @@ export function LeadForm({ onSuccess, userId, workspaceId, defaultValues }: Lead
           placeholder="Internal notes about this lead..."
         />
       </div>
+
+      {customFields.length > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Custom Fields</h3>
+            {customFields
+              .sort((a, b) => a.order - b.order)
+              .map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={`cf-${field.id}`}>
+                    {field.name}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {field.type === "text" && (
+                    <Input
+                      id={`cf-${field.id}`}
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onChange={(e) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: e.target.value }))
+                      }
+                      placeholder={`Enter ${field.name.toLowerCase()}`}
+                    />
+                  )}
+                  {field.type === "number" && (
+                    <Input
+                      id={`cf-${field.id}`}
+                      type="number"
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onChange={(e) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: parseFloat(e.target.value) || 0 }))
+                      }
+                      placeholder={`Enter ${field.name.toLowerCase()}`}
+                    />
+                  )}
+                  {field.type === "date" && (
+                    <Input
+                      id={`cf-${field.id}`}
+                      type="date"
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onChange={(e) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: e.target.value }))
+                      }
+                    />
+                  )}
+                  {field.type === "select" && (
+                    <Select
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onValueChange={(v) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: v }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select ${field.name.toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {field.type === "multiselect" && (
+                    <div className="flex flex-wrap gap-2">
+                      {field.options?.map((option) => {
+                        const selected = ((customFieldValues[field.id] as string[]) || []).includes(option);
+                        return (
+                          <Button
+                            key={option}
+                            type="button"
+                            variant={selected ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const current = (customFieldValues[field.id] as string[]) || [];
+                              const updated = selected
+                                ? current.filter((v) => v !== option)
+                                : [...current, option];
+                              setCustomFieldValues((prev) => ({ ...prev, [field.id]: updated }));
+                            }}
+                          >
+                            {option}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {field.type === "url" && (
+                    <Input
+                      id={`cf-${field.id}`}
+                      type="url"
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onChange={(e) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: e.target.value }))
+                      }
+                      placeholder="https://example.com"
+                    />
+                  )}
+                  {field.type === "email" && (
+                    <Input
+                      id={`cf-${field.id}`}
+                      type="email"
+                      value={(customFieldValues[field.id] as string) || ""}
+                      onChange={(e) =>
+                        setCustomFieldValues((prev) => ({ ...prev, [field.id]: e.target.value }))
+                      }
+                      placeholder="email@example.com"
+                    />
+                  )}
+                </div>
+              ))}
+          </div>
+        </>
+      )}
 
       <div className="flex justify-end gap-3 pt-4">
         <Button

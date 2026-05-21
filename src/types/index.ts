@@ -78,7 +78,7 @@ export interface PipelineStage {
 export interface CustomField {
   id: string;
   name: string;
-  type: "text" | "number" | "date" | "select" | "multiselect" | "checkbox" | "url";
+  type: "text" | "number" | "date" | "select" | "multiselect" | "checkbox" | "url" | "email";
   options?: string[];
   required: boolean;
   order: number;
