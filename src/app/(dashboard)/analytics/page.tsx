@@ -8,6 +8,7 @@ import { SkeletonCardGrid } from "@/components/skeletons/skeleton-card";
 import { SkeletonChartGrid } from "@/components/skeletons/skeleton-chart";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ import {
 import { DEFAULT_PIPELINE_STAGES, LEAD_SOURCES } from "@/lib/constants";
 import type { PipelineStage } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, Users, DollarSign, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, DollarSign, Target, Mail, Phone, Download } from "lucide-react";
 
 const COLORS = [
   "hsl(212 72% 58%)",
@@ -110,6 +111,7 @@ export default function AnalyticsPage() {
   // KPIs
   const totalLeads = filteredLeads.length;
   const wonLeads = filteredLeads.filter((l) => l.status === "won").length;
+  const lostLeads = filteredLeads.filter((l) => l.status === "lost").length;
   const conversionRate =
     totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
   const totalValue = filteredLeads.reduce(
@@ -119,6 +121,36 @@ export default function AnalyticsPage() {
   const activeDeals = filteredLeads.filter(
     (l) => !["won", "lost"].includes(l.status)
   ).length;
+  const wonValue = filteredLeads
+    .filter((l) => l.status === "won")
+    .reduce((sum, l) => sum + (l.value || 0), 0);
+  const avgDealSize = wonLeads > 0 ? wonValue / wonLeads : 0;
+
+  // Top leads by value
+  const topLeads = [...filteredLeads]
+    .filter((l) => l.value && l.value > 0)
+    .sort((a, b) => (b.value || 0) - (a.value || 0))
+    .slice(0, 5);
+
+  // Leads by niche/industry
+  const nicheData = filteredLeads.reduce<Record<string, number>>((acc, lead) => {
+    const niche = lead.niche || "Unknown";
+    acc[niche] = (acc[niche] || 0) + 1;
+    return acc;
+  }, {});
+  const nicheChartData = Object.entries(nicheData)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  // Conversion funnel
+  const funnelData = stages.map((stage) => ({
+    name: stage.name,
+    count: filteredLeads.filter((l) => l.status === stage.id).length,
+    value: filteredLeads
+      .filter((l) => l.status === stage.id)
+      .reduce((sum, l) => sum + (l.value || 0), 0),
+  }));
 
   if (loading) {
     return (
@@ -373,6 +405,153 @@ export default function AnalyticsPage() {
                 No data for this period
               </div>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Advanced Reporting */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Conversion Funnel */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Conversion Funnel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {funnelData.length > 0 ? (
+              <div className="space-y-3">
+                {funnelData.map((stage, index) => {
+                  const maxCount = Math.max(...funnelData.map((s) => s.count), 1);
+                  const width = (stage.count / maxCount) * 100;
+                  return (
+                    <div key={stage.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{stage.name}</span>
+                        <span className="text-muted-foreground">
+                          {stage.count} leads • {formatCurrency(stage.value)}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full transition-all"
+                          style={{
+                            width: `${width}%`,
+                            backgroundColor: COLORS[index % COLORS.length],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+                No data for this period
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Leads by Value */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top Leads by Value</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topLeads.length > 0 ? (
+              <div className="space-y-3">
+                {topLeads.map((lead, index) => (
+                  <div key={lead.id} className="flex items-center justify-between rounded-lg p-2 hover:bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {lead.firstName} {lead.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {lead.company || "No company"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {formatCurrency(lead.value || 0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+                No leads with value data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Industry Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Industry Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {nicheChartData.length > 0 ? (
+              <div className="space-y-3">
+                {nicheChartData.map((niche) => (
+                  <div key={niche.name} className="flex items-center justify-between">
+                    <span className="text-sm">{niche.name}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-24 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-primary"
+                          style={{ width: `${(niche.value / totalLeads) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{niche.value}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+                No industry data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Summary Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Summary Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total Leads</span>
+                <span className="text-lg font-bold">{totalLeads}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Won Deals</span>
+                <span className="text-lg font-bold text-green-600">{wonLeads}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Lost Deals</span>
+                <span className="text-lg font-bold text-red-600">{lostLeads}</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Conversion Rate</span>
+                <span className="text-lg font-bold">{conversionRate}%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Won Revenue</span>
+                <span className="text-lg font-bold">{formatCurrency(wonValue)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Avg Deal Size</span>
+                <span className="text-lg font-bold">{formatCurrency(avgDealSize)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
