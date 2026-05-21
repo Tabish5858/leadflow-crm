@@ -6,6 +6,7 @@ import { logStatusChange } from "@/lib/firebase/activities";
 import type { Lead } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +23,8 @@ import { DEFAULT_PIPELINE_STAGES } from "@/lib/constants";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActivityTimeline } from "@/components/leads/activity-timeline";
+import { EmailComposer, EmailHistory } from "@/components/leads/email-composer";
+import { sendEmail, getEmailsForLead, type EmailRecord } from "@/lib/firebase/emails";
 import {
   Mail,
   Phone,
@@ -93,6 +96,9 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const updateStatus = useLeadStore((s) => s.updateStatus);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emails, setEmails] = useState<EmailRecord[]>([]);
+  const [loadingEmails, setLoadingEmails] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -102,6 +108,30 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
       })
       .finally(() => setLoading(false));
   }, [leadId]);
+
+  useEffect(() => {
+    if (leadId) {
+      setLoadingEmails(true);
+      getEmailsForLead(leadId)
+        .then(setEmails)
+        .finally(() => setLoadingEmails(false));
+    }
+  }, [leadId]);
+
+  const handleSendEmail = async (data: { to: string; subject: string; body: string }) => {
+    if (!activeWorkspace || !user || !lead) return;
+    await sendEmail({
+      workspaceId: activeWorkspace.id,
+      leadId: lead.id,
+      to: data.to,
+      subject: data.subject,
+      body: data.body,
+      createdBy: user.id,
+    });
+    // Refresh emails
+    const updated = await getEmailsForLead(leadId);
+    setEmails(updated);
+  };
 
   const handleStatusChange = async (status: string) => {
     if (!lead) return;
@@ -187,7 +217,7 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
 
       <Separator />
 
-      {/* Tabs: Details & Activity */}
+      {/* Tabs: Details, Activity & Emails */}
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">
@@ -197,6 +227,10 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
           <TabsTrigger value="activity">
             <Clock className="h-3.5 w-3.5" />
             Activity
+          </TabsTrigger>
+          <TabsTrigger value="emails">
+            <Mail className="h-3.5 w-3.5" />
+            Emails {emails.length > 0 && `(${emails.length})`}
           </TabsTrigger>
         </TabsList>
 
@@ -358,7 +392,42 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
             userName={user?.displayName || "User"}
           />
         </TabsContent>
+
+        <TabsContent value="emails" className="mt-4">
+          <div className="space-y-4">
+            <Button size="sm" onClick={() => setEmailDialogOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Compose Email
+            </Button>
+            {loadingEmails ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : (
+              <EmailHistory
+                emails={emails.map((e) => ({
+                  id: e.id,
+                  subject: e.subject,
+                  to: e.to,
+                  status: e.status,
+                  sentAt: e.sentAt?.toDate() || null,
+                }))}
+              />
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
+
+      <EmailComposer
+        leadEmail={lead.email}
+        leadName={`${lead.firstName} ${lead.lastName}`}
+        leadCompany={lead.company || undefined}
+        onSend={handleSendEmail}
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+      />
     </div>
   );
 }
