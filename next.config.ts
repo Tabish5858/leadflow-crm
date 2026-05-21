@@ -31,6 +31,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  webpack: (config) => {
+    config.resolve.fallback = { fs: false, net: false, tls: false };
+    return config;
+  },
+  experimental: {
+    optimizePackageImports: ["recharts", "lucide-react", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-switch"],
+  },
 };
 
 export default nextConfig;
