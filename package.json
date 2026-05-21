@@ -15,8 +15,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "cf-build": "opennextjs-cloudflare build",
-    "cf-deploy": "opennextjs-cloudflare deploy",
+    "cf-build": "npx opennextjs-cloudflare build",
+    "cf-deploy": "npx opennextjs-cloudflare deploy",
     "cf-preview": "opennextjs-cloudflare preview"
   },
   "dependencies": {
