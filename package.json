@@ -14,10 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "cf-build": "npx @opennextjs/cloudflare build",
-    "cf-deploy": "npx @opennextjs/cloudflare deploy",
-    "cf-preview": "opennextjs-cloudflare preview"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -60,9 +57,7 @@
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.64",
-    "zustand": "^5.0.5",
-    "@opennextjs/cloudflare": "^1.19.11",
-    "wrangler": "^4.93.1"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.10",
