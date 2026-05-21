@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { StatCard } from "@/components/shared/stat-card";
@@ -73,40 +73,52 @@ export default function AnalyticsPage() {
   // Filter leads by date range
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - dateRange);
-  const filteredLeads = leads.filter(
-    (l) => !l.createdAt || l.createdAt.toDate() >= cutoff
+  const filteredLeads = useMemo(
+    () => leads.filter((l) => !l.createdAt || l.createdAt.toDate() >= cutoff),
+    [leads, cutoff]
   );
 
   // Leads over time
-  const leadsOverTime: Record<string, number> = {};
-  for (const lead of filteredLeads) {
-    const date = lead.createdAt?.toDate().toLocaleDateString() || "Unknown";
-    leadsOverTime[date] = (leadsOverTime[date] || 0) + 1;
-  }
-  const leadsOverTimeData = Object.entries(leadsOverTime)
-    .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-    .map(([date, count]) => ({ date, leads: count }));
+  const leadsOverTimeData = useMemo(() => {
+    const leadsOverTime: Record<string, number> = {};
+    for (const lead of filteredLeads) {
+      const date = lead.createdAt?.toDate().toLocaleDateString() || "Unknown";
+      leadsOverTime[date] = (leadsOverTime[date] || 0) + 1;
+    }
+    return Object.entries(leadsOverTime)
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([date, count]) => ({ date, leads: count }));
+  }, [filteredLeads]);
 
   // Pipeline distribution
-  const pipelineData = stages.map((stage) => ({
-    name: stage.name,
-    value: filteredLeads.filter((l) => l.status === stage.id).length,
-    color: stage.color,
-  })).filter((d) => d.value > 0);
+  const pipelineData = useMemo(() =>
+    stages.map((stage) => ({
+      name: stage.name,
+      value: filteredLeads.filter((l) => l.status === stage.id).length,
+      color: stage.color,
+    })).filter((d) => d.value > 0),
+    [filteredLeads, stages]
+  );
 
   // Revenue by stage
-  const revenueData = stages.map((stage) => ({
-    name: stage.name,
-    value: filteredLeads
-      .filter((l) => l.status === stage.id)
-      .reduce((sum, l) => sum + (l.value || 0), 0),
-  })).filter((d) => d.value > 0);
+  const revenueData = useMemo(() =>
+    stages.map((stage) => ({
+      name: stage.name,
+      value: filteredLeads
+        .filter((l) => l.status === stage.id)
+        .reduce((sum, l) => sum + (l.value || 0), 0),
+    })).filter((d) => d.value > 0),
+    [filteredLeads, stages]
+  );
 
   // Lead sources
-  const sourceData = LEAD_SOURCES.map((source) => ({
-    name: source.replace(/_/g, " "),
-    value: filteredLeads.filter((l) => l.source === source).length,
-  })).filter((d) => d.value > 0);
+  const sourceData = useMemo(() =>
+    LEAD_SOURCES.map((source) => ({
+      name: source.replace(/_/g, " "),
+      value: filteredLeads.filter((l) => l.source === source).length,
+    })).filter((d) => d.value > 0),
+    [filteredLeads]
+  );
 
   // KPIs
   const totalLeads = filteredLeads.length;
@@ -127,30 +139,38 @@ export default function AnalyticsPage() {
   const avgDealSize = wonLeads > 0 ? wonValue / wonLeads : 0;
 
   // Top leads by value
-  const topLeads = [...filteredLeads]
-    .filter((l) => l.value && l.value > 0)
-    .sort((a, b) => (b.value || 0) - (a.value || 0))
-    .slice(0, 5);
+  const topLeads = useMemo(() =>
+    [...filteredLeads]
+      .filter((l) => l.value && l.value > 0)
+      .sort((a, b) => (b.value || 0) - (a.value || 0))
+      .slice(0, 5),
+    [filteredLeads]
+  );
 
   // Leads by niche/industry
-  const nicheData = filteredLeads.reduce<Record<string, number>>((acc, lead) => {
-    const niche = lead.niche || "Unknown";
-    acc[niche] = (acc[niche] || 0) + 1;
-    return acc;
-  }, {});
-  const nicheChartData = Object.entries(nicheData)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6);
+  const nicheChartData = useMemo(() => {
+    const nicheData = filteredLeads.reduce<Record<string, number>>((acc, lead) => {
+      const niche = lead.niche || "Unknown";
+      acc[niche] = (acc[niche] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(nicheData)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [filteredLeads]);
 
   // Conversion funnel
-  const funnelData = stages.map((stage) => ({
-    name: stage.name,
-    count: filteredLeads.filter((l) => l.status === stage.id).length,
-    value: filteredLeads
-      .filter((l) => l.status === stage.id)
-      .reduce((sum, l) => sum + (l.value || 0), 0),
-  }));
+  const funnelData = useMemo(() =>
+    stages.map((stage) => ({
+      name: stage.name,
+      count: filteredLeads.filter((l) => l.status === stage.id).length,
+      value: filteredLeads
+        .filter((l) => l.status === stage.id)
+        .reduce((sum, l) => sum + (l.value || 0), 0),
+    })),
+    [filteredLeads, stages]
+  );
 
   if (loading) {
     return (
