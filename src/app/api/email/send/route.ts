@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         body: text || processedText,
         status: "sent",
         sentAt: Timestamp.now(),
-        createdBy,
+        createdBy: createdBy || "system",
         createdAt: Timestamp.now(),
         trackingEnabled: enableTracking,
       });
