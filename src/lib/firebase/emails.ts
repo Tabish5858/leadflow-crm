@@ -22,6 +22,8 @@ export interface EmailRecord {
   sentAt: Timestamp | null;
   createdBy: string;
   createdAt: Timestamp;
+  resendId?: string;
+  trackingEnabled?: boolean;
 }
 
 export async function sendEmail(data: {
@@ -31,20 +33,32 @@ export async function sendEmail(data: {
   subject: string;
   body: string;
   createdBy: string;
+  trackOpens?: boolean;
+  trackClicks?: boolean;
 }): Promise<string> {
-  // In production, this would call a Next.js API route that uses Resend
-  // For now, we simulate sending and store the record
-  const docRef = await addDoc(collection(db, EMAILS_COLLECTION), {
-    ...data,
-    status: "sent",
-    sentAt: Timestamp.now(),
-    createdAt: Timestamp.now(),
+  const response = await fetch("/api/email/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: data.to,
+      subject: data.subject,
+      html: data.body.replace(/\n/g, "<br/>"),
+      text: data.body,
+      leadId: data.leadId,
+      workspaceId: data.workspaceId,
+      createdBy: data.createdBy,
+      trackOpens: data.trackOpens !== false,
+      trackClicks: data.trackClicks !== false,
+    }),
   });
 
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  const result = await response.json();
 
-  return docRef.id;
+  if (!response.ok) {
+    throw new Error(result.error || "Failed to send email");
+  }
+
+  return result.emailId;
 }
 
 export async function saveDraft(data: {
