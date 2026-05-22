@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BrevoClient } from "@getbrevo/brevo";
+import { Resend } from "resend";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { addTrackingPixel, rewriteLinks } from "@/lib/email-tracking";
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@leadflow.app";
 const FROM_NAME = process.env.FROM_NAME || "LeadFlow CRM";
 const EMAILS_COLLECTION = "emails";
@@ -20,9 +20,9 @@ function getBaseUrl(): string {
 }
 
 export async function POST(req: NextRequest) {
-  if (!BREVO_API_KEY) {
+  if (!process.env.RESEND_API_KEY) {
     return NextResponse.json(
-      { error: "Brevo API key not configured" },
+      { error: "Resend API key not configured" },
       { status: 500 }
     );
   }
@@ -72,38 +72,48 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Send via Brevo
-    const client = new BrevoClient({ apiKey: BREVO_API_KEY });
-
-    const headers: Record<string, string> = {
-      "X-LeadFlow-Lead-Id": leadId || "",
-      "X-LeadFlow-Workspace-Id": workspaceId || "",
-    };
-    if (emailId) {
-      headers["X-LeadFlow-Email-Id"] = emailId;
-    }
-
-    const result = await client.transactionalEmails.sendTransacEmail({
-      sender: { email: FROM_EMAIL, name: FROM_NAME },
-      to: Array.isArray(to) ? to.map((e: string) => ({ email: e })) : [{ email: to }],
+    // Send via Resend
+    const recipients = Array.isArray(to) ? to : [to];
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: recipients,
       subject,
-      htmlContent: processedHtml || undefined,
-      textContent: processedText || undefined,
-      headers,
+      html: processedHtml || processedText,
+      text: processedText,
+      headers: {
+        "X-LeadFlow-Lead-Id": leadId || "",
+        "X-LeadFlow-Workspace-Id": workspaceId || "",
+      ...(emailId ? { "X-LeadFlow-Email-Id": emailId } : {})},
     });
 
-    // Update Firestore record with Brevo message ID
-    if (emailId) {
-      // messageId is returned but we don't need to update — it's stored in the response
+    if (result.error) {
+      console.error("Resend email error:", result.error);
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: 500 }
+      );
+    }
+
+    // Update Firestore record with Resend ID
+    if (emailId && result.data?.id) {
+      const { doc, updateDoc } = await import("firebase/firestore");
+      try {
+        await updateDoc(doc(db, EMAILS_COLLECTION, emailId), {
+          resendId: result.data.id,
+        });
+      } catch {
+        // Non-critical — log but don't fail
+        console.warn("Failed to update email record with resendId");
+      }
     }
 
     return NextResponse.json({
       success: true,
       emailId,
-      messageId: result.messageId,
+      resendId: result.data?.id,
     });
   } catch (error) {
-    console.error("Brevo email error:", error);
+    console.error("Email send error:", error);
     const message = error instanceof Error ? error.message : "Failed to send email";
     return NextResponse.json(
       { error: message },

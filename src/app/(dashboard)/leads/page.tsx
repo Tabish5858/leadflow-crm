@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LeadForm } from "@/components/leads/lead-form";
-import { LeadDetail } from "@/components/leads/lead-detail";
-import { CsvImportDialog } from "@/components/leads/csv-import-dialog";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import {
   Select,
@@ -58,6 +56,19 @@ import {
 import { calculateLeadScore, type ScoreBreakdown } from "@/lib/lead-scoring";
 import { getEmailsForWorkspace, type EmailRecord } from "@/lib/firebase/emails";
 import { ExportButton } from "@/components/shared/export-button";
+
+// Dynamically loaded components — only loaded when user opens the dialog
+const LeadForm = dynamic(() => import("@/components/leads/lead-form").then((mod) => mod.LeadForm), {
+  loading: () => <div className="p-8 flex items-center justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>,
+});
+
+const LeadDetail = dynamic(() => import("@/components/leads/lead-detail").then((mod) => mod.LeadDetail), {
+  loading: () => <div className="p-8 flex items-center justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>,
+});
+
+const CsvImportDialog = dynamic(() => import("@/components/leads/csv-import-dialog").then((mod) => mod.CsvImportDialog), {
+  loading: () => <div className="p-8 flex items-center justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>,
+});
 
 export default function LeadsPage() {
   const { user, activeWorkspace } = useWorkspace();

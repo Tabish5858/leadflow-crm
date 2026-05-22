@@ -36,7 +36,15 @@ const nextConfig: NextConfig = {
     return config;
   },
   experimental: {
-    optimizePackageImports: ["recharts", "lucide-react", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-switch"],
+    optimizePackageImports: [
+      "recharts",
+      "lucide-react",
+      "firebase",
+      "date-fns",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-switch",
+    ],
   },
 };
 

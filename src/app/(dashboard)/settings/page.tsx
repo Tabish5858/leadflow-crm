@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -59,9 +60,19 @@ import {
   updateMemberRole,
 } from "@/lib/firebase/workspaces";
 import type { WorkspaceMember, PipelineStage, CustomField } from "@/types";
-import { PipelineEditor } from "@/components/settings/pipeline-editor";
-import { CustomFieldsEditor } from "@/components/settings/custom-fields-editor";
-import { CalendarConnection } from "@/components/settings/calendar-connection";
+
+// Dynamically loaded tab content — only loaded when user clicks the tab
+const PipelineEditor = dynamic(() => import("@/components/settings/pipeline-editor").then((mod) => mod.PipelineEditor), {
+  loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
+});
+
+const CustomFieldsEditor = dynamic(() => import("@/components/settings/custom-fields-editor").then((mod) => mod.CustomFieldsEditor), {
+  loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
+});
+
+const CalendarConnection = dynamic(() => import("@/components/settings/calendar-connection").then((mod) => mod.CalendarConnection), {
+  loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
+});
 import { useLeadStore } from "@/lib/stores/leadStore";
 import {
   DropdownMenu,

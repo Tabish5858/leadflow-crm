@@ -1,5 +1,4 @@
 import type { Lead } from "@/types";
-import ExcelJS from "exceljs";
 
 const CSV_HEADERS = [
   "firstName",
@@ -78,6 +77,7 @@ export function exportLeadsToCsv(leads: Lead[]): void {
 }
 
 export async function exportLeadsToExcel(leads: Lead[]): Promise<Blob> {
+  const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "LeadFlow CRM";
   workbook.created = new Date();
