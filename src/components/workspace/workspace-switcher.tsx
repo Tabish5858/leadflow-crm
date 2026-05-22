@@ -28,7 +28,7 @@ import {
   Plus,
   Building2,
 } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 function getWorkspaceInitials(name: string): string {
   return name

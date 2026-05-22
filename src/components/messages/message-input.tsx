@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Loader2, Paperclip, X, File } from "lucide-react";
 
 interface MessageInputProps {
@@ -67,9 +68,14 @@ export function MessageInput({
           </span>
           {uploading && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
           {!uploading && onClearFile && (
-            <button onClick={onClearFile} className="text-muted-foreground hover:text-foreground">
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={onClearFile} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent><p>Remove file</p></TooltipContent>
+            </Tooltip>
           )}
         </div>
       )}

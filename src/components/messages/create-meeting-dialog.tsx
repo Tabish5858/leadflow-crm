@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar, Loader2, AlertCircle, Video } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -92,7 +92,7 @@ export function CreateMeetingDialog({
 
         if (cancelled) return;
 
-        toast.success("Google Meet link sent");
+        toast.meetingLink(meetData.meetLink);
         onOpenChange(false);
       } catch (err) {
         if (cancelled) return;

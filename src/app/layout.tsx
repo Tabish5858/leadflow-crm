@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,10 +55,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main id="main-content" tabIndex={-1} className="flex-1">
-            {children}
-          </main>
-          <Toaster />
+          <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+            <main id="main-content" tabIndex={-1} className="flex-1">
+              {children}
+            </main>
+            <Toaster />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

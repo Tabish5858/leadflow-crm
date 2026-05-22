@@ -52,7 +52,7 @@ import {
   Palette,
   UserCircle,
 } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import {
   updateWorkspaceName,
   updateWorkspace,

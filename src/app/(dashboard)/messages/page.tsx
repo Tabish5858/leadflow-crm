@@ -22,6 +22,7 @@ import { MessageInput } from "@/components/messages/message-input";
 import { NewConversationDialog } from "@/components/messages/new-conversation-dialog";
 import { NewMemberConversationDialog } from "@/components/messages/new-member-conversation-dialog";
 import { CreateMeetingDialog } from "@/components/messages/create-meeting-dialog";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import {
   subscribeToConversations,
   subscribeToMessages,
@@ -36,7 +37,7 @@ import {
 import { getWorkspaceMembers } from "@/lib/firebase/workspaces";
 import { Search, Plus, Mail, Users, Video } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import { getInitials } from "@/lib/utils";
 import type { Conversation, Message, WorkspaceMember } from "@/types";
 
@@ -698,15 +699,14 @@ export default function MessagesPage() {
               {/* Input */}
               <div className="border-t px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Button
+                  <TooltipButton
+                    tooltip="Send Google Meet link"
                     variant="ghost"
-                    size="icon"
                     className="shrink-0"
                     onClick={handleOpenMeetingDialog}
-                    title="Send Google Meet link"
                   >
                     <Video className="h-4 w-4" />
-                  </Button>
+                  </TooltipButton>
                   <div className="flex-1">
                     <MessageInput
                       onSend={handleSendMessage}

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Mail, Send, Save, FileText, Loader2, Eye, MousePointer, ChevronDown, ChevronUp } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const EMAIL_TEMPLATES = [
   {

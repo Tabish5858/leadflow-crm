@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useTimeTrackingStore } from "@/lib/stores/timeTrackingStore";
 import { useLeadStore } from "@/lib/stores/leadStore";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ import {
 } from "lucide-react";
 import { formatDuration, formatDate } from "@/lib/utils";
 import { Timestamp } from "firebase/firestore";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 export default function TimeTrackerPage() {
   const { user, activeWorkspace } = useWorkspace();
@@ -269,34 +270,34 @@ export default function TimeTrackerPage() {
                 </span>
               </div>
               {!timer.isRunning ? (
-                <Button
-                  size="icon"
+                <TooltipButton
+                  tooltip="Start timer"
                   className="h-10 w-10 bg-success hover:bg-success/90"
                   onClick={() =>
                     startTimer(timer.leadId || undefined, timer.description)
                   }
                 >
                   <Play className="h-4 w-4" />
-                </Button>
+                </TooltipButton>
               ) : (
-                <Button
-                  size="icon"
+                <TooltipButton
+                  tooltip="Stop timer"
                   variant="destructive"
                   className="h-10 w-10"
                   onClick={handleStopTimer}
                 >
                   <Square className="h-4 w-4" />
-                </Button>
+                </TooltipButton>
               )}
               {!timer.isRunning && timer.elapsed > 0 && (
-                <Button
-                  size="icon"
+                <TooltipButton
+                  tooltip="Reset timer"
                   variant="outline"
                   className="h-10 w-10"
                   onClick={resetTimer}
                 >
                   <RotateCcw className="h-4 w-4" />
-                </Button>
+                </TooltipButton>
               )}
             </div>
           </div>
@@ -467,14 +468,14 @@ export default function TimeTrackerPage() {
                               </span>
                             )}
                           </div>
-                          <Button
+                          <TooltipButton
+                            tooltip="Delete entry"
                             variant="ghost"
-                            size="icon"
                             className="h-8 w-8"
                             onClick={() => handleDeleteEntry(entry.id)}
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
+                          </TooltipButton>
                         </div>
                       </div>
                     );

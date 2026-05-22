@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { GripVertical, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import type { PipelineStage } from "@/types";
 import {
   DndContext,
@@ -93,23 +94,23 @@ function SortableStage({ stage, index, onEdit, onDelete, leadCount }: SortableSt
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
+        <TooltipButton
+          tooltip="Edit stage"
           variant="ghost"
-          size="icon"
           className="h-8 w-8"
           onClick={() => onEdit(stage)}
         >
           <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button
+        </TooltipButton>
+        <TooltipButton
+          tooltip="Delete stage"
           variant="ghost"
-          size="icon"
           className="h-8 w-8 text-destructive hover:text-destructive"
           onClick={() => onDelete(stage.id)}
           disabled={leadCount > 0}
         >
           <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        </TooltipButton>
       </div>
     </div>
   );

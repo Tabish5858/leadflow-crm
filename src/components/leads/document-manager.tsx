@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Document as LeadDocument } from "@/types";
+import { TooltipButton } from "@/components/ui/tooltip-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import {
   Dialog,
   DialogContent,
@@ -345,15 +347,20 @@ export function DocumentManager({
                   {state.error && (
                     <span className="text-xs text-muted-foreground">{state.error}</span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setUploadStates((prev) => prev.filter((_, idx) => idx !== i))
-                    }
-                    className="ml-auto shrink-0"
-                  >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUploadStates((prev) => prev.filter((_, idx) => idx !== i))
+                        }
+                        className="ml-auto shrink-0"
+                      >
+                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Dismiss</p></TooltipContent>
+                  </Tooltip>
                 </>
               )}
             </div>
@@ -395,31 +402,31 @@ export function DocumentManager({
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   {previewable && (
-                    <Button
+                    <TooltipButton
+                      tooltip="Preview"
                       variant="ghost"
-                      size="icon"
                       className="h-8 w-8"
                       onClick={() => handlePreview(doc)}
                     >
                       <Eye className="h-4 w-4" />
-                    </Button>
+                    </TooltipButton>
                   )}
-                  <Button
+                  <TooltipButton
+                    tooltip="Download"
                     variant="ghost"
-                    size="icon"
                     className="h-8 w-8"
                     onClick={() => handleDownload(doc.cloudinaryUrl, doc.fileName)}
                   >
                     <Download className="h-4 w-4" />
-                  </Button>
-                  <Button
+                  </TooltipButton>
+                  <TooltipButton
+                    tooltip="Delete document"
                     variant="ghost"
-                    size="icon"
                     className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                     onClick={() => handleDelete(doc.id, doc.fileName)}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </TooltipButton>
                 </div>
               </div>
             );

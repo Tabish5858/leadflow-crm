@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -154,12 +155,17 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
             <span className="text-lg font-bold tracking-tight">LeadFlow</span>
           </div>
-          <button
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-5 w-5 text-muted-foreground" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent><p>Close menu</p></TooltipContent>
+          </Tooltip>
         </div>
 
         <Separator />
@@ -254,12 +260,17 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
           <div className="flex items-center gap-2">
-            <button
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="lg:hidden"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent><p>Open menu</p></TooltipContent>
+            </Tooltip>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="hidden sm:inline">LeadFlow</span>
               <ChevronRight className="h-3.5 w-3.5 hidden sm:inline" />

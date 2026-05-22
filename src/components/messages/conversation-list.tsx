@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MessageSquare, Users, MoreHorizontal, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Conversation, WorkspaceMember } from "@/types";
@@ -251,14 +252,19 @@ export function ConversationList({
                   {(hoveredConvId === conv.id || isSelected) && onDeleteConversation && (
                     <div className="shrink-0">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-3.5 w-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Conversation options</p></TooltipContent>
+                        </Tooltip>
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem
                             className="text-destructive"

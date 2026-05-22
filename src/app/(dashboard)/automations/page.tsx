@@ -17,7 +17,7 @@ import {
 } from "@/lib/firebase/automations";
 import type { Automation } from "@/types";
 import { Plus, Zap } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 export default function AutomationsPage() {
   const { activeWorkspace } = useWorkspace();

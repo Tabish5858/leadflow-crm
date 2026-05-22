@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { DEFAULT_PIPELINE_STAGES, LEAD_SOURCES, NICHES } from "@/lib/constants";
 import { useState } from "react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import type { CustomField } from "@/types";
 import { Separator } from "@/components/ui/separator";
 

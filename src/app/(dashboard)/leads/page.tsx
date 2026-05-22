@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { useLeadStore } from "@/lib/stores/leadStore";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,7 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import {
   type FilterState,
   applyFilters,
@@ -468,13 +469,13 @@ export default function LeadsPage() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
+                          <TooltipButton
+                            tooltip="Actions"
                             variant="ghost"
-                            size="icon"
                             className="h-8 w-8"
                           >
                             <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          </TooltipButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem

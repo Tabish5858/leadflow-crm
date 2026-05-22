@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Text, Hash, Calendar, List, Tags, Link2, Mail, GripVertical, Plus, Trash2, Pencil } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import type { CustomField } from "@/types";
 import {
   DndContext,
@@ -89,12 +90,12 @@ function SortableField({
         )}
       </div>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(field)}>
+        <TooltipButton tooltip="Edit field" variant="ghost" className="h-8 w-8" onClick={() => onEdit(field)}>
           <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(field.id)}>
+        </TooltipButton>
+        <TooltipButton tooltip="Delete field" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onDelete(field.id)}>
           <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        </TooltipButton>
       </div>
     </div>
   );

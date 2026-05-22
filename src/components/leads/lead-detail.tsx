@@ -6,6 +6,7 @@ import { logStatusChange } from "@/lib/firebase/activities";
 import type { Lead } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,7 +51,7 @@ import {
   FileText,
   Calendar,
 } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import { DocumentManager } from "@/components/leads/document-manager";
 
 interface LeadDetailProps {
@@ -610,16 +611,29 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
             <div className="grid gap-2">
               <Label>Color</Label>
               <div className="flex gap-2 flex-wrap">
-                {["#3b82f6", "#eab308", "#f97316", "#a855f7", "#ef4444", "#22c55e", "#6b7280", "#06b6d4"].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`h-8 w-8 rounded-full border-2 transition-all ${
-                      newStatusColor === color ? "border-foreground scale-110" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewStatusColor(color)}
-                  />
+                {[
+                  { color: "#3b82f6", label: "Blue" },
+                  { color: "#eab308", label: "Yellow" },
+                  { color: "#f97316", label: "Orange" },
+                  { color: "#a855f7", label: "Purple" },
+                  { color: "#ef4444", label: "Red" },
+                  { color: "#22c55e", label: "Green" },
+                  { color: "#6b7280", label: "Gray" },
+                  { color: "#06b6d4", label: "Cyan" },
+                ].map(({ color, label }) => (
+                  <Tooltip key={color}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className={`h-8 w-8 rounded-full border-2 transition-all ${
+                          newStatusColor === color ? "border-foreground scale-110" : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setNewStatusColor(color)}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent><p>{label}</p></TooltipContent>
+                  </Tooltip>
                 ))}
               </div>
             </div>

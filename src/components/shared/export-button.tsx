@@ -16,7 +16,7 @@ import {
   exportAnalyticsToPdf,
   type AnalyticsMetrics,
 } from "@/lib/export";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 interface ExportButtonProps {
   type: "leads" | "analytics";

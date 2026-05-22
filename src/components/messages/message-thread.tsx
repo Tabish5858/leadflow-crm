@@ -17,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Pencil, Trash2, X, Check, Smile, File as FileIcon, Download } from "lucide-react";
 import type { Message } from "@/types";
 import { MeetingCard } from "@/components/messages/meeting-card";
@@ -45,6 +46,7 @@ export function MessageThread({
   const bottomRef = useRef<HTMLDivElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [reactionOpenId, setReactionOpenId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -186,7 +188,7 @@ export function MessageThread({
         const isFirstInGroup = idx === 0 || messages[idx - 1].senderId !== msg.senderId || isDifferentDay(msg, messages[idx - 1]);
         const isLastInGroup = idx === messages.length - 1 || messages[idx + 1].senderId !== msg.senderId || isDifferentDay(msg, messages[idx + 1]);
         const showDate = idx === 0 || isDifferentDay(msg, messages[idx - 1]);
-        const isHovered = hoveredId === msg.id;
+        const isHovered = hoveredId === msg.id || reactionOpenId === msg.id;
         const isEditing = editingId === msg.id;
 
         return (
@@ -242,23 +244,23 @@ export function MessageThread({
                         }}
                         autoFocus
                       />
-                      <Button
-                        size="icon"
+                      <TooltipButton
+                        tooltip="Save"
                         variant="ghost"
                         className="h-7 w-7"
                         onClick={handleSaveEdit}
                         disabled={actionLoading}
                       >
                         <Check className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
+                      </TooltipButton>
+                      <TooltipButton
+                        tooltip="Cancel"
                         variant="ghost"
                         className="h-7 w-7"
                         onClick={handleCancelEdit}
                       >
                         <X className="h-3.5 w-3.5" />
-                      </Button>
+                      </TooltipButton>
                     </div>
                   ) : (
                     /* Normal message */
@@ -380,7 +382,7 @@ export function MessageThread({
                   <div className="absolute -top-4 right-0 z-10 flex items-center rounded-lg bg-white px-1 shadow-md dark:bg-[#202c33]">
                     {/* Reaction picker */}
                     {onToggleReaction && (
-                      <Popover>
+                      <Popover open={reactionOpenId === msg.id} onOpenChange={(open) => setReactionOpenId(open ? msg.id : null)}>
                         <PopoverTrigger asChild>
                           <button
                             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"

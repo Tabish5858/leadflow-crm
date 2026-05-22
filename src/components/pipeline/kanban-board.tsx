@@ -21,7 +21,7 @@ import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import type { Lead, PipelineStage } from "@/types";
 import { useState } from "react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 export function KanbanBoard() {
   const { activeWorkspace } = useWorkspace();

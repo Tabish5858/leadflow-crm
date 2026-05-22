@@ -39,7 +39,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Timestamp, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const PAGE_SIZE = 20;
 

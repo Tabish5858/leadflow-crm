@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +38,7 @@ import {
   Clock,
   FileText,
 } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import type { Automation } from "@/types";
 
 const TRIGGER_TYPES = [
@@ -229,9 +230,9 @@ export function AutomationBuilder({ automation, onSave, open, onOpenChange }: Au
                             <ActionIcon className="h-4 w-4 text-green-500" />
                             <span className="text-sm font-medium">{actionInfo?.label}</span>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveAction(index)}>
+                          <TooltipButton tooltip="Remove action" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveAction(index)}>
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </TooltipButton>
                         </div>
 
                         {action.type === "add_tag" || action.type === "remove_tag" ? (
@@ -315,9 +316,9 @@ export function AutomationBuilder({ automation, onSave, open, onOpenChange }: Au
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleAddAction} disabled={!newActionType}>
+              <TooltipButton tooltip="Add action" onClick={handleAddAction} disabled={!newActionType}>
                 <Plus className="h-4 w-4" />
-              </Button>
+              </TooltipButton>
             </div>
           </div>
         </div>
@@ -386,12 +387,12 @@ export function AutomationCard({ automation, onEdit, onDelete, onToggle }: Autom
             {automation.actions.length} action{automation.actions.length !== 1 ? "s" : ""}
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(automation)}>
+            <TooltipButton tooltip="Edit automation" variant="ghost" className="h-7 w-7" onClick={() => onEdit(automation)}>
               <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(automation.id)}>
+            </TooltipButton>
+            <TooltipButton tooltip="Delete automation" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => onDelete(automation.id)}>
               <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            </TooltipButton>
           </div>
         </div>
       </CardContent>
