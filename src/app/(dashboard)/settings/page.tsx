@@ -61,6 +61,7 @@ import {
   getPendingInvitesForWorkspace,
   updateMemberRole,
 } from "@/lib/firebase/workspaces";
+import { renderInviteEmail } from "@/lib/email-templates";
 import type { WorkspaceMember, WorkspaceInvite, PipelineStage, CustomField } from "@/types";
 
 // Dynamically loaded tab content — only loaded when user clicks the tab
@@ -165,23 +166,20 @@ export default function SettingsPage() {
       const inviterName = user?.displayName || "A team member";
 
       // Send actual invitation email via Resend
+      const html = renderInviteEmail({
+        inviterName,
+        workspaceName,
+        inviteRole,
+        acceptUrl,
+      });
+
       await fetch("/api/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: inviteEmail.trim(),
-          subject: `You're invited to join ${workspaceName} on LeadFlow CRM`,
-          html: `
-            <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto;">
-              <h2 style="color: #111827;">You&apos;re invited!</h2>
-              <p style="color: #374151;">${inviterName} has invited you to join <strong>${workspaceName}</strong> on LeadFlow CRM.</p>
-              <p style="color: #374151;">Your role will be: <strong>${inviteRole}</strong></p>
-              <div style="margin: 24px 0;">
-                <a href="${acceptUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Accept Invitation</a>
-              </div>
-              <p style="color: #6b7280; font-size: 14px;">This invitation expires in 7 days. If you don't have an account, you'll be prompted to create one.</p>
-            </div>
-          `,
+          subject: `Join ${workspaceName} on LeadFlow CRM`,
+          html,
           workspaceId: activeWorkspace.id,
           createdBy: firebaseUser.uid,
         }),
