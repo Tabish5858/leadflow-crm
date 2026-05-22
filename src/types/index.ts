@@ -172,6 +172,30 @@ export interface Activity {
   metadata?: Record<string, unknown>;
 }
 
+// ─── Meeting ─────────────────────────────────────────────────────────────────
+
+export interface Meeting {
+  id: string;
+  workspaceId: string;
+  leadId?: string;
+  conversationId?: string;
+  title: string;
+  description?: string;
+  startTime: Timestamp;
+  endTime: Timestamp;
+  timezone: string;
+  attendees: { email: string; name: string }[];
+  conferencingTool: "google_meet";
+  googleMeetLink: string;
+  calendarEventId: string;
+  calendarEventUrl?: string;
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  meetingType: "instant" | "scheduled";
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 // ─── Message ─────────────────────────────────────────────────────────────────
 
 export interface Message {
@@ -185,6 +209,29 @@ export interface Message {
   edited: boolean;
   editedAt?: Timestamp;
   createdAt: Timestamp | null;
+  /* Enrichments */
+  replyTo?: string | null;
+  replyPreview?: string | null;
+  mentions?: string[];
+  readBy?: string[];
+  pinned?: boolean;
+  pinnedBy?: string;
+  pinnedAt?: Timestamp;
+  reactions?: Record<string, string[]>;
+  attachment?: {
+    type: "image" | "document" | "voice" | "video";
+    url: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    duration?: number;
+  } | null;
+  /* Meeting card embedded in message */
+  meetingCard?: {
+    meetLink: string;
+    calendarEventUrl?: string;
+    status: "active" | "ended";
+  } | null;
 }
 
 export interface Conversation {

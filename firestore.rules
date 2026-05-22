@@ -120,5 +120,46 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Conversations (messages module)
+    match /conversations/{conversationId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+    }
+
+    // Messages
+    match /messages/{messageId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+    }
+
+    // Meetings
+    match /meetings/{meetingId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+    }
+
+    // Documents (Cloudinary metadata)
+    match /documents/{documentId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+    }
+
+    // Emails
+    match /emails/{emailId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId) ||
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
+    }
   }
 }

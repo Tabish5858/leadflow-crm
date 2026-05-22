@@ -116,26 +116,41 @@ export async function sendMessage(data: {
   senderId: string;
   senderName: string;
   body: string;
+  attachment?: Message["attachment"];
+  meetingCard?: Message["meetingCard"];
+  replyTo?: string;
+  replyPreview?: string;
+  mentions?: string[];
 }): Promise<string> {
-  const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), {
+  const docData: Record<string, unknown> = {
     conversationId: data.conversationId,
     workspaceId: data.workspaceId,
     senderId: data.senderId,
     senderName: data.senderName,
     body: data.body,
+    deleted: false,
+    edited: false,
     createdAt: serverTimestamp(),
-  });
+  };
+
+  if (data.attachment) docData.attachment = data.attachment;
+  if (data.meetingCard) docData.meetingCard = data.meetingCard;
+  if (data.replyTo) docData.replyTo = data.replyTo;
+  if (data.replyPreview) docData.replyPreview = data.replyPreview;
+  if (data.mentions?.length) docData.mentions = data.mentions;
+
+  const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), docData);
 
   // Update conversation's last message preview
   try {
+    const preview = data.meetingCard ? "📹 Google Meet" : data.attachment ? `📎 ${data.attachment.name}` : data.body.slice(0, 100);
     const convRef = doc(db, CONVERSATIONS_COLLECTION, data.conversationId);
     await updateDoc(convRef, {
-      lastMessage: data.body.slice(0, 100),
+      lastMessage: preview,
       lastMessageAt: serverTimestamp(),
     });
   } catch {
-    // Non-critical — message is already saved
-    console.warn("Failed to update conversation preview — conversation may not exist");
+    console.warn("Failed to update conversation preview");
   }
 
   return docRef.id;
@@ -216,6 +231,40 @@ export async function createConversation(data: {
 // ─── Exports for backward compatibility ──────────────────────────────────────
 
 export type { Message, Conversation };
+
+// ─── Reaction Toggle ───────────────────────────────────────────────────────
+
+export async function toggleReaction(
+  messageId: string,
+  emoji: string,
+  userId: string
+): Promise<void> {
+  const msgRef = doc(db, MESSAGES_COLLECTION, messageId);
+  const snap = await getDoc(msgRef);
+
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  const reactions: Record<string, string[]> = data.reactions || {};
+
+  const userList = reactions[emoji] || [];
+  const hasReacted = userList.includes(userId);
+
+  if (hasReacted) {
+    // Remove reaction
+    const updated = userList.filter((id) => id !== userId);
+    if (updated.length === 0) {
+      delete reactions[emoji];
+    } else {
+      reactions[emoji] = updated;
+    }
+  } else {
+    // Add reaction
+    reactions[emoji] = [...userList, userId];
+  }
+
+  await updateDoc(msgRef, { reactions });
+}
 
 // ─── Fix misaligned participantNames in old conversations ────────────────────
 

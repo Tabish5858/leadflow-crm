@@ -179,3 +179,74 @@ export async function getUpcomingEvents(
 
   return response.data.items || [];
 }
+
+/* ── Google Meet via Calendar API (adapted from GigBase) ─────────── */
+
+export interface CreateMeetResult {
+  meetLink: string;
+  calendarEventId: string;
+  calendarEventUrl: string;
+}
+
+/**
+ * Creates an instant Google Calendar event WITH a Google Meet conference.
+ * Adapted from GigBase's instantMeetingController.js and googleCalenderEvent.js.
+ *
+ * Key: conferenceDataVersion: 1 + conferenceSolutionKey: { type: "hangoutsMeet" }
+ * returns the actual Google Meet hangoutLink (not a static URL).
+ */
+export async function createGoogleMeetEvent(
+  userId: string,
+  attendees: { email: string; name?: string }[],
+  options?: { title?: string; durationMinutes?: number; description?: string }
+): Promise<CreateMeetResult> {
+  const authData = await getGoogleAuth(userId);
+
+  if (!authData) {
+    throw new Error("Google Calendar not connected. Please connect in Settings.");
+  }
+
+  const calendar = google.calendar({ version: "v3", auth: authData.client });
+
+  const duration = options?.durationMinutes ?? 30;
+  const startTime = new Date();
+  const endTime = new Date(startTime.getTime() + duration * 60000);
+
+  const names = attendees.map((a) => a.name || a.email).join(", ");
+  const summary = options?.title || `Meeting with ${names || "Lead"}`;
+
+  const eventBody: calendar_v3.Schema$Event = {
+    summary,
+    description: options?.description || "",
+    start: {
+      dateTime: startTime.toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    },
+    end: {
+      dateTime: endTime.toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    },
+    attendees: attendees.map((a) => ({
+      email: a.email,
+      displayName: a.name || "",
+    })),
+    conferenceData: {
+      createRequest: {
+        requestId: `lf-meet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    },
+  };
+
+  const response = await calendar.events.insert({
+    calendarId: "primary",
+    conferenceDataVersion: 1,
+    requestBody: eventBody,
+  });
+
+  return {
+    meetLink: response.data.hangoutLink || "",
+    calendarEventId: response.data.id || "",
+    calendarEventUrl: response.data.htmlLink || "",
+  };
+}

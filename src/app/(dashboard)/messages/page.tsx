@@ -29,10 +29,11 @@ import {
   deleteConversation,
   editMessage,
   deleteMessage,
+  toggleReaction,
   fixConversationNames,
 } from "@/lib/firebase/messages";
 import { getWorkspaceMembers } from "@/lib/firebase/workspaces";
-import { Search, Plus, Mail, Users, Video } from "lucide-react";
+import { Search, Plus, Mail, Users, Video, Paperclip, Loader2 } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/sonner";
 import { getInitials } from "@/lib/utils";
@@ -98,6 +99,13 @@ export default function MessagesPage() {
   // Delete conversation
   const [deleteConvTarget, setDeleteConvTarget] = useState<Conversation | null>(null);
   const [deletingConv, setDeletingConv] = useState(false);
+
+  // Google Meet creation state
+  const [creatingMeet, setCreatingMeet] = useState(false);
+
+  // File upload state
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   // ─── Subscribe to conversations (real-time) ─────────────────────────
 
@@ -275,26 +283,150 @@ export default function MessagesPage() {
     }
   }, [deleteConvTarget, selected]);
 
-  // ─── Send Google Meet link ────────────────────────────────────────────
+  // ─── Send Google Meet link (real, via Calendar API) ──────────────
 
   const handleSendMeetLink = useCallback(async () => {
     if (!selected || !user || !activeWorkspace) return;
+
+    setCreatingMeet(true);
     try {
-      const meetUrl = "https://meet.google.com/new";
+      const attendees: { email: string; name?: string }[] = [];
+
+      if (selected.type === "lead" && selected.leadEmail) {
+        attendees.push({ email: selected.leadEmail, name: selected.leadName });
+      } else if (selected.type === "member") {
+        const otherId = selected.participantIds?.find((id) => id !== user.id);
+        const otherMember = workspaceMembers.find((m) => m.userId === otherId);
+        if (otherMember) {
+          attendees.push({ email: otherMember.email, name: otherMember.displayName });
+        }
+      }
+
+      if (attendees.length === 0) {
+        toast.error("No attendees found for this conversation");
+        return;
+      }
+
+      const res = await fetch("/api/meetings/instant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          workspaceId: activeWorkspace.id,
+          attendees,
+          conversationId: selected.id,
+          leadId: selected.leadId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.needsCalendarAuth) {
+          toast.error("Please connect Google Calendar in Settings > Integrations");
+        } else {
+          toast.error(data.error || "Failed to create meeting");
+        }
+        return;
+      }
+
+      // Send the meeting card as a message
       await sendMessage({
         workspaceId: activeWorkspace.id,
         conversationId: selected.id,
         senderId: user.id,
         senderName: user.displayName || "Unknown",
-        body: `📹 Google Meet — ${meetUrl}`,
+        body: "Google Meet",
+        meetingCard: {
+          meetLink: data.meetLink,
+          calendarEventUrl: data.calendarEventUrl,
+          status: "active",
+        },
       });
-      toast.success("Meeting link sent");
+
+      toast.success("Google Meet created");
     } catch {
-      toast.error("Failed to send meeting link");
+      toast.error("Failed to create meeting");
+    } finally {
+      setCreatingMeet(false);
     }
-  }, [selected, user, activeWorkspace]);
+  }, [selected, user, activeWorkspace, workspaceMembers]);
 
   // ─── Send message ────────────────────────────────────────────────────
+
+  /** Upload file to Cloudinary via API, return attachment data */
+  const uploadAndAttachFile = useCallback(async (file: File) => {
+    setPendingFile(file);
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("workspaceId", activeWorkspace?.id || "");
+      formData.append("leadId", selected?.leadId || "");
+
+      const res = await fetch("/api/documents/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+
+      const attachment = {
+        type: (file.type.startsWith("image/") ? "image" : "document") as "image" | "document",
+        url: data.url || data.cloudinaryUrl,
+        name: file.name,
+        size: file.size,
+        mimeType: file.type,
+      };
+
+      return attachment;
+    } finally {
+      setUploadingFile(false);
+      setPendingFile(null);
+    }
+  }, [activeWorkspace, selected]);
+
+  // Listen for file selection from MessageInput
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const file = (e as CustomEvent<File>).detail;
+      if (!file || !user || !activeWorkspace) return;
+
+      const attachment = await uploadAndAttachFile(file);
+      if (!attachment) return;
+
+      // Create conversation if in draft mode
+      let convoId = selected?.id;
+      if (draftMember && !convoId) {
+        convoId = await createConversation({
+          workspaceId: activeWorkspace.id,
+          type: "member",
+          participantIds: [user.id, draftMember.userId],
+          participantNames: [user.displayName || "You", draftMember.displayName],
+        });
+        setDraftMember(null);
+      }
+
+      if (!convoId) {
+        toast.error("Select a conversation first");
+        return;
+      }
+
+      await sendMessage({
+        workspaceId: activeWorkspace.id,
+        conversationId: convoId,
+        senderId: user.id,
+        senderName: user.displayName || "Unknown",
+        body: "",
+        attachment,
+      });
+    };
+
+    window.addEventListener("message-file-selected", handler);
+    return () => window.removeEventListener("message-file-selected", handler);
+  }, [user, activeWorkspace, selected, draftMember, uploadAndAttachFile]);
 
   const handleSendMessage = useCallback(
     async (body: string) => {
@@ -446,6 +578,16 @@ export default function MessagesPage() {
       )
     : membersWithoutConvo;
 
+  // ─── Toggle reaction ──────────────────────────────────────────────────
+
+  const handleToggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!user) return;
+      await toggleReaction(messageId, emoji, user.id);
+    },
+    [user]
+  );
+
   // ─── No workspace state ──────────────────────────────────────────────
 
   if (!activeWorkspace) {
@@ -554,6 +696,7 @@ export default function MessagesPage() {
                 error={msgsError}
                 onEditMessage={handleEditMessage}
                 onDeleteMessage={handleDeleteMessage}
+                onToggleReaction={handleToggleReaction}
               />
 
               {/* Input */}

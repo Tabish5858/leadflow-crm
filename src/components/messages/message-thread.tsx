@@ -12,8 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash2, X, Check, MoreVertical } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Pencil, Trash2, X, Check, Smile, Image as ImageIcon, File as FileIcon, Download } from "lucide-react";
 import type { Message } from "@/types";
+import { MeetingCard } from "@/components/messages/meeting-card";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -22,7 +28,10 @@ interface MessageThreadProps {
   error: string | null;
   onEditMessage: (messageId: string, newBody: string) => Promise<void>;
   onDeleteMessage: (messageId: string) => Promise<void>;
+  onToggleReaction?: (messageId: string, emoji: string) => Promise<void>;
 }
+
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
 export function MessageThread({
   messages,
@@ -31,6 +40,7 @@ export function MessageThread({
   error,
   onEditMessage,
   onDeleteMessage,
+  onToggleReaction,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -235,9 +245,70 @@ export function MessageThread({
                   ) : (
                     /* Normal message */
                     <>
-                      <p className="text-[14.2px] leading-[19px] whitespace-pre-wrap break-words">
-                        {msg.body}
-                      </p>
+                      {/* Meeting card */}
+                      {msg.meetingCard && (
+                        <div className="mb-2 max-w-[280px]">
+                          <MeetingCard
+                            data={msg.meetingCard}
+                            isOwn={isOwn}
+                          />
+                        </div>
+                      )}
+
+                      {/* File attachment */}
+                      {msg.attachment && (
+                        <div className="mb-2 max-w-[260px]">
+                          <a
+                            href={msg.attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 rounded-lg border bg-white/60 p-2.5 transition-colors hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10"
+                          >
+                            {msg.attachment.type === "image" ? (
+                              <ImageIcon className="h-6 w-6 shrink-0 text-blue-500" />
+                            ) : (
+                              <FileIcon className="h-6 w-6 shrink-0 text-muted-foreground" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12px] font-medium text-foreground">
+                                {msg.attachment.name}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {(msg.attachment.size / 1024).toFixed(0)} KB
+                              </p>
+                            </div>
+                            <Download className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Text body */}
+                      {msg.body && (
+                        <p className="text-[14.2px] leading-[19px] whitespace-pre-wrap break-words">
+                          {msg.body}
+                        </p>
+                      )}
+
+                      {/* Reactions */}
+                      {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {Object.entries(msg.reactions).map(([emoji, userIds]) => (
+                            <button
+                              key={emoji}
+                              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] transition-colors ${
+                                userIds.includes(currentUserId)
+                                  ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                              }`}
+                            >
+                              <span className="text-[14px] leading-none">{emoji}</span>
+                              {userIds.length > 1 && (
+                                <span className="text-[10px]">{userIds.length}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <span className="float-right ml-2 mt-1 inline-flex items-center gap-1 text-[11px] leading-none text-[#667781] dark:text-[#8696a0]">
                         {msg.edited && (
                           <span className="text-[10px] italic">edited</span>
@@ -252,22 +323,53 @@ export function MessageThread({
                 </div>
 
                 {/* Hover actions (own messages only) */}
-                {isOwn && isHovered && !isEditing && !msg.deleted && (
+                {isHovered && !isEditing && !msg.deleted && (
                   <div className="absolute -top-4 right-0 z-10 flex items-center rounded-lg bg-white px-1 shadow-md dark:bg-[#202c33]">
-                    <button
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      onClick={() => handleStartEdit(msg)}
-                      title="Edit"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => setDeleteConfirmId(msg.id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {/* Reaction picker */}
+                    {onToggleReaction && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Add reaction"
+                          >
+                            <Smile className="h-3.5 w-3.5" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-1.5" align="start" side="top">
+                          <div className="flex gap-0.5">
+                            {QUICK_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                className="rounded-md p-1.5 text-lg leading-none transition-transform hover:scale-125 hover:bg-muted"
+                                onClick={() => onToggleReaction(msg.id, emoji)}
+                                title={emoji}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    {isOwn && (
+                      <>
+                        <button
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          onClick={() => handleStartEdit(msg)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => setDeleteConfirmId(msg.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
