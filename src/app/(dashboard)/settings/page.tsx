@@ -50,6 +50,8 @@ import {
   XCircle,
   Check,
   Palette,
+  UserCircle,
+  Camera,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
@@ -79,6 +81,7 @@ const CustomFieldsEditor = dynamic(() => import("@/components/settings/custom-fi
 const CalendarConnection = dynamic(() => import("@/components/settings/calendar-connection").then((mod) => mod.CalendarConnection), {
   loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
 });
+import { updateUserProfile } from "@/lib/firebase/users";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import {
   DropdownMenu,
@@ -89,13 +92,23 @@ import {
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 
-type Tab = "workspace" | "members" | "pipeline" | "custom-fields" | "preferences" | "integrations";
+type Tab = "profile" | "workspace" | "members" | "pipeline" | "custom-fields" | "preferences" | "integrations";
 
 export default function SettingsPage() {
   const { user, activeWorkspace, workspaces, switchWorkspace, refreshWorkspaces } = useWorkspace();
   const { firebaseUser } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("workspace");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    // Check if navigated from sidebar user profile click
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("leadflow_settings_tab");
+      if (saved === "profile") {
+        localStorage.removeItem("leadflow_settings_tab");
+        return "profile";
+      }
+    }
+    return "workspace";
+  });
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -108,6 +121,11 @@ export default function SettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Profile state
+  const [profileName, setProfileName] = useState(user?.displayName || "");
+  const [profilePhotoURL, setProfilePhotoURL] = useState(user?.photoURL || "");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const isOwner = activeWorkspace?.ownerId === user?.id;
   const { stats, refreshStats } = useLeadStore();
@@ -123,6 +141,13 @@ export default function SettingsPage() {
       setCustomFields(activeWorkspace.customFields || []);
     }
   }, [activeWorkspace]);
+
+  useEffect(() => {
+    if (user) {
+      setProfileName(user.displayName || "");
+      setProfilePhotoURL(user.photoURL || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     if (activeTab === "members" && activeWorkspace) {
@@ -153,6 +178,32 @@ export default function SettingsPage() {
       toast.error("Failed to update workspace name");
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const trimmed = profileName.trim();
+    if (!trimmed || trimmed.length < 1) {
+      toast.error("Display name cannot be empty");
+      return;
+    }
+    if (trimmed.length > 50) {
+      toast.error("Display name must be 50 characters or less");
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      await updateUserProfile(user.id, {
+        displayName: trimmed,
+        photoURL: profilePhotoURL.trim() || null,
+      });
+      toast.success("Profile updated");
+      refreshWorkspaces();
+    } catch {
+      toast.error("Failed to update profile");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -322,6 +373,7 @@ export default function SettingsPage() {
   }
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "profile", label: "Profile", icon: <UserCircle className="h-4 w-4" /> },
     { id: "workspace", label: "Workspace", icon: <Building2 className="h-4 w-4" /> },
     { id: "members", label: "Members", icon: <Users className="h-4 w-4" /> },
     { id: "pipeline", label: "Pipeline", icon: <KanbanSquare className="h-4 w-4" /> },
@@ -362,6 +414,88 @@ export default function SettingsPage() {
           Audit Log
         </Button>
       </div>
+
+      {/* Profile Tab */}
+      {activeTab === "profile" && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4" />
+                Profile
+              </CardTitle>
+              <CardDescription>
+                Your personal profile information across all workspaces.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Avatar Preview */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-20 w-20 border-2">
+                    <AvatarImage src={profilePhotoURL || undefined} />
+                    <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                      {(profileName || "U").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{profileName || "Your Name"}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
+                </div>
+              </div>
+
+              {/* Display Name */}
+              <div className="space-y-2 max-w-md">
+                <Label htmlFor="profile-name">Display Name</Label>
+                <Input
+                  id="profile-name"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="Your display name"
+                  maxLength={50}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is how your name appears across the application to other workspace members.
+                </p>
+              </div>
+
+              {/* Photo URL */}
+              <div className="space-y-2 max-w-md">
+                <Label htmlFor="profile-photo">Photo URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="profile-photo"
+                    value={profilePhotoURL}
+                    onChange={(e) => setProfilePhotoURL(e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Provide a URL to your profile image. Leave empty to show initials.
+                </p>
+              </div>
+
+              {/* Email (read-only) */}
+              <div className="space-y-2 max-w-md">
+                <Label>Email</Label>
+                <Input
+                  value={user?.email || ""}
+                  disabled
+                  className="text-muted-foreground"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your email address is managed through Firebase Authentication and cannot be changed here.
+                </p>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={savingProfile}>
+                {savingProfile ? "Saving..." : "Save Profile"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Workspace Tab */}
       {activeTab === "workspace" && (

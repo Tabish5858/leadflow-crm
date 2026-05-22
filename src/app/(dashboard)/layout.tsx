@@ -211,7 +211,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </button>
 
           {/* User Info */}
-          <div className="flex items-center gap-3 rounded-md px-3 py-2">
+          <Link
+            href="/settings"
+            onClick={() => {
+              // Set active tab to profile via localStorage
+              localStorage.setItem("leadflow_settings_tab", "profile");
+              setSidebarOpen(false);
+            }}
+            className="flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-accent/50"
+          >
             <Avatar className="h-8 w-8 border">
               <AvatarImage src={user?.photoURL || undefined} />
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -226,7 +234,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 {user?.email || ""}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Sign Out */}
           <Button

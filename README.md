@@ -1,136 +1,242 @@
 # LeadFlow CRM
 
-> Open-source CRM & Time Tracker built with Next.js 15 and Firebase
+Open-source customer relationship management and time tracking platform for freelancers, small teams, and agencies. Built with Next.js 15 on Firebase.
 
-A modern, lightweight CRM for freelancers, small teams, and agencies. Manage leads, track outreach, automate follow-ups, and analyze performance — without vendor lock-in or expensive subscriptions.
+Manage leads, track outreach, automate follow-ups, and analyze sales performance without vendor lock-in or expense.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
-![Firebase](https://img.shields.io/badge/Firebase-BaaS-orange)
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  <img src="https://img.shields.io/badge/Next.js-15-black" alt="Next.js 15" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-blue" alt="TypeScript 5.8" />
+  <img src="https://img.shields.io/badge/Firebase-BaaS-orange" alt="Firebase" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB" alt="React 19" />
+</p>
 
 ## Features
 
-- **Lead Management** — Full CRUD with list, Kanban, and detail views
-- **Pipeline Board** — Drag-and-drop Kanban with customizable stages
-- **Time Tracking** — Per-lead timer, manual entries, billable tracking
-- **Activity Timeline** — Log calls, emails, meetings, and notes
-- **Analytics Dashboard** — Charts for conversion, revenue, and activity
-- **Automation Rules** — Trigger actions based on lead events
-- **Dark Mode** — Full dark/light theme support
-- **Responsive** — Works on desktop, tablet, and mobile
+| Module | Capabilities |
+|--------|-------------|
+| **Lead Management** | CRUD with real-time sync, Kanban board, advanced filters, lead scoring (0-100), CSV import, bulk operations, duplicate detection, custom fields |
+| **Pipeline** | Drag-and-drop Kanban with customizable stages, colors, probabilities, and WIP limits |
+| **Analytics** | KPI cards, time-series charts, pipeline/revenue/source distributions, conversion funnel, industry breakdown, PDF export |
+| **Time Tracking** | Live stopwatch, manual entries, per-lead association, billable tracking, daily grouped view, real-time Firestore sync |
+| **Messaging** | Real-time chat (lead + team), reactions, file attachments, Google Meet integration, conversation search |
+| **Automation** | Trigger/action engine (5 triggers, 5 actions), enable/disable per rule, full CRUD |
+| **Calendar** | Google Calendar OAuth, event CRUD, Google Meet creation, upcoming events on dashboard |
+| **Documents** | Cloudinary upload, preview, type icons, 10MB limit, per-lead/per-workspace organization |
+| **Email** | Resend integration, open/click tracking (pixel + link rewrite), email history, draft management |
+| **Workspaces** | Multi-workspace with membership, roles (Owner/Admin/Member/Viewer), email invite system, audit logging |
+| **User Profile** | Editable display name and photo URL, synced across workspace member views |
+| **Customization** | 18 accent colors, dark/light mode, custom pipeline stages, custom lead fields |
+| **Auth** | Email/password, Google, GitHub (Firebase Auth), auth guard on all routes |
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 15 (App Router) |
-| Language | TypeScript 5.x |
-| Styling | Tailwind CSS 3.x + shadcn/ui |
-| State | Zustand 4.x |
-| Database | Firestore (Firebase) |
-| Auth | Firebase Auth |
-| Storage | Firebase Storage |
-| Functions | Firebase Cloud Functions |
-| Charts | Recharts 2.x |
-| DnD | @dnd-kit |
-| Forms | React Hook Form + Zod |
+| Language | TypeScript 5.8 (strict) |
+| UI | React 19, Tailwind CSS 4, shadcn/ui (20+ primitives) |
+| State | Zustand 5, TanStack Query 5 |
+| Database | Firestore (Firebase) -- real-time listeners |
+| Auth | Firebase Auth (Email, Google, GitHub) |
+| Storage | Cloudinary (documents), Firebase Storage (fallback) |
+| Email | Resend (transactional) |
+| Calendar | Google Calendar API / Google Meet |
+| Charts | Recharts 2 (line, bar, pie, donut, funnel) |
+| Drag/Drop | @dnd-kit (core, sortable, utilities) |
+| Tables | TanStack Table 8 |
+| Forms | React Hook Form 7 + Zod 3 |
+| Testing | Vitest 4 + Testing Library |
+| CI/CD | GitHub Actions (lint, typecheck, build) |
+| Deploy | Vercel (frontend + serverless functions) |
 
-## Getting Started
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js** 22+
-- **npm** 10+
-- A **Firebase project** (free tier works)
+- Node.js 22+, npm 10+
+- Firebase project (free Spark plan)
+- Resend, Cloudinary, Google Cloud accounts (for full features)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Tabish5858/leadflow-crm.git
-   cd leadflow-crm
-   ```
+```bash
+git clone https://github.com/Tabish5858/leadflow-crm.git
+cd leadflow-crm/leadflow
+npm install
+cp .env.example .env.local
+npm run dev
+```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+Open [http://localhost:3000](http://localhost:3000).
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   Fill in your Firebase credentials from the [Firebase Console](https://console.firebase.google.com/).
+### Environment Variables
 
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+Configure `.env.local` with these values (see `.env.example` for the full template):
 
-## Firebase Setup
+| Variable | Required For |
+|----------|-------------|
+| `NEXT_PUBLIC_FIREBASE_*` (6 vars) | Firebase Auth, Firestore, Storage |
+| `FIREBASE_ADMIN_*` (3 vars) | Admin SDK for API routes |
+| `NEXT_PUBLIC_APP_URL` | OAuth redirects, invite links |
+| `RESEND_API_KEY` | Email sending |
+| `CLOUDINARY_*` (3 vars) | Document/file storage |
+| `GOOGLE_*` (4 vars) | Calendar integration, Google Meet |
 
-1. Create a new project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable **Authentication** (Email/Password, Google, GitHub)
-3. Create a **Firestore Database** (start in production mode)
-4. Enable **Storage** for file uploads
-5. Copy your config into `.env.local`
-6. Deploy the security rules from `firestore.rules`
+### Firebase Setup
+
+1. Enable Authentication (Email/Password, Google, GitHub)
+2. Create Firestore database (production mode)
+3. Enable Storage
+4. Deploy security rules: `firestore.rules`
+5. Deploy indexes: `firestore.indexes.json`
+
+---
+
+## Project Structure
+
+```
+leadflow/
+├── src/app/                  # Next.js App Router
+│   ├── (auth)/               # Login, Register
+│   ├── (dashboard)/          # Dashboard, Leads, Pipeline, Analytics,
+│   │                         # Time Tracker, Messages, Automations, Settings
+│   ├── invite/accept/        # Workspace invite acceptance
+│   └── api/                  # 11 API routes (email, documents, calendar, meetings, auth)
+├── src/components/           # React components
+│   ├── ui/                   # shadcn/ui primitives
+│   ├── leads/                # Lead form, detail, filters, score badge, CSV import, documents, email composer, activity timeline
+│   ├── pipeline/             # Kanban board, column, card
+│   ├── messages/             # Conversation list, message thread, input, meeting dialogs
+│   ├── automations/          # Automation builder
+│   ├── settings/             # Pipeline editor, custom fields editor, calendar connection
+│   ├── shared/               # Page header, stat card, status badge, export button, empty state
+│   ├── skeletons/            # Loading placeholders (card, chart, table, list)
+│   └── workspace/            # Workspace switcher
+├── src/lib/                  # Business logic
+│   ├── firebase/             # DB operations (leads, messages, workspaces,
+│   │                         #   automations, activities, emails, meetings)
+│   ├── stores/               # Zustand stores (leadStore, timeTrackingStore)
+│   ├── hooks/                # useAuth hook
+│   ├── schemas/              # Zod validation schemas
+│   ├── constants/            # Pipeline stages, sources, niches
+│   ├── utils/                # cn(), formatCurrency(), dates, etc.
+│   ├── calendar.ts           # Google Calendar OAuth + API
+│   ├── cloudinary.ts         # Cloudinary config
+│   ├── csv.ts                # CSV parsing/generation
+│   ├── email-templates.ts    # HTML email templates
+│   ├── email-tracking.ts     # Tracking pixel and link rewriting
+│   ├── export.ts             # CSV/Excel/PDF export
+│   ├── lead-filters.ts       # Filter state with URL sync
+│   ├── lead-scoring.ts       # Scoring algorithm
+│   └── audit-log.ts          # Audit trail
+├── src/types/                # TypeScript interfaces (User, Lead, Workspace, etc.)
+├── src/contexts/             # Workspace context, Accent color context
+├── firestore.rules           # Security rules
+├── firestore.indexes.json    # 11 composite indexes
+├── .env.example              # Environment variable template
+├── CONTRIBUTING.md           # Contribution guidelines
+├── CODE_OF_CONDUCT.md        # Code of conduct
+└── SECURITY.md               # Security policy
+```
+
+---
+
+## API Routes
+
+All routes are serverless functions deployed via Vercel.
+
+| Method | Route | Purpose | Auth |
+|--------|-------|---------|------|
+| POST | `/api/email/send` | Send email via Resend with tracking | Firebase Auth |
+| GET/POST | `/api/email/test` | Test email configuration | None (dev) |
+| GET | `/api/email/track/open/[id]` | Open tracking pixel (1x1 GIF) | Public |
+| GET | `/api/email/track/click/[id]` | Click tracking redirect | Public |
+| POST | `/api/documents/upload` | Upload to Cloudinary | Firebase Auth |
+| GET/DELETE | `/api/documents/list` | List/delete documents | Firebase Auth |
+| GET | `/api/auth/google` | Initiate Calendar OAuth | Firebase Auth |
+| GET | `/api/auth/google/callback` | OAuth callback handler | OAuth |
+| GET/POST/DELETE | `/api/calendar/events` | Calendar event CRUD | Firebase Auth |
+| GET | `/api/calendar/status` | Calendar connection status | Firebase Auth |
+| POST | `/api/meetings/instant` | Create Google Meet | Firebase Auth |
+
+---
+
+## Firestore Collections
+
+| Collection | Description |
+|------------|-------------|
+| `leads` | Lead records with pipeline status, value, source |
+| `activities` | Per-lead activity timeline |
+| `audit_logs` | Workspace audit trail |
+| `emails` | Email history with tracking |
+| `email_events` | Open/click tracking events |
+| `documents` | Cloudinary document metadata |
+| `automations` | Automation rule configurations |
+| `timeEntries` | Time tracking records |
+| `conversations` | Message conversations |
+| `messages` | Individual messages with reactions |
+| `meetings` | Meeting records (Google Meet) |
+| `workspaces` | Workspace configuration |
+| `workspace_invites` | Pending invitations |
+| `users` | User profiles with displayName, photoURL |
+
+---
+
+## Lead Scoring Algorithm
+
+The scoring engine in `src/lib/lead-scoring.ts` computes a 0-100 score per lead:
+
+| Component | Weight | Inputs |
+|-----------|--------|--------|
+| Deal Value | 30 pts | Normalized against workspace max |
+| Activity Recency | 25 pts | Last activity timestamp |
+| Pipeline Stage | 25 pts | Stage probability percentage |
+| Email Engagement | 10 pts | Open/click rate |
+| Notes Presence | 10 pts | Has notes or not |
+
+---
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run tests |
-
-## Contributing
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
-
-### Quick Start for Contributors
-
-1. Fork the repo
-2. Create a branch from `develop`: `git checkout -b feature/your-feature`
-3. Make changes and commit with [Conventional Commits](https://www.conventionalcommits.org/)
-4. Push and open a PR against `develop`
-
-## Project Structure
-
-```
-src/
-├── app/              # Next.js App Router pages
-├── components/       # React components
-├── lib/              # Firebase, utils, hooks, stores
-├── types/            # TypeScript definitions
-└── styles/           # Global styles
-```
-
-## Roadmap
-
-- [x] PRD & Architecture
-- [ ] Phase 1: MVP (Lead CRUD, Kanban, Time Tracking, Dashboard)
-- [ ] Phase 2: Automation, Email Integration, Advanced Analytics
-- [ ] Phase 3: Multi-workspace, API, Mobile App
-
-See [PRD.md](PRD.md) for the full product requirements.
-
-## License
-
-[MIT](LICENSE) — Free for personal and commercial use.
-
-## Acknowledgments
-
-- [shadcn/ui](https://ui.shadcn.com/) for the beautiful component library
-- [Firebase](https://firebase.google.com/) for the backend infrastructure
-- [Next.js](https://nextjs.org/) for the framework
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm run typecheck` | TypeScript check |
+| `npm run test:run` | Run tests once |
+| `npm run test:coverage` | Coverage report |
 
 ---
 
-Built for freelancers and small teams everywhere.
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+Workflow: Fork -> Branch from `develop` -> Conventional Commits -> PR to `develop`.
+
+Open issues: [github.com/Tabish5858/leadflow-crm/issues](https://github.com/Tabish5858/leadflow-crm/issues)
+
+### Priority Areas
+
+- Test coverage expansion (3 existing tests)
+- E2E tests with Playwright
+- Gmail OAuth integration
+- Message enrichment (read receipts, reply threading, voice notes)
+- PWA / offline mode
+- Server-side auth verification in API routes
+- Docker configuration
+
+---
+
+## License
+
+[MIT](LICENSE) -- Free for personal and commercial use.
