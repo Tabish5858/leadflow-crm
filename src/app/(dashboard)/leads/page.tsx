@@ -169,6 +169,18 @@ export default function LeadsPage() {
     return ["checkbox", ...visibleToggleable, "actions"];
   }, [visibleToggleable]);
 
+  // Lookup map for toggleable columns (standard + custom fields)
+  const allToggleableMap = useMemo(() => {
+    const map = new Map<string, { label: string; isCustom: boolean }>();
+    for (const id of STANDARD_TOGGLEABLE) {
+      map.set(id, { label: COLUMN_LABELS[id], isCustom: false });
+    }
+    for (const cf of allCustomFields) {
+      map.set(`cf_${cf.id}`, { label: cf.name, isCustom: true });
+    }
+    return map;
+  }, [allCustomFields]);
+
   // ─── DnD column reorder from dropdown ─────────────────────────────────
   const [dropdownDragId, setDropdownDragId] = useState<string | null>(null);
   const dropdownSensors = useSensors(
@@ -486,14 +498,6 @@ export default function LeadsPage() {
                           );
                         }
                         if (colId === "actions") {
-                          const allToggleableColumns = [
-                            ...STANDARD_TOGGLEABLE.map((id) => ({ id, label: COLUMN_LABELS[id] })),
-                            ...allCustomFields.map((cf) => ({
-                              id: `cf_${cf.id}`,
-                              label: cf.name,
-                              isCustom: true as const,
-                            })),
-                          ];
                           return (
                             <th key="actions" className="sticky right-0 z-20 bg-card w-12 px-4 py-3">
                               <Popover>
@@ -521,32 +525,37 @@ export default function LeadsPage() {
                                       items={effectiveOrder}
                                       strategy={verticalListSortingStrategy}
                                     >
-                                      {allToggleableColumns.map((col) => {
-                                        const colIdx = effectiveOrder.indexOf(col.id);
+                                      {effectiveOrder.map((id) => {
+                                        const col = allToggleableMap.get(id);
+                                        if (!col) return null;
+                                        const colIdx = effectiveOrder.indexOf(id);
                                         return (
                                           <ColumnReorderItem
-                                            key={col.id}
-                                            id={col.id}
+                                            key={id}
+                                            id={id}
                                             label={col.label}
-                                            isCustom={"isCustom" in col}
-                                            isVisible={isColumnVisible(col.id)}
+                                            isCustom={col.isCustom}
+                                            isVisible={isColumnVisible(id)}
                                             isLast={colIdx === effectiveOrder.length - 1}
                                             onToggleVisibility={() =>
                                               setColumnVisibility((prev) => ({
                                                 ...prev,
-                                                [col.id]: prev[col.id] === false ? true : false,
+                                                [id]: prev[id] === false ? true : false,
                                               }))
                                             }
-                                            onMoveDown={() => moveColumn(col.id, "down")}
+                                            onMoveDown={() => moveColumn(id, "down")}
                                           />
                                         );
                                       })}
                                     </SortableContext>
                                   </DndContext>
-                                  {allToggleableColumns.length > 0 && (
+                                  {allToggleableMap.size > 0 && (
                                     <button
                                       type="button"
-                                      onClick={() => setColumnVisibility({})}
+                                      onClick={() => {
+                                        setColumnVisibility({});
+                                        setColumnOrder(defaultOrder);
+                                      }}
                                       className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted rounded-md mt-1 border-t pt-2"
                                     >
                                       Reset to default
