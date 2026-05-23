@@ -1,6 +1,8 @@
 import {
   collection,
   addDoc,
+  doc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -58,6 +60,10 @@ export function subscribeToLeadActivities(
     })) as Activity[];
     callback(activities);
   });
+}
+
+export async function deleteActivity(id: string): Promise<void> {
+  await deleteDoc(doc(db, ACTIVITIES_COLLECTION, id));
 }
 
 export async function logStatusChange(

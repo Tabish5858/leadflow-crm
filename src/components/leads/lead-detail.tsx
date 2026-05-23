@@ -37,6 +37,8 @@ import { ScoreBadge } from "@/components/leads/score-badge";
 import { ActivityTimeline } from "@/components/leads/activity-timeline";
 import { EmailComposer, EmailHistory } from "@/components/leads/email-composer";
 import { sendEmail, getEmailsForLead, type EmailRecord } from "@/lib/firebase/emails";
+import { subscribeToLeadActivities, logNote, deleteActivity } from "@/lib/firebase/activities";
+import type { Activity } from "@/types";
 import { getEmailEventsForLead, type EmailEvent } from "@/lib/email-tracking";
 import { calculateLeadScore } from "@/lib/lead-scoring";
 import {
@@ -51,8 +53,7 @@ import {
   User,
   FileText,
   Calendar,
-  Pencil,
-  Save,
+  Trash2,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { DocumentManager } from "@/components/leads/document-manager";
@@ -104,8 +105,11 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
   const [newStatusDialogOpen, setNewStatusDialogOpen] = useState(false);
   const [newStatusName, setNewStatusName] = useState("");
   const [newStatusColor, setNewStatusColor] = useState("#3b82f6");
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [notesDraft, setNotesDraft] = useState("");
+  const [notes, setNotes] = useState<Activity[]>([]);
+  const [notesLoading, setNotesLoading] = useState(true);
+  const [newNoteText, setNewNoteText] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -126,6 +130,15 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
         })
         .finally(() => setLoadingEmails(false));
     }
+  }, [leadId]);
+
+  useEffect(() => {
+    setNotesLoading(true);
+    const unsubscribe = subscribeToLeadActivities(leadId, (acts) => {
+      setNotes(acts.filter((a) => a.type === "note"));
+      setNotesLoading(false);
+    });
+    return () => unsubscribe();
   }, [leadId]);
 
   const stages = activeWorkspace?.pipeline?.stages || DEFAULT_PIPELINE_STAGES;
@@ -234,22 +247,30 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
     }
   };
 
-  const handleSaveNotes = async () => {
-    if (!lead) return;
+  const handleAddNote = async () => {
+    if (!newNoteText.trim() || !user || !lead) return;
+    setAddingNote(true);
     try {
-      const { updateLead } = await import("@/lib/firebase/firestore");
-      await updateLead(lead.id, { notes: notesDraft || null });
-      setLead({ ...lead, notes: notesDraft || null });
-      setEditingNotes(false);
-      toast.success("Notes saved");
+      await logNote(lead.id, lead.workspaceId, user.id, newNoteText.trim());
+      setNewNoteText("");
+      toast.success("Note added");
     } catch {
-      toast.error("Failed to save notes");
+      toast.error("Failed to add note");
+    } finally {
+      setAddingNote(false);
     }
   };
 
-  const startEditingNotes = () => {
-    setNotesDraft(lead?.notes || "");
-    setEditingNotes(true);
+  const handleDeleteNote = async (activityId: string) => {
+    setDeletingNoteId(activityId);
+    try {
+      await deleteActivity(activityId);
+      toast.success("Note deleted");
+    } catch {
+      toast.error("Failed to delete note");
+    } finally {
+      setDeletingNoteId(null);
+    }
   };
 
   if (loading) {
@@ -532,64 +553,83 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
         </TabsContent>
 
         <TabsContent value="notes" className="mt-4">
-          <div className="space-y-3">
-            {editingNotes ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={notesDraft}
-                  onChange={(e) => setNotesDraft(e.target.value)}
-                  placeholder="Add notes about this lead..."
-                  className="min-h-[150px] resize-y"
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingNotes(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveNotes}
-                    disabled={!notesDraft.trim() && !lead.notes}
-                  >
-                    <Save className="mr-1.5 h-3.5 w-3.5" />
-                    Save
-                  </Button>
-                </div>
+          <div className="space-y-4">
+            {/* Add Note */}
+            <div className="space-y-2">
+              <Textarea
+                value={newNoteText}
+                onChange={(e) => setNewNoteText(e.target.value)}
+                placeholder="Add a note..."
+                className="min-h-[80px] resize-none"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={handleAddNote}
+                  disabled={addingNote || !newNoteText.trim()}
+                >
+                  {addingNote ? (
+                    <>
+                      <span className="animate-spin mr-1.5 h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-1.5 h-3.5 w-3.5" />
+                      Add Note
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Notes List */}
+            {notesLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : notes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm">No notes yet</p>
               </div>
             ) : (
-              <div>
-                {lead.notes ? (
-                  <div className="relative group">
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap rounded-lg bg-muted/30 p-3">
-                      {lead.notes}
-                    </p>
+              <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
+                {notes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="flex items-start gap-3 p-3 rounded-lg border group hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm whitespace-pre-wrap">{note.body}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {note.createdAt?.toDate().toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      onClick={startEditingNotes}
-                      className="absolute top-2 right-2 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-muted transition-opacity"
+                      onClick={() => handleDeleteNote(note.id)}
+                      disabled={deletingNoteId === note.id}
+                      className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all disabled:opacity-50"
                     >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      {deletingNoteId === note.id ? (
+                        <span className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileText className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                    <p className="text-sm">No notes yet</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={startEditingNotes}
-                    >
-                      <FileText className="mr-1.5 h-3.5 w-3.5" />
-                      Add Notes
-                    </Button>
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </div>

@@ -78,6 +78,7 @@ export function DocumentManager({
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState("");
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = useCallback(async () => {
@@ -243,6 +244,7 @@ export function DocumentManager({
   }, []);
 
   const handleDelete = async (documentId: string, fileName: string) => {
+    setDeletingDocId(documentId);
     try {
       const res = await fetch("/api/documents/list", {
         method: "DELETE",
@@ -258,12 +260,19 @@ export function DocumentManager({
       }
     } catch {
       toast.error("Failed to delete document");
+    } finally {
+      setDeletingDocId(null);
     }
   };
 
   const handlePreview = (doc: LeadDocument) => {
-    setPreviewUrl(doc.cloudinaryUrl);
-    setPreviewName(doc.fileName);
+    if (canPreview(doc.fileType)) {
+      setPreviewUrl(doc.cloudinaryUrl);
+      setPreviewName(doc.fileName);
+    } else {
+      // Open non-previewable files in a new tab
+      window.open(doc.cloudinaryUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   const handleDownload = (url: string, fileName: string) => {
@@ -388,10 +397,10 @@ export function DocumentManager({
           <p className="text-xs mt-1">Upload your first document above</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
           {documents.map((doc) => {
             const Icon = getFileIcon(doc.fileType);
-            const previewable = canPreview(doc.fileType);
+            const isDeleting = deletingDocId === doc.id;
 
             return (
               <div
@@ -413,16 +422,14 @@ export function DocumentManager({
                   </p>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {previewable && (
-                    <TooltipButton
-                      tooltip="Preview"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => handlePreview(doc)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </TooltipButton>
-                  )}
+                  <TooltipButton
+                    tooltip="Preview"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => handlePreview(doc)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </TooltipButton>
                   <TooltipButton
                     tooltip="Download"
                     variant="ghost"
@@ -436,8 +443,13 @@ export function DocumentManager({
                     variant="ghost"
                     className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                     onClick={() => handleDelete(doc.id, doc.fileName)}
+                    disabled={isDeleting}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {isDeleting ? (
+                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </TooltipButton>
                 </div>
               </div>
