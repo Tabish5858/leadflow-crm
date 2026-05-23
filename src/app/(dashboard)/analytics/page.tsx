@@ -68,7 +68,7 @@ import { ExportButton } from "@/components/shared/export-button";
 import type { AnalyticsMetrics } from "@/lib/export";
 import { RequireModuleAccess } from "@/components/shared/require-module-access";
 import { getAnalyticsCards, AVAILABLE_METRICS } from "@/lib/analytics-cards";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteField } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { toast } from "sonner";
 
@@ -358,8 +358,14 @@ export default function AnalyticsPage() {
     async (cards: AnalyticsCardConfig[]) => {
       if (!activeWorkspace) return;
       try {
+        // Firestore rejects undefined values — strip them
+        const sanitized = cards.map((card) =>
+          Object.fromEntries(
+            Object.entries(card).filter(([, v]) => v !== undefined)
+          )
+        );
         await updateDoc(doc(db, "workspaces", activeWorkspace.id), {
-          analyticsCards: cards,
+          analyticsCards: sanitized,
         });
       } catch (err) {
         console.error("Failed to save analytics cards:", err);
@@ -417,6 +423,24 @@ export default function AnalyticsPage() {
     },
     [activeWorkspace, saveCards]
   );
+
+  // ─── Reset to default ─────────────────────────────────────────────────
+
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleResetToDefault = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      await updateDoc(doc(db, "workspaces", activeWorkspace.id), {
+        analyticsCards: deleteField(),
+      });
+      toast.success("Layout reset to default");
+      setConfirmReset(false);
+    } catch (err) {
+      console.error("Failed to reset analytics cards:", err);
+      toast.error("Failed to reset layout");
+    }
+  }, [activeWorkspace]);
 
   // ─── Render a single card ─────────────────────────────────────────────
 
@@ -823,18 +847,50 @@ export default function AnalyticsPage() {
           })}
         </div>
 
-        {/* ─── Add Card button (edit mode) ──────────────────────────────── */}
+        {/* ─── Edit mode actions ─────────────────────────────────────── */}
 
         {editMode && (
-          <Button
-            variant="outline"
-            className="w-full border-dashed py-8"
-            onClick={() => setAddDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Card
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 border-dashed py-8"
+              onClick={() => setAddDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Card
+            </Button>
+            <Button
+              variant="destructive"
+              className="py-8"
+              onClick={() => setConfirmReset(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Reset to Default
+            </Button>
+          </div>
         )}
+
+        {/* ─── Reset confirmation dialog ──────────────────────────────── */}
+
+        <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Reset analytics layout?</DialogTitle>
+              <DialogDescription>
+                This will remove all custom cards and restore the default 12-card layout.
+                Any cards you added will be lost. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleResetToDefault}>
+                Reset to Default
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* ─── Add Card Dialog ──────────────────────────────────────────── */}
 
