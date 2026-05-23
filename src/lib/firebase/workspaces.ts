@@ -91,15 +91,36 @@ export function subscribeToUserWorkspaces(
 
 // ─── Update Workspace ────────────────────────────────────────────────────────
 
+/**
+ * Recursively removes undefined values from an object or array.
+ * Firestore does not accept undefined field values.
+ */
+function sanitizeFirestoreData(data: unknown): unknown {
+  if (data === null || data === undefined) return null;
+  if (data instanceof Timestamp) return data;
+  if (typeof data !== "object") return data;
+  if (Array.isArray(data)) {
+    return data.map(sanitizeFirestoreData);
+  }
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    if (value !== undefined) {
+      cleaned[key] = sanitizeFirestoreData(value);
+    }
+  }
+  return cleaned;
+}
+
 export async function updateWorkspace(
   workspaceId: string,
   data: Partial<Workspace>
 ): Promise<void> {
   const docRef = doc(db, WORKSPACES_COLLECTION, workspaceId);
-  await updateDoc(docRef, {
+  const payload = sanitizeFirestoreData({
     ...data,
     updatedAt: Timestamp.now(),
-  });
+  }) as Record<string, unknown>;
+  await updateDoc(docRef, payload);
 }
 
 export async function updateWorkspaceName(

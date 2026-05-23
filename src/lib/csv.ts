@@ -1,4 +1,4 @@
-import type { Lead } from "@/types";
+import type { Lead, CustomField } from "@/types";
 
 const CSV_HEADERS = [
   "First Name",
@@ -38,9 +38,13 @@ const CSV_HEADER_MAP: Record<string, keyof Lead> = {
   notes: "notes",
 };
 
-export function leadsToCsv(leads: Lead[]): string {
+export function leadsToCsv(leads: Lead[], customFields: CustomField[] = []): string {
+  // Build headers: standard fields + custom field names
+  const allHeaders = [...CSV_HEADERS, ...customFields.map((f) => f.name)];
+
   const rows = leads.map((lead) => {
-    const values = CSV_HEADERS.map((header) => {
+    // Standard field values
+    const standardValues = CSV_HEADERS.map((header) => {
       const key = CSV_HEADER_MAP[header.toLowerCase()] as keyof Lead;
       const value = lead[key];
 
@@ -54,10 +58,17 @@ export function leadsToCsv(leads: Lead[]): string {
       return String(value);
     });
 
-    return values.map((v) => `"${v.replace(/"/g, '""')}"`).join(",");
+    // Custom field values
+    const customValues = customFields.map((f) => {
+      const val = lead.customFields?.[f.id];
+      return val ? String(val) : "";
+    });
+
+    const allValues = [...standardValues, ...customValues];
+    return allValues.map((v) => `"${v.replace(/"/g, '""')}"`).join(",");
   });
 
-  return [CSV_HEADERS.map((h) => `"${h}"`).join(","), ...rows].join("\n");
+  return [allHeaders.map((h) => `"${h}"`).join(","), ...rows].join("\n");
 }
 
 export function downloadCsv(content: string, filename: string): void {
@@ -156,11 +167,14 @@ export interface MappedLead {
   city: string | null;
   tags: string[];
   notes: string | null;
+  /** Custom field values keyed by custom field ID. */
+  customFields: Record<string, string>;
 }
 
 export function mapCsvRowToLead(
   row: Record<string, string>,
-  columnMapping: Record<string, string>
+  columnMapping: Record<string, string>,
+  workspaceCustomFields?: CustomField[],
 ): MappedLead | null {
   const getValue = (field: string): string => {
     const csvHeader = columnMapping[field];
@@ -179,6 +193,20 @@ export function mapCsvRowToLead(
   const valueStr = getValue("value");
   const tagsStr = getValue("tags");
 
+  // Map custom field values from the CSV
+  const customFields: Record<string, string> = {};
+  if (workspaceCustomFields) {
+    for (const field of workspaceCustomFields) {
+      const csvHeader = columnMapping[`cf_${field.id}`];
+      if (csvHeader) {
+        const val = row[csvHeader]?.trim() || "";
+        if (val) {
+          customFields[field.id] = val;
+        }
+      }
+    }
+  }
+
   return {
     firstName,
     lastName,
@@ -196,6 +224,7 @@ export function mapCsvRowToLead(
     city: getValue("city") || null,
     tags: tagsStr ? tagsStr.split(";").map((t) => t.trim()).filter(Boolean) : [],
     notes: getValue("notes") || null,
+    customFields,
   };
 }
 
@@ -219,3 +248,23 @@ export const LEAD_FIELDS = [
   { key: "tags", label: "Tags" },
   { key: "notes", label: "Notes" },
 ] as const;
+
+/**
+ * Returns standard lead fields plus workspace custom fields for the CSV mapping UI.
+ * Custom fields are prefixed with `cf_` to distinguish them from built-in fields.
+ */
+export function getLeadFieldsWithCustom(customFields: CustomField[] = []) {
+  const standard = LEAD_FIELDS.map((f) => ({
+    key: f.key,
+    label: f.label,
+    isCustom: false,
+  }));
+
+  const custom = customFields.map((f) => ({
+    key: `cf_${f.id}`,
+    label: `${f.name} (${f.type})`,
+    isCustom: true,
+  }));
+
+  return [...standard, ...custom];
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,6 +114,12 @@ export function CustomFieldsEditor({ fields, onSave }: CustomFieldsEditorProps) 
   const [fieldType, setFieldType] = useState<CustomField["type"]>("text");
   const [fieldRequired, setFieldRequired] = useState(false);
   const [fieldOptions, setFieldOptions] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Sync localFields when `fields` prop changes (e.g. after save + refresh)
+  useEffect(() => {
+    setLocalFields(fields);
+  }, [fields]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -188,9 +194,16 @@ export function CustomFieldsEditor({ fields, onSave }: CustomFieldsEditorProps) 
     setLocalFields((prev) => prev.filter((f) => f.id !== id).map((f, i) => ({ ...f, order: i })));
   };
 
-  const handleSave = () => {
-    onSave(localFields);
-    toast.success("Custom fields updated");
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(localFields);
+      toast.success("Custom fields updated");
+    } catch {
+      toast.error("Failed to save custom fields");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const hasChanges = JSON.stringify(localFields) !== JSON.stringify(fields);
@@ -233,7 +246,9 @@ export function CustomFieldsEditor({ fields, onSave }: CustomFieldsEditorProps) 
           Add Field
         </Button>
         {hasChanges && (
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         )}
       </div>
 

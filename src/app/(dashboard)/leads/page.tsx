@@ -25,7 +25,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SkeletonTable } from "@/components/skeletons/skeleton-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { SortableColumnHeader } from "@/components/leads/sortable-column-header";
+import { SelectFieldCell } from "@/components/leads/select-field-cell";
+import { ColumnReorderItem } from "@/components/leads/column-reorder-item";
+import { useColumnResize } from "@/lib/hooks/use-column-resize";
 import { ScoreBadge } from "@/components/leads/score-badge";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import {
   Search,
   Plus,
@@ -46,6 +63,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "@/lib/toast";
 import {
   type FilterState,
@@ -81,6 +103,107 @@ export default function LeadsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [sortBy, setSortBy] = useState<string>("created");
   const [emails, setEmails] = useState<EmailRecord[]>([]);
+  // ─── Column visibility and ordering ──────────────────────────────────
+  const COLUMN_LABELS: Record<string, string> = {
+    name: "Name",
+    company: "Company",
+    status: "Status",
+    value: "Value",
+    created: "Created",
+    score: "Score",
+  };
+
+  const STANDARD_TOGGLEABLE = Object.keys(COLUMN_LABELS);
+
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem("leadflow_col_visibility");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("leadflow_col_order");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("leadflow_col_visibility", JSON.stringify(columnVisibility));
+  }, [columnVisibility]);
+
+  useEffect(() => {
+    localStorage.setItem("leadflow_col_order", JSON.stringify(columnOrder));
+  }, [columnOrder]);
+
+  // Build the effective column order: standard fields + custom fields (new ones appended at end)
+  const allCustomFields = activeWorkspace?.customFields || [];
+  const allCustomPrefixed = allCustomFields.map((cf) => `cf_${cf.id}`);
+  const defaultOrder = ["name", "company", "status", "value", ...allCustomPrefixed, "created", "score"];
+
+  const effectiveOrder = useMemo(() => {
+    let order = columnOrder.length > 0 ? [...columnOrder] : [...defaultOrder];
+    // Remove stale IDs (deleted custom fields)
+    const valid = new Set([...STANDARD_TOGGLEABLE, ...allCustomPrefixed]);
+    order = order.filter((id) => valid.has(id));
+    // Append new custom fields not yet in order
+    for (const prefixed of allCustomPrefixed) {
+      if (!order.includes(prefixed)) order.push(prefixed);
+    }
+    return order;
+  }, [columnOrder, allCustomPrefixed, defaultOrder]);
+
+  const isColumnVisible = (id: string) => columnVisibility[id] !== false;
+
+  const visibleToggleable = effectiveOrder.filter(isColumnVisible);
+
+  // Full render columns (checkbox + toggleable + actions)
+  const renderColumnIds = useMemo(() => {
+    return ["checkbox", ...visibleToggleable, "actions"];
+  }, [visibleToggleable]);
+
+  // ─── DnD column reorder from dropdown ─────────────────────────────────
+  const [dropdownDragId, setDropdownDragId] = useState<string | null>(null);
+  const dropdownSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+  );
+
+  const handleDropdownDragStart = (event: DragStartEvent) => {
+    setDropdownDragId(String(event.active.id));
+  };
+
+  const handleDropdownDragEnd = (event: DragEndEvent) => {
+    setDropdownDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = effectiveOrder.indexOf(String(active.id));
+    const newIdx = effectiveOrder.indexOf(String(over.id));
+    if (oldIdx === -1 || newIdx === -1) return;
+    const next = [...effectiveOrder];
+    next.splice(oldIdx, 1);
+    next.splice(newIdx, 0, String(active.id));
+    setColumnOrder(next);
+  };
+
+  const moveColumn = (id: string, direction: "up" | "down") => {
+    const idx = effectiveOrder.indexOf(id);
+    if (idx === -1) return;
+    if (direction === "up" && idx === 0) return;
+    if (direction === "down" && idx === effectiveOrder.length - 1) return;
+    const next = [...effectiveOrder];
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+    setColumnOrder(next);
+  };
+
+  const { columnWidths, startResize } = useColumnResize("leads");
 
   // Initialize filters from URL
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -347,162 +470,308 @@ export default function LeadsPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="w-12 px-4 py-3">
-                    <Checkbox
-                      checked={allSelected}
-                      onCheckedChange={allSelected ? clearSelection : selectAll}
-                    />
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Name
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                    Company
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                    Status
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                    Value
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden xl:table-cell">
-                    Created
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Score
-                  </th>
-                  <th className="w-12 px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {sortedLeads.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className={cn(
-                      "border-b last:border-b-0 transition-colors hover:bg-muted/30 cursor-pointer",
-                      selectedIds.has(lead.id) && "bg-muted/50"
-                    )}
-                    onClick={() => setSelectedLead(lead.id)}
-                  >
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(lead.id)}
-                        onCheckedChange={() => toggleSelect(lead.id)}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 border">
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
-                            {getInitials(`${lead.firstName} ${lead.lastName}`)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">
-                            {lead.firstName} {lead.lastName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {lead.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm hidden md:table-cell">
-                      {lead.company || (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <Select value={lead.status} onValueChange={(v) => handleStatusChange(lead.id, v)}>
-                        <SelectTrigger className="w-fit h-6 px-2 py-0 text-xs font-medium border-0 shadow-none hover:opacity-80 focus:ring-0 bg-muted/50 rounded-full">
-                          {(() => {
-                            const stage = stages.find((s) => s.id === lead.status);
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="inline-block h-2 w-2 rounded-full"
-                                  style={{ backgroundColor: stage?.color || "#94a3b8" }}
-                                />
-                                <p>{stage?.name || lead.status}</p>
-                              </div>
-                            );
-                          })()}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {stages.map((stage) => (
-                            <SelectItem key={stage.id} value={stage.id}>
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className="inline-block h-2.5 w-2.5 rounded-full"
-                                  style={{ backgroundColor: stage.color }}
-                                />
-                                {stage.name}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium hidden lg:table-cell">
-                      {lead.value
-                        ? formatCurrency(lead.value, lead.currency)
-                        : (
-                          <span className="text-muted-foreground">—</span>
+          <div className="overflow-x-auto min-w-[900px]">
+            <table className="min-w-full w-max table-fixed">
+                  <thead>
+                    <tr className="border-b">
+                      {renderColumnIds.map((colId) => {
+                        if (colId === "checkbox") {
+                          return (
+                            <th key="checkbox" className="sticky left-0 z-10 bg-card w-12 px-4 py-3">
+                              <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={allSelected ? clearSelection : selectAll}
+                              />
+                            </th>
+                          );
+                        }
+                        if (colId === "actions") {
+                          const allToggleableColumns = [
+                            ...STANDARD_TOGGLEABLE.map((id) => ({ id, label: COLUMN_LABELS[id] })),
+                            ...allCustomFields.map((cf) => ({
+                              id: `cf_${cf.id}`,
+                              label: cf.name,
+                              isCustom: true as const,
+                            })),
+                          ];
+                          return (
+                            <th key="actions" className="sticky right-0 z-20 bg-card w-12 px-4 py-3">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <TooltipButton
+                                    tooltip="Toggle &amp; reorder columns"
+                                    variant="ghost"
+                                    className="h-6 w-6"
+                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                  </TooltipButton>
+                                </PopoverTrigger>
+                                <PopoverContent align="end" className="w-72 p-1 max-h-80 overflow-y-auto" sideOffset={4}>
+                                  <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground sticky top-0 bg-popover z-10 border-b mb-1">
+                                    Toggle &amp; reorder columns
+                                  </p>
+                                  <DndContext
+                                    sensors={dropdownSensors}
+                                    collisionDetection={closestCenter}
+                                    onDragStart={handleDropdownDragStart}
+                                    onDragEnd={handleDropdownDragEnd}
+                                  >
+                                    <SortableContext
+                                      items={effectiveOrder}
+                                      strategy={verticalListSortingStrategy}
+                                    >
+                                      {allToggleableColumns.map((col) => {
+                                        const colIdx = effectiveOrder.indexOf(col.id);
+                                        return (
+                                          <ColumnReorderItem
+                                            key={col.id}
+                                            id={col.id}
+                                            label={col.label}
+                                            isCustom={"isCustom" in col}
+                                            isVisible={isColumnVisible(col.id)}
+                                            isLast={colIdx === effectiveOrder.length - 1}
+                                            onToggleVisibility={() =>
+                                              setColumnVisibility((prev) => ({
+                                                ...prev,
+                                                [col.id]: prev[col.id] === false ? true : false,
+                                              }))
+                                            }
+                                            onMoveDown={() => moveColumn(col.id, "down")}
+                                          />
+                                        );
+                                      })}
+                                    </SortableContext>
+                                  </DndContext>
+                                  {allToggleableColumns.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setColumnVisibility({})}
+                                      className="w-full text-left px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted rounded-md mt-1 border-t pt-2"
+                                    >
+                                      Reset to default
+                                    </button>
+                                  )}
+                                </PopoverContent>
+                              </Popover>
+                            </th>
+                          );
+                        }
+                        // Standard or custom field column
+                        const isCustom = colId.startsWith("cf_");
+                        const cf = isCustom
+                          ? allCustomFields.find((c) => `cf_${c.id}` === colId)
+                          : undefined;
+                        const label = isCustom
+                          ? cf?.name || colId
+                          : COLUMN_LABELS[colId] || colId;
+                        const minWidth = isCustom ? 120 : STANDARD_TOGGLEABLE.includes(colId)
+                          ? ({ name: 180, company: 140, status: 120, value: 100, created: 120, score: 90 } as Record<string, number>)[colId] || 72
+                          : 72;
+                        const responsiveClass = isCustom
+                          ? "hidden lg:table-cell"
+                          : ({ name: "", company: "hidden md:table-cell", status: "hidden lg:table-cell", value: "hidden lg:table-cell", created: "hidden xl:table-cell", score: "" } as Record<string, string>)[colId] || "";
+
+                        return (
+                          <SortableColumnHeader
+                            key={colId}
+                            colId={colId}
+                            width={columnWidths[colId]}
+                            onResizeStart={startResize}
+                            minWidth={minWidth}
+                            className={cn(
+                              "text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground",
+                              responsiveClass
+                            )}
+                          >
+                            {label}
+                          </SortableColumnHeader>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedLeads.map((lead) => (
+                      <tr
+                        key={lead.id}
+                        className={cn(
+                          "border-b last:border-b-0 transition-colors hover:bg-muted/30 cursor-pointer",
+                          selectedIds.has(lead.id) && "bg-muted/50"
                         )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
-                      {formatDate(lead.createdAt?.toDate())}
-                    </td>
-                    <td className="px-4 py-3">
-                      {leadScores[lead.id] && (
-                        <ScoreBadge
-                          score={leadScores[lead.id].score}
-                          breakdown={leadScores[lead.id].breakdown}
-                          size="sm"
-                        />
-                      )}
-                    </td>
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <TooltipButton
-                            tooltip="Actions"
-                            variant="ghost"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </TooltipButton>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setSelectedLead(lead.id)}
-                          >
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          {stages.filter(
-                            (s) => s.id !== lead.status
-                          ).map((stage) => (
-                            <DropdownMenuItem
-                              key={stage.id}
-                              onClick={() =>
-                                handleStatusChange(lead.id, stage.id)
-                              }
-                            >
-                              Move to {stage.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        onClick={() => setSelectedLead(lead.id)}
+                      >
+                        {renderColumnIds.map((colId) => {
+                          if (colId === "checkbox") {
+                            return (
+                              <td key="checkbox" className="sticky left-0 z-10 bg-card px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedIds.has(lead.id)}
+                                  onCheckedChange={() => toggleSelect(lead.id)}
+                                />
+                              </td>
+                            );
+                          }
+                          if (colId === "actions") {
+                            return (
+                              <td key="actions" className="sticky right-0 z-20 bg-card px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <TooltipButton
+                                      tooltip="Actions"
+                                      variant="ghost"
+                                      className="h-8 w-8"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </TooltipButton>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => setSelectedLead(lead.id)}
+                                    >
+                                      <ExternalLink className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    {stages
+                                      .filter((s) => s.id !== lead.status)
+                                      .map((stage) => (
+                                        <DropdownMenuItem
+                                          key={stage.id}
+                                          onClick={() =>
+                                            handleStatusChange(lead.id, stage.id)
+                                          }
+                                        >
+                                          Move to {stage.name}
+                                        </DropdownMenuItem>
+                                      ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            );
+                          }
+                          if (colId === "name") {
+                            return (
+                              <td key="name" className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9 border">
+                                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
+                                      {getInitials(`${lead.firstName} ${lead.lastName}`)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-sm">
+                                      {lead.firstName} {lead.lastName}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {lead.email}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          }
+                          if (colId === "company") {
+                            return (
+                              <td key="company" className="px-4 py-3 text-sm hidden md:table-cell">
+                                {lead.company || (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </td>
+                            );
+                          }
+                          if (colId === "status") {
+                            return (
+                              <td key="status" className="px-4 py-3 hidden lg:table-cell">
+                                <Select value={lead.status} onValueChange={(v) => handleStatusChange(lead.id, v)}>
+                                  <SelectTrigger className="w-fit h-6 px-2 py-0 text-xs font-medium border-0 shadow-none hover:opacity-80 focus:ring-0 bg-muted/50 rounded-full">
+                                    {(() => {
+                                      const stage = stages.find((s) => s.id === lead.status);
+                                      return (
+                                        <div className="flex items-center gap-1.5">
+                                          <span
+                                            className="inline-block h-2 w-2 rounded-full"
+                                            style={{ backgroundColor: stage?.color || "#94a3b8" }}
+                                          />
+                                          <p>{stage?.name || lead.status}</p>
+                                        </div>
+                                      );
+                                    })()}
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {stages.map((stage) => (
+                                      <SelectItem key={stage.id} value={stage.id}>
+                                        <span className="flex items-center gap-2">
+                                          <span
+                                            className="inline-block h-2.5 w-2.5 rounded-full"
+                                            style={{ backgroundColor: stage.color }}
+                                          />
+                                          {stage.name}
+                                        </span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                            );
+                          }
+                          if (colId === "value") {
+                            return (
+                              <td key="value" className="px-4 py-3 text-sm font-medium hidden lg:table-cell">
+                                {lead.value
+                                  ? formatCurrency(lead.value, lead.currency)
+                                  : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                              </td>
+                            );
+                          }
+                          if (colId === "created") {
+                            return (
+                              <td key="created" className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
+                                {formatDate(lead.createdAt?.toDate())}
+                              </td>
+                            );
+                          }
+                          if (colId === "score") {
+                            return (
+                              <td key="score" className="px-4 py-3">
+                                {leadScores[lead.id] && (
+                                  <ScoreBadge
+                                    score={leadScores[lead.id].score}
+                                    breakdown={leadScores[lead.id].breakdown}
+                                    size="sm"
+                                  />
+                                )}
+                              </td>
+                            );
+                          }
+                          // Custom field
+                          if (colId.startsWith("cf_")) {
+                            const cf = allCustomFields.find((c) => `cf_${c.id}` === colId);
+                            if (!cf) return null;
+                            const rawValue = lead.customFields?.[cf.id];
+                            const isSelectType = cf.type === "select" || cf.type === "multiselect";
+                            return (
+                              <td key={colId} className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
+                                {isSelectType ? (
+                                  <SelectFieldCell
+                                    customField={cf}
+                                    value={rawValue}
+                                    leadId={lead.id}
+                                  />
+                                ) : rawValue != null ? (
+                                  <span>{String(rawValue)}</span>
+                                ) : (
+                                  <span className="text-muted-foreground/50">—</span>
+                                )}
+                              </td>
+                            );
+                          }
+                          return null;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
           </div>
         )}
       </div>
@@ -538,6 +807,7 @@ export default function LeadsPage() {
         onOpenChange={setShowCsvImport}
         onImport={handleImportLeads}
         existingLeads={leads}
+        customFields={activeWorkspace?.customFields || []}
       />
     </div>
   );

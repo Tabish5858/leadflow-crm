@@ -351,13 +351,9 @@ export default function SettingsPage() {
 
   const handleSaveCustomFields = async (fields: CustomField[]) => {
     if (!activeWorkspace) return;
-    try {
-      await updateWorkspace(activeWorkspace.id, { customFields: fields });
-      setCustomFields(fields);
-      refreshWorkspaces();
-    } catch {
-      toast.error("Failed to save custom fields");
-    }
+    await updateWorkspace(activeWorkspace.id, { customFields: fields });
+    setCustomFields(fields);
+    refreshWorkspaces();
   };
 
   if (!activeWorkspace) {

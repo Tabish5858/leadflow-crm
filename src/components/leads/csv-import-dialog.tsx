@@ -34,17 +34,18 @@ import {
   leadsToCsv,
   downloadCsv,
   mapCsvRowToLead,
-  LEAD_FIELDS,
+  getLeadFieldsWithCustom,
   type MappedLead,
   type CsvImportResult,
 } from "@/lib/csv";
-import type { Lead } from "@/types";
+import type { Lead, CustomField } from "@/types";
 
 interface CsvImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (leads: Omit<Lead, "id" | "createdAt" | "updatedAt">[]) => Promise<void>;
   existingLeads: Lead[];
+  customFields?: CustomField[];
 }
 
 export function CsvImportDialog({
@@ -52,6 +53,7 @@ export function CsvImportDialog({
   onOpenChange,
   onImport,
   existingLeads,
+  customFields = [],
 }: CsvImportDialogProps) {
   const [step, setStep] = useState<"upload" | "map" | "preview" | "importing">("upload");
   const [csvData, setCsvData] = useState<CsvImportResult | null>(null);
@@ -84,10 +86,14 @@ export function CsvImportDialog({
 
         // Auto-map columns that match exactly
         const autoMapping: Record<string, string> = {};
+        const allFields = getLeadFieldsWithCustom(customFields);
         result.headers.forEach((header) => {
           const lower = header.toLowerCase();
-          for (const field of LEAD_FIELDS) {
-            if (lower === field.key.toLowerCase() || lower === field.label.toLowerCase()) {
+          for (const field of allFields) {
+            if (
+              lower === field.key.toLowerCase() ||
+              lower === field.label.toLowerCase()
+            ) {
               autoMapping[field.key] = header;
               break;
             }
@@ -116,7 +122,7 @@ export function CsvImportDialog({
 
     const leads: MappedLead[] = [];
     for (const row of csvData.rows) {
-      const lead = mapCsvRowToLead(row, columnMapping);
+      const lead = mapCsvRowToLead(row, columnMapping, customFields);
       if (lead) leads.push(lead);
     }
 
@@ -164,7 +170,7 @@ export function CsvImportDialog({
         tags: lead.tags,
         notes: lead.notes,
         assignedTo: null,
-        customFields: {},
+        customFields: lead.customFields,
         socialProfiles: {},
         avatarUrl: null,
         attachments: [],
@@ -190,7 +196,7 @@ export function CsvImportDialog({
   };
 
   const handleExport = () => {
-    const csv = leadsToCsv(existingLeads);
+    const csv = leadsToCsv(existingLeads, customFields);
     downloadCsv(csv, `leads-export-${new Date().toISOString().split("T")[0]}`);
     toast.success("Leads exported successfully");
   };
@@ -290,9 +296,16 @@ export function CsvImportDialog({
             )}
 
             <div className="space-y-2">
-              {LEAD_FIELDS.map((field) => (
+              {getLeadFieldsWithCustom(customFields).map((field) => (
                 <div key={field.key} className="flex items-center gap-3">
-                  <Label className="w-24 text-sm">{field.label}</Label>
+                  <Label className="w-24 text-sm flex items-center gap-1">
+                    {field.label}
+                    {field.isCustom && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                        Custom
+                      </Badge>
+                    )}
+                  </Label>
                   <Select
                     value={columnMapping[field.key] || ""}
                     onValueChange={(v) =>
