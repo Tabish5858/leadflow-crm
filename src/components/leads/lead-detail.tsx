@@ -469,7 +469,7 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
                       return (
                         <div key={field.id}>
                           <p className="text-xs text-muted-foreground">{field.name}</p>
-                          <p className="text-sm font-medium">{displayValue}</p>
+                          <div className="text-sm font-medium">{displayValue}</div>
                         </div>
                       );
                     })}

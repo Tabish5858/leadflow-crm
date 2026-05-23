@@ -870,6 +870,7 @@ export default function LeadsPage() {
         onOpenChange={(open) => !open && setSelectedLead(null)}
       >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Lead Details</DialogTitle>
           {selectedLead && <LeadDetail leadId={selectedLead} />}
         </DialogContent>
       </Dialog>
