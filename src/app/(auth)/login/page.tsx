@@ -22,6 +22,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
 
+  const getPostLoginRedirect = async (uid: string): Promise<string> => {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        const wsIds: string[] = data.workspaceIds || [];
+        if (wsIds.length > 1) return "/select-workspace";
+      }
+    } catch {}
+    return "/dashboard";
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -30,14 +43,15 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(
+      const cred = await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
       toast.success("Logged in successfully");
+      const redirect = await getPostLoginRedirect(cred.user.uid);
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = redirect;
       }, 500);
     } catch (error: unknown) {
       const message =
@@ -99,8 +113,9 @@ export default function LoginPage() {
         });
       }
       toast.success("Logged in with Google");
+      const redirect = await getPostLoginRedirect(result.user.uid);
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = redirect;
       }, 500);
     } catch (error: unknown) {
       const message =
