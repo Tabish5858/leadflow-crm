@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { ScheduleMeetingDialog } from "@/components/meetings/schedule-meeting-dialog";
-import { MeetingTypeDialog } from "@/components/meetings/meeting-type-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,23 +22,18 @@ import {
   AlertCircle,
   Calendar,
   Clock,
-  Copy,
   ExternalLink,
   Loader2,
   MoreHorizontal,
   Plus,
   RefreshCw,
-  Settings2,
   Video,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Meeting } from "@/types";
-import type { MeetingType } from "@/lib/firebase/meeting-types";
-import { format, isAfter, isBefore, isToday, isTomorrow } from "date-fns";
+import { format, isAfter, isBefore } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-
-const BOOKING_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -163,12 +157,10 @@ export default function MeetingsPage() {
   const { canAccess } = usePermissions();
 
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
@@ -178,21 +170,9 @@ export default function MeetingsPage() {
     setError(null);
 
     try {
-      const [
-        { getMeetings },
-        { getMeetingTypes },
-      ] = await Promise.all([
-        import("@/lib/firebase/meetings"),
-        import("@/lib/firebase/meeting-types"),
-      ]);
-
-      const [meetingsData, typesData] = await Promise.all([
-        getMeetings(activeWorkspace.id),
-        getMeetingTypes(activeWorkspace.id),
-      ]);
-
+      const { getMeetings } = await import("@/lib/firebase/meetings");
+      const meetingsData = await getMeetings(activeWorkspace.id);
       setMeetings(meetingsData);
-      setMeetingTypes(typesData);
     } catch (err) {
       console.error("Failed to load meetings:", err);
       setError("Failed to load meetings. Please try again.");
@@ -315,51 +295,6 @@ export default function MeetingsPage() {
           </Button>
         </div>
       </div>
-
-      {/* Meeting Types Bar */}
-      {meetingTypes.length > 0 && (
-        <div className="flex items-center gap-1 overflow-x-auto pb-1">
-          <span className="text-xs font-medium text-muted-foreground shrink-0 mr-1">
-            Quick create:
-          </span>
-          {meetingTypes.map((mt) => (
-            <div key={mt.id} className="flex shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-r-none border-r-0"
-                onClick={() => setScheduleOpen(true)}
-              >
-                <Clock className="mr-1.5 h-3 w-3" />
-                {mt.name}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-l-none px-2"
-                onClick={() => {
-                  const url = mt.slug
-                    ? `${BOOKING_BASE_URL}/schedule/${mt.slug}`
-                    : `${BOOKING_BASE_URL}/b/${mt.bookingToken}`;
-                  navigator.clipboard.writeText(url);
-                  toast.success("Booking link copied!");
-                }}
-                title="Copy booking link"
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTypeDialogOpen(true)}
-          >
-            <Settings2 className="mr-1.5 h-3 w-3" />
-            Manage Types
-          </Button>
-        </div>
-      )}
 
       {/* Loading state */}
       {loading && (
@@ -506,22 +441,13 @@ export default function MeetingsPage() {
 
       {/* Dialogs */}
       {user && activeWorkspace && (
-        <>
-          <ScheduleMeetingDialog
-            open={scheduleOpen}
-            onOpenChange={setScheduleOpen}
-            userId={user.id}
-            workspaceId={activeWorkspace.id}
-            onMeetingScheduled={handleMeetingScheduled}
-          />
-          <MeetingTypeDialog
-            open={typeDialogOpen}
-            onOpenChange={setTypeDialogOpen}
-            userId={user.id}
-            workspaceId={activeWorkspace.id}
-            onSaved={loadData}
-          />
-        </>
+        <ScheduleMeetingDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          userId={user.id}
+          workspaceId={activeWorkspace.id}
+          onMeetingScheduled={handleMeetingScheduled}
+        />
       )}
     </div>
   );

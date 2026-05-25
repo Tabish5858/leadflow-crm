@@ -17,6 +17,7 @@ import { doc, getDoc } from "firebase/firestore";
 import {
   BarChart3,
   Calendar,
+  CalendarCheck,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -44,6 +45,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/analytics", label: "Analytics", icon: BarChart3, moduleId: "analytics" },
   { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
   { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
+  { href: "/meetings/types", label: "Meeting Types", icon: CalendarCheck, moduleId: "meetings" },
   { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
   { href: "/settings", label: "Settings", icon: Settings, moduleId: "settings" },
 ];
@@ -231,7 +233,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             {navItems
               .filter((item) => canAccess(item.moduleId))
               .map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const isActive = item.href === "/meetings"
+                  ? pathname === "/meetings"
+                  : pathname.startsWith(item.href);
                 const navLink = (
                   <Link
                     key={item.href}
