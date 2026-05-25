@@ -3,7 +3,7 @@
  * Given a meeting type's availability settings and a date,
  * computes which time slots are available for booking.
  */
-import { adminDb } from "@/lib/firebase/admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 
 const SLOT_INTERVAL = 30; // minutes between slot starts
 
@@ -103,7 +103,7 @@ export async function computeAvailableSlots(
   // 4. Fetch existing meetings for this workspace on this date
   let existingMeetings: Array<{ startMinutes: number; endMinutes: number }> = [];
   try {
-    const meetingsSnap = await adminDb
+    const meetingsSnap = await getAdminDb()
       .collection("meetings")
       .where("workspaceId", "==", meetingType.workspaceId)
       .where("status", "in", ["scheduled", "in_progress"])

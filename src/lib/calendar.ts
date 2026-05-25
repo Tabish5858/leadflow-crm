@@ -1,6 +1,6 @@
 import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
-import { adminDb } from "@/lib/firebase/admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
 import type { Lead } from "@/types";
 
@@ -45,7 +45,7 @@ export async function exchangeCodeForTokens(code: string) {
 }
 
 export async function getGoogleAuth(userId: string): Promise<{ client: OAuth2Client; email: string } | null> {
-  const tokenDoc = await adminDb
+  const tokenDoc = await getAdminDb()
     .collection("users").doc(userId)
     .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
     .get();
@@ -81,21 +81,21 @@ export async function saveCalendarTokens(userId: string, tokens: { access_token?
     connectedAt: Timestamp.now(),
   };
 
-  await adminDb
+  await getAdminDb()
     .collection("users").doc(userId)
     .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
     .set(docData);
 }
 
 export async function disconnectCalendar(userId: string): Promise<void> {
-  await adminDb
+  await getAdminDb()
     .collection("users").doc(userId)
     .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
     .delete();
 }
 
 export async function getCalendarConnectionStatus(userId: string): Promise<{ connected: boolean; email: string | null }> {
-  const tokenDoc = await adminDb
+  const tokenDoc = await getAdminDb()
     .collection("users").doc(userId)
     .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
     .get();

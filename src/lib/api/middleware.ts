@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 import type { ModuleId } from "@/types";
 import { canAccessModule } from "@/lib/permissions";
 
@@ -36,7 +36,7 @@ export async function requireAuth(
   }
 
   // Verify user exists
-  const userSnap = await adminDb.collection("users").doc(userId).get();
+  const userSnap = await getAdminDb().collection("users").doc(userId).get();
 
   if (!userSnap.exists) {
     return NextResponse.json(
@@ -51,7 +51,7 @@ export async function requireAuth(
   let role = workspaceRoles[workspaceId] || null;
 
   // Fetch workspace once (used for fallback role + module permissions)
-  const workspaceSnap = await adminDb.collection("workspaces").doc(workspaceId).get();
+  const workspaceSnap = await getAdminDb().collection("workspaces").doc(workspaceId).get();
   const workspaceData = workspaceSnap.exists ? workspaceSnap.data() : null;
 
   // Fallback: if workspaceRoles doesn't have this workspace,

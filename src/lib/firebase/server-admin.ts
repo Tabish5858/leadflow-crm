@@ -3,7 +3,7 @@
  * Use these in API routes instead of the client SDK to avoid
  * "Missing or insufficient permissions" errors.
  */
-import { adminDb } from "@/lib/firebase/admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
 import type { MeetingTypeAvailability } from "@/lib/availability";
 
@@ -13,7 +13,7 @@ export { Timestamp };
 /* ── Workspace helpers ─────────────────────────────────────────────── */
 
 export async function getWorkspace(workspaceId: string) {
-  const snap = await adminDb.collection("workspaces").doc(workspaceId).get();
+  const snap = await getAdminDb().collection("workspaces").doc(workspaceId).get();
   return snap.exists ? snap.data() : null;
 }
 
@@ -61,7 +61,7 @@ export async function createMeeting(data: CreateMeetingInput): Promise<string> {
   if (data.description) docData.description = data.description;
   if (data.calendarEventUrl) docData.calendarEventUrl = data.calendarEventUrl;
 
-  const docRef = await adminDb.collection("meetings").add(docData);
+  const docRef = await getAdminDb().collection("meetings").add(docData);
   return docRef.id;
 }
 
@@ -133,7 +133,7 @@ function generateSlug(name: string): string {
 }
 
 export async function getMeetingTypeByToken(token: string): Promise<ServerMeetingType | null> {
-  const q = adminDb
+  const q = getAdminDb()
     .collection("meeting_types")
     .where("bookingToken", "==", token)
     .where("active", "==", true)
@@ -145,7 +145,7 @@ export async function getMeetingTypeByToken(token: string): Promise<ServerMeetin
 }
 
 export async function getMeetingTypeBySlug(slug: string): Promise<ServerMeetingType | null> {
-  const q = adminDb
+  const q = getAdminDb()
     .collection("meeting_types")
     .where("slug", "==", slug)
     .where("active", "==", true)
@@ -157,13 +157,13 @@ export async function getMeetingTypeBySlug(slug: string): Promise<ServerMeetingT
 }
 
 export async function getMeetingType(id: string) {
-  const snap = await adminDb.collection("meeting_types").doc(id).get();
+  const snap = await getAdminDb().collection("meeting_types").doc(id).get();
   if (!snap.exists) return null;
   return { id: snap.id, ...snap.data() };
 }
 
 export async function getMeetingTypes(workspaceId: string) {
-  const q = adminDb
+  const q = getAdminDb()
     .collection("meeting_types")
     .where("workspaceId", "==", workspaceId)
     .orderBy("name", "asc");
@@ -216,7 +216,7 @@ export async function createMeetingType(data: {
   if (data.confirmationPage) docData.confirmationPage = data.confirmationPage;
   if (data.redirectUrl) docData.redirectUrl = data.redirectUrl;
 
-  const docRef = await adminDb.collection("meeting_types").add(docData);
+  const docRef = await getAdminDb().collection("meeting_types").add(docData);
   return { id: docRef.id, slug };
 }
 
@@ -230,14 +230,14 @@ export function generateSlugFromName(name: string): string {
 }
 
 export async function updateMeetingType(id: string, data: Record<string, unknown>): Promise<void> {
-  await adminDb.collection("meeting_types").doc(id).update({
+  await getAdminDb().collection("meeting_types").doc(id).update({
     ...data,
     updatedAt: Timestamp.now(),
   });
 }
 
 export async function deleteMeetingType(id: string): Promise<void> {
-  await adminDb.collection("meeting_types").doc(id).delete();
+  await getAdminDb().collection("meeting_types").doc(id).delete();
 }
 
 /* ── Activity helpers ──────────────────────────────────────────────── */
@@ -250,7 +250,7 @@ export async function logMeeting(
   body: string | null,
   duration?: number
 ): Promise<void> {
-  await adminDb.collection("activities").add({
+  await getAdminDb().collection("activities").add({
     workspaceId,
     leadId,
     type: "meeting",
