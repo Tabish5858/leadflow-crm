@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createGoogleMeetEvent } from "@/lib/calendar";
-import { createMeeting } from "@/lib/firebase/meetings";
-import { Timestamp } from "firebase/firestore";
+import { createMeeting } from "@/lib/firebase/server-admin";
 import { withAuth } from "@/lib/api/middleware";
 
 export async function POST(req: NextRequest) {
@@ -32,8 +31,8 @@ export async function POST(req: NextRequest) {
         leadId: leadId || undefined,
         conversationId: conversationId || undefined,
         title: `Meeting with ${attendees.map((a: { name?: string; email: string }) => a.name || a.email).join(", ")}`,
-        startTime: Timestamp.fromDate(startTime),
-        endTime: Timestamp.fromDate(endTime),
+        startTime,
+        endTime,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
         attendees: attendees.map((a: { email: string; name?: string }) => ({
           email: a.email,

@@ -47,8 +47,8 @@ service cloud.firestore {
 
     // Workspaces
     match /workspaces/{workspaceId} {
-      allow read: if isWorkspaceMember(workspaceId) ||
-        getWorkspace(workspaceId).ownerId == request.auth.uid;
+      allow read: if isAuthenticated() &&
+        resource.data.memberIds.hasAny([request.auth.uid]);
       allow create: if isAuthenticated();
       allow update: if getWorkspace(workspaceId).ownerId == request.auth.uid ||
         hasRole(workspaceId, 'admin');
@@ -145,6 +145,14 @@ service cloud.firestore {
       allow delete: if isWorkspaceMember(resource.data.workspaceId);
     }
 
+    // Meeting Types
+    match /meeting_types/{typeId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+    }
+
     // Documents (Cloudinary metadata)
     match /documents/{documentId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
@@ -160,6 +168,25 @@ service cloud.firestore {
       allow update: if isWorkspaceMember(resource.data.workspaceId);
       allow delete: if isWorkspaceMember(resource.data.workspaceId) ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
+    }
+
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if isAuthenticated();  // Created by app logic
+      allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
+        getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
+    }
+
+    // Email Events (tracking opens/clicks)
+    match /email_events/{eventId} {
+      allow read: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if true;  // Public tracking endpoints
+    }
+
+    // Calendar Tokens (subcollection under users)
+    match /users/{userId}/calendar_tokens/{tokenId} {
+      allow read, write: if isOwner(userId);
     }
   }
 }

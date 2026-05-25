@@ -1,7 +1,7 @@
 import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
-import { db } from "@/lib/firebase/client";
-import { doc, getDoc, setDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase/admin";
+import { Timestamp } from "firebase-admin/firestore";
 import type { Lead } from "@/types";
 
 const CALENDAR_TOKENS_COLLECTION = "calendar_tokens";
@@ -45,9 +45,12 @@ export async function exchangeCodeForTokens(code: string) {
 }
 
 export async function getGoogleAuth(userId: string): Promise<{ client: OAuth2Client; email: string } | null> {
-  const tokenDoc = await getDoc(doc(db, "users", userId, CALENDAR_TOKENS_COLLECTION, "primary"));
+  const tokenDoc = await adminDb
+    .collection("users").doc(userId)
+    .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
+    .get();
 
-  if (!tokenDoc.exists()) {
+  if (!tokenDoc.exists) {
     return null;
   }
 
@@ -78,17 +81,26 @@ export async function saveCalendarTokens(userId: string, tokens: { access_token?
     connectedAt: Timestamp.now(),
   };
 
-  await setDoc(doc(db, "users", userId, CALENDAR_TOKENS_COLLECTION, "primary"), docData);
+  await adminDb
+    .collection("users").doc(userId)
+    .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
+    .set(docData);
 }
 
 export async function disconnectCalendar(userId: string): Promise<void> {
-  await deleteDoc(doc(db, "users", userId, CALENDAR_TOKENS_COLLECTION, "primary"));
+  await adminDb
+    .collection("users").doc(userId)
+    .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
+    .delete();
 }
 
 export async function getCalendarConnectionStatus(userId: string): Promise<{ connected: boolean; email: string | null }> {
-  const tokenDoc = await getDoc(doc(db, "users", userId, CALENDAR_TOKENS_COLLECTION, "primary"));
+  const tokenDoc = await adminDb
+    .collection("users").doc(userId)
+    .collection(CALENDAR_TOKENS_COLLECTION).doc("primary")
+    .get();
 
-  if (!tokenDoc.exists()) {
+  if (!tokenDoc.exists) {
     return { connected: false, email: null };
   }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase/client";
-import { doc, getDoc } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase/admin";
 import type { ModuleId } from "@/types";
 import { canAccessModule } from "@/lib/permissions";
 
@@ -37,25 +36,23 @@ export async function requireAuth(
   }
 
   // Verify user exists
-  const userRef = doc(db, "users", userId);
-  const userSnap = await getDoc(userRef);
+  const userSnap = await adminDb.collection("users").doc(userId).get();
 
-  if (!userSnap.exists()) {
+  if (!userSnap.exists) {
     return NextResponse.json(
       { error: "User account not found." },
       { status: 403 }
     );
   }
 
-  const userData = userSnap.data();
+  const userData = userSnap.data()!;
   const workspaceRoles: Record<string, string> =
     userData.workspaceRoles || {};
   let role = workspaceRoles[workspaceId] || null;
 
   // Fetch workspace once (used for fallback role + module permissions)
-  const workspaceRef = doc(db, "workspaces", workspaceId);
-  const workspaceSnap = await getDoc(workspaceRef);
-  const workspaceData = workspaceSnap.exists() ? workspaceSnap.data() : null;
+  const workspaceSnap = await adminDb.collection("workspaces").doc(workspaceId).get();
+  const workspaceData = workspaceSnap.exists ? workspaceSnap.data() : null;
 
   // Fallback: if workspaceRoles doesn't have this workspace,
   // check legacy workspaceIds + workspace's ownerId/memberIds

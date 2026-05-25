@@ -78,6 +78,7 @@ export type ModuleId =
   | "time_tracker"
   | "messages"
   | "automations"
+  | "meetings"
   | "settings";
 
 export type ModulePermissionsMap = Record<ModuleId, boolean>;
@@ -95,6 +96,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   time_tracker: "Time Tracker",
   messages: "Messages",
   automations: "Automations",
+  meetings: "Meetings",
   settings: "Settings",
 } as const;
 
@@ -106,6 +108,7 @@ export const DEFAULT_MEMBER_PERMISSIONS: ModulePermissionsMap = {
   time_tracker: true,
   messages: true,
   automations: false,
+  meetings: true,
   settings: true,
 };
 
@@ -117,6 +120,7 @@ export const DEFAULT_VIEWER_PERMISSIONS: ModulePermissionsMap = {
   time_tracker: false,
   messages: false,
   automations: false,
+  meetings: false,
   settings: true,
 };
 

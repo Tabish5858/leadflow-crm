@@ -17,7 +17,7 @@ export function getEffectivePermissions(
   // Owner and Admin get full access
   if (role === "owner" || role === "admin") {
     const full: ModulePermissionsMap = {} as ModulePermissionsMap;
-    for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "settings"] as ModuleId[]) {
+    for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "meetings", "settings"] as ModuleId[]) {
       full[key] = true;
     }
     return full;
@@ -43,7 +43,7 @@ export function getEffectivePermissions(
 
   // Unknown role — no access
   const none: ModulePermissionsMap = {} as ModulePermissionsMap;
-  for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "settings"] as ModuleId[]) {
+  for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "meetings", "settings"] as ModuleId[]) {
     none[key] = false;
   }
   return none;

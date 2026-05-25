@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "leadflow-cde37"
+    "default": "leadflow-cde37",
+    "test": "test-c98e2",
+    "prod": "leadflow-cde37"
   }
 }
