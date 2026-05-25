@@ -3,11 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { usePermissions } from "@/lib/hooks/use-permissions";
+import { MeetingTypeDialog } from "@/components/meetings/meeting-type-dialog";
 import { ScheduleMeetingDialog } from "@/components/meetings/schedule-meeting-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,18 +26,24 @@ import {
   AlertCircle,
   Calendar,
   Clock,
+  Copy,
   ExternalLink,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Plus,
   RefreshCw,
+  Trash2,
   Video,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Meeting } from "@/types";
+import type { MeetingType } from "@/lib/firebase/meeting-types";
 import { format, isAfter, isBefore } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
+
+const BOOKING_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -157,11 +167,16 @@ export default function MeetingsPage() {
   const { canAccess } = usePermissions();
 
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
+  const [editingType, setEditingType] = useState<MeetingType | null>(null);
+  const [typesLoading, setTypesLoading] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -170,9 +185,16 @@ export default function MeetingsPage() {
     setError(null);
 
     try {
-      const { getMeetings } = await import("@/lib/firebase/meetings");
-      const meetingsData = await getMeetings(activeWorkspace.id);
+      const [{ getMeetings }, { getMeetingTypes }] = await Promise.all([
+        import("@/lib/firebase/meetings"),
+        import("@/lib/firebase/meeting-types"),
+      ]);
+      const [meetingsData, typesData] = await Promise.all([
+        getMeetings(activeWorkspace.id),
+        getMeetingTypes(activeWorkspace.id),
+      ]);
       setMeetings(meetingsData);
+      setMeetingTypes(typesData);
     } catch (err) {
       console.error("Failed to load meetings:", err);
       setError("Failed to load meetings. Please try again.");
@@ -221,6 +243,62 @@ export default function MeetingsPage() {
 
   const handleMeetingScheduled = () => {
     loadData();
+  };
+
+  const loadTypes = useCallback(async () => {
+    if (!activeWorkspace?.id) return;
+    setTypesLoading(true);
+    try {
+      const { getMeetingTypes } = await import("@/lib/firebase/meeting-types");
+      const data = await getMeetingTypes(activeWorkspace.id);
+      setMeetingTypes(data);
+    } catch {
+      // Non-critical
+    } finally {
+      setTypesLoading(false);
+    }
+  }, [activeWorkspace?.id]);
+
+  const handleDeleteType = async (id: string) => {
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/meetings/types/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user?.id || "",
+          "x-workspace-id": activeWorkspace?.id || "",
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete");
+        return;
+      }
+      setMeetingTypes((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Meeting type deleted");
+    } catch {
+      toast.error("Failed to delete meeting type");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleEditType = (type: MeetingType) => {
+    setEditingType(type);
+    setTypeDialogOpen(true);
+  };
+
+  const handleTypeDialogClose = (open: boolean) => {
+    setTypeDialogOpen(open);
+    if (!open) setTimeout(() => setEditingType(null), 100);
+  };
+
+  const copyBookingLink = (type: MeetingType) => {
+    const url = type.slug
+      ? `${BOOKING_BASE_URL}/schedule/${type.slug}`
+      : `${BOOKING_BASE_URL}/b/${type.bookingToken}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Booking link copied!");
   };
 
   // ── Filter meetings ─────────────────────────────────────────────
@@ -316,30 +394,9 @@ export default function MeetingsPage() {
         </Card>
       )}
 
-      {/* Empty state */}
-      {!loading && !error && meetings.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Calendar className="h-8 w-8 text-primary" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-semibold text-lg">No meetings yet</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Schedule your first meeting to get started
-              </p>
-            </div>
-            <Button onClick={() => setScheduleOpen(true)}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              Schedule Meeting
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Meetings list */}
-      {!loading && !error && meetings.length > 0 && (
-        <Tabs defaultValue="upcoming">
+      {/* Meetings + Types tabs */}
+      {!loading && !error && (
+        <Tabs defaultValue={meetings.length > 0 ? "upcoming" : "types"}>
           <TabsList>
             <TabsTrigger value="upcoming">
               Upcoming
@@ -354,6 +411,14 @@ export default function MeetingsPage() {
               {past.length > 0 && (
                 <Badge variant="secondary" className="ml-1.5">
                   {past.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="types">
+              Types
+              {meetingTypes.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5">
+                  {meetingTypes.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -436,18 +501,158 @@ export default function MeetingsPage() {
               ))
             )}
           </TabsContent>
+
+          {/* Types tab */}
+          <TabsContent value="types" className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Templates for recurring meeting types and booking pages
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => { setEditingType(null); setTypeDialogOpen(true); }}
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                New Type
+              </Button>
+            </div>
+
+            {typesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : meetingTypes.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
+                  <Calendar className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center">
+                    <p className="font-medium">No meeting types yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Create templates for recurring meetings like Discovery Calls, Demos, or Follow-ups
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setEditingType(null); setTypeDialogOpen(true); }}
+                  >
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    Create Meeting Type
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {meetingTypes.map((type) => {
+                  const bookingUrl = type.slug
+                    ? `${BOOKING_BASE_URL}/schedule/${type.slug}`
+                    : type.bookingToken
+                    ? `${BOOKING_BASE_URL}/b/${type.bookingToken}`
+                    : null;
+
+                  return (
+                    <Card key={type.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-lg truncate">{type.name}</CardTitle>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEditType(type)}
+                              title="Edit meeting type"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              disabled={deleting === type.id}
+                              onClick={() => handleDeleteType(type.id)}
+                              title="Delete meeting type"
+                            >
+                              {deleting === type.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">{type.duration} min</Badge>
+                          <Badge variant="outline">
+                            {type.videoTool === "google_meet" ? "Google Meet" : "In-person"}
+                          </Badge>
+                        </div>
+                        {type.availability && (
+                          <div className="text-xs text-muted-foreground">
+                            {type.availability.daysOfWeek.length === 5
+                              ? "Weekdays"
+                              : type.availability.daysOfWeek
+                                  .map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d])
+                                  .join(", ")}{" "}
+                            &middot; {type.availability.startTime}-{type.availability.endTime}
+                          </div>
+                        )}
+                        {bookingUrl && (
+                          <div className="flex gap-2">
+                            <div className="flex-1 min-w-0">
+                              <Input
+                                value={bookingUrl}
+                                readOnly
+                                className="text-xs font-mono h-8 bg-muted/30"
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                              />
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 shrink-0"
+                              onClick={() => copyBookingLink(type)}
+                              title="Copy booking link"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       )}
 
       {/* Dialogs */}
       {user && activeWorkspace && (
-        <ScheduleMeetingDialog
-          open={scheduleOpen}
-          onOpenChange={setScheduleOpen}
-          userId={user.id}
-          workspaceId={activeWorkspace.id}
-          onMeetingScheduled={handleMeetingScheduled}
-        />
+        <>
+          <ScheduleMeetingDialog
+            open={scheduleOpen}
+            onOpenChange={setScheduleOpen}
+            userId={user.id}
+            workspaceId={activeWorkspace.id}
+            onMeetingScheduled={handleMeetingScheduled}
+          />
+          <MeetingTypeDialog
+            open={typeDialogOpen}
+            onOpenChange={handleTypeDialogClose}
+            userId={user.id}
+            workspaceId={activeWorkspace.id}
+            onSaved={() => { loadData(); loadTypes(); }}
+            editingType={editingType}
+          />
+        </>
       )}
     </div>
   );
