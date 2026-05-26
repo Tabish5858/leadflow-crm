@@ -85,7 +85,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Dynamically loaded components — only loaded when user opens the dialog
 const LeadForm = dynamic(() => import("@/components/leads/lead-form").then((mod) => mod.LeadForm), {
@@ -415,6 +415,28 @@ export default function LeadsPage() {
     return () => setHeaderActions(null);
   }, [headerActions, setHeaderActions]);
 
+  // Infinite scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        const state = useLeadStore.getState();
+        if (state.hasMore && !state.loading && !state.loadingMore && activeWorkspace?.id) {
+          state.loadMore(activeWorkspace.id);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeWorkspace?.id]);
+
   return (
     <RequireModuleAccess moduleId="leads">
       <div className="space-y-6">
@@ -445,7 +467,7 @@ export default function LeadsPage() {
         {!loading && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {finalFilteredLeads.length} of {filteredLeads.length} leads
+              Showing {finalFilteredLeads.length} of {totalCount} leads
             </p>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -883,6 +905,19 @@ export default function LeadsPage() {
                   ))}
                 </tbody>
               </table>
+
+              {hasMore && !loading ? (
+                <div className="flex items-center justify-center py-4 border-t">
+                  <Button variant="outline" size="sm" onClick={function() { loadMore(activeWorkspace ? activeWorkspace.id : ""); }} disabled={loadingMore}>
+                    {loadingMore ? "Loading..." : "Load More (" + leads.length + " of " + totalCount + ")"}
+                  </Button>
+                </div>
+              ) : null}
+              {!hasMore && !loading && leads.length > 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-3">Showing all {leads.length} leads</p>
+              ) : null}
+
+              <div ref={sentinelRef} className="h-4" />
             </div>
           )}
 
