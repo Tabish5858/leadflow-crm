@@ -207,7 +207,7 @@ export function InlineEditCell({
     }
 
     return (
-      <span className={cn("inline-flex items-center gap-1 group max-w-[200px]", className)}>
+      <span className={cn("inline-flex items-center gap-1 group", className)}>
         <span
           onClick={startEditing}
           onKeyDown={(e) => { if (e.key === "Enter") startEditing(); }}

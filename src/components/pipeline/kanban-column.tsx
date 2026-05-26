@@ -49,14 +49,20 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
         ref={setNodeRef}
         className={cn(
           "flex min-h-[200px] flex-1 flex-col gap-2 p-3 transition-colors",
-          isOver && "bg-muted/30"
+          isOver && "ring-1 ring-primary/30 rounded-lg"
         )}
       >
         {leads.map((lead) => (
           <KanbanCard key={lead.id} lead={lead} onClick={() => onLeadClick?.(lead.id)} />
         ))}
 
-        {leads.length === 0 && (
+        {isOver && (
+          <div className="rounded-lg border-2 border-dashed border-primary/40 p-3">
+            <p className="text-xs text-muted-foreground text-center">Drop here</p>
+          </div>
+        )}
+
+        {leads.length === 0 && !isOver && (
           <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed p-6">
             <p className="text-xs text-muted-foreground">Drop leads here</p>
           </div>
