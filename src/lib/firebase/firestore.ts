@@ -76,6 +76,28 @@ export async function getLeadsByWorkspace(
   return { leads, lastVisible, total: countSnapshot.data().count };
 }
 
+export async function getAllLeadsByWorkspace(
+  workspaceId: string
+): Promise<{ leads: Lead[]; total: number }> {
+  const leadsRef = collection(db, LEADS_COLLECTION);
+  const q = query(
+    leadsRef,
+    where("workspaceId", "==", workspaceId),
+    orderBy("createdAt", "desc"),
+    limit(1000)
+  );
+  const snapshot = await getDocs(q);
+  const leads = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Lead[];
+
+  const countQuery = query(leadsRef, where("workspaceId", "==", workspaceId));
+  const countSnapshot = await getCountFromServer(countQuery);
+
+  return { leads, total: countSnapshot.data().count };
+}
+
 export async function getLeadsByStatus(
   workspaceId: string,
   status: string

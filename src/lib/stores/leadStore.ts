@@ -7,6 +7,7 @@ import {
   deleteLead,
   deleteLeads,
   getLeadsByWorkspace,
+  getAllLeadsByWorkspace,
   getLeadStats,
 } from "@/lib/firebase/firestore";
 import type { LeadFormData } from "@/lib/schemas/lead";
@@ -32,6 +33,7 @@ interface LeadState {
 
   // Actions
   initialize: (workspaceId: string) => Promise<void>;
+  initializeAll: (workspaceId: string) => Promise<void>;
   loadMore: (workspaceId: string) => Promise<void>;
   addLead: (workspaceId: string, userId: string, data: LeadFormData, customFields?: Record<string, unknown>) => Promise<void>;
   editLead: (id: string, data: Partial<LeadFormData>) => Promise<void>;
@@ -68,6 +70,24 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         filteredLeads: leads,
         cursor: lastVisible,
         hasMore: leads.length >= PAGE_SIZE,
+        totalCount: total,
+        loading: false,
+      });
+    } catch {
+      set({ error: "Failed to load leads", loading: false });
+    }
+  },
+
+  initializeAll: async (workspaceId: string) => {
+    set({ loading: true, error: null, leads: [], filteredLeads: [], cursor: null, hasMore: false });
+
+    try {
+      const { leads, total } = await getAllLeadsByWorkspace(workspaceId);
+      set({
+        leads,
+        filteredLeads: leads,
+        cursor: null,
+        hasMore: false,
         totalCount: total,
         loading: false,
       });

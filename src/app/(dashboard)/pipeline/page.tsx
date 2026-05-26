@@ -19,20 +19,15 @@ const LeadDetail = dynamic(() => import("@/components/leads/lead-detail").then((
 
 export default function PipelinePage() {
   const { activeWorkspace } = useWorkspace();
-  const { loading, initialize, loadMore, refreshStats } = useLeadStore();
+  const { loading, initializeAll, refreshStats } = useLeadStore();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
+  // Load all leads in a single query (pipeline needs the full dataset)
   useEffect(() => {
     if (!activeWorkspace) return;
-    (async () => {
-      await initialize(activeWorkspace.id);
-      // Load all pages so the kanban board has complete data
-      while (useLeadStore.getState().hasMore) {
-        await useLeadStore.getState().loadMore(activeWorkspace.id);
-      }
-    })();
+    initializeAll(activeWorkspace.id);
     refreshStats(activeWorkspace.id);
-  }, [activeWorkspace?.id, initialize, loadMore, refreshStats]);
+  }, [activeWorkspace?.id, initializeAll, refreshStats]);
 
   if (loading) {
     return (
