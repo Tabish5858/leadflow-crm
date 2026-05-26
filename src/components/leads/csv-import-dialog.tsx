@@ -84,18 +84,29 @@ export function CsvImportDialog({
 
         setCsvData(result);
 
-        // Auto-map columns that match exactly
+        // Auto-map columns that match field names or labels
         const autoMapping: Record<string, string> = {};
         const allFields = getLeadFieldsWithCustom(customFields);
         result.headers.forEach((header) => {
-          const lower = header.toLowerCase();
+          const lower = header.toLowerCase().trim();
           for (const field of allFields) {
-            if (
-              lower === field.key.toLowerCase() ||
-              lower === field.label.toLowerCase()
-            ) {
+            const fieldKey = field.key.toLowerCase();
+            const fieldLabel = field.label.toLowerCase();
+
+            // Exact match on key or label (e.g. "firstname" === "firstName")
+            if (lower === fieldKey || lower === fieldLabel) {
               autoMapping[field.key] = header;
               break;
+            }
+
+            // Custom field labels are "Name (type)" — match just the name part
+            // e.g. "Niche" should match "Niche (select)"
+            if (field.isCustom && fieldLabel.includes("(")) {
+              const baseName = fieldLabel.split("(")[0].trim();
+              if (lower === baseName) {
+                autoMapping[field.key] = header;
+                break;
+              }
             }
           }
         });
@@ -160,7 +171,7 @@ export function CsvImportDialog({
         jobTitle: lead.jobTitle,
         status: lead.status,
         source: lead.source,
-        niche: null,
+        niche: lead.niche,
         value: lead.value,
         currency: lead.currency,
         website: lead.website,

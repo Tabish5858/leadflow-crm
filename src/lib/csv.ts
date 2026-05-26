@@ -9,6 +9,7 @@ const CSV_HEADERS = [
   "Job Title",
   "Status",
   "Source",
+  "Niche",
   "Value",
   "Currency",
   "Website",
@@ -28,6 +29,7 @@ const CSV_HEADER_MAP: Record<string, keyof Lead> = {
   "job title": "jobTitle",
   status: "status",
   source: "source",
+  niche: "niche",
   value: "value",
   currency: "currency",
   website: "website",
@@ -101,6 +103,12 @@ export function parseCsv(content: string): CsvImportResult {
 
   for (let i = 1; i < lines.length; i++) {
     const values = parseCsvLine(lines[i]);
+
+    // Trim trailing empty columns (common with trailing commas in exports)
+    while (values.length > headers.length && values[values.length - 1] === "") {
+      values.pop();
+    }
+
     if (values.length !== headers.length) {
       errors.push(`Row ${i + 1}: Expected ${headers.length} columns, got ${values.length}`);
       continue;
@@ -159,6 +167,7 @@ export interface MappedLead {
   jobTitle: string | null;
   status: string;
   source: string | null;
+  niche: string | null;
   value: number | null;
   currency: string;
   website: string | null;
@@ -216,6 +225,7 @@ export function mapCsvRowToLead(
     jobTitle: getValue("jobTitle") || null,
     status: getValue("status") || "new",
     source: getValue("source") || null,
+    niche: getValue("niche") || null,
     value: valueStr ? parseFloat(valueStr) || null : null,
     currency: getValue("currency") || "USD",
     website: getValue("website") || null,
@@ -239,6 +249,7 @@ export const LEAD_FIELDS = [
   { key: "jobTitle", label: "Job Title" },
   { key: "status", label: "Status" },
   { key: "source", label: "Source" },
+  { key: "niche", label: "Niche" },
   { key: "value", label: "Value" },
   { key: "currency", label: "Currency" },
   { key: "website", label: "Website" },

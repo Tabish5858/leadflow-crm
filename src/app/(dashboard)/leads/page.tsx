@@ -75,6 +75,7 @@ import {
 import {
   ArrowUpDown,
   ExternalLink,
+  Loader2,
   MoreHorizontal,
   Plus,
   Search,
@@ -235,12 +236,16 @@ export default function LeadsPage() {
     leads,
     filteredLeads,
     loading,
+    loadingMore,
+    hasMore,
+    totalCount,
     selectedIds,
     toggleSelect,
     selectAll,
     clearSelection,
     removeLeads,
     initialize,
+    loadMore,
     refreshStats,
   } = useLeadStore();
 
@@ -511,7 +516,11 @@ export default function LeadsPage() {
                 }
               />
             </div>
-          ) : (
+          ) : null}
+        </div>
+
+          {/* Table + Load More */}
+          {sortedLeads.length > 0 && (
             <div className="overflow-x-auto min-w-[900px]">
               <table className="min-w-full w-max table-fixed">
                 <thead>
@@ -876,7 +885,6 @@ export default function LeadsPage() {
               </table>
             </div>
           )}
-        </div>
 
         {/* Create Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

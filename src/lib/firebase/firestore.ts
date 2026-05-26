@@ -10,6 +10,7 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   Timestamp,
   onSnapshot,
   QuerySnapshot,
@@ -44,17 +45,22 @@ export async function getLead(id: string): Promise<Lead | null> {
 
 export async function getLeadsByWorkspace(
   workspaceId: string,
-  _page = 1,
-  pageSize = 25
+  pageSize = 50,
+  cursor?: DocumentData | null
 ): Promise<{ leads: Lead[]; lastVisible: DocumentData | null; total: number }> {
   const leadsRef = collection(db, LEADS_COLLECTION);
-  const q = query(
-    leadsRef,
+
+  const constraints: Parameters<typeof query>[1][] = [
     where("workspaceId", "==", workspaceId),
     orderBy("createdAt", "desc"),
-    limit(pageSize)
-  );
+    limit(pageSize),
+  ];
 
+  if (cursor) {
+    constraints.push(startAfter(cursor));
+  }
+
+  const q = query(leadsRef, ...constraints);
   const snapshot = await getDocs(q);
   const leads = snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -63,7 +69,7 @@ export async function getLeadsByWorkspace(
 
   const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
-  // Get total count
+  // Get total count (cheap, no data read)
   const countQuery = query(leadsRef, where("workspaceId", "==", workspaceId));
   const countSnapshot = await getCountFromServer(countQuery);
 

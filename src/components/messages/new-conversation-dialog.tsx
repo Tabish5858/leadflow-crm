@@ -41,7 +41,7 @@ export function NewConversationDialog({
     setLoading(true);
     setError(null);
 
-    getLeadsByWorkspace(workspaceId, 1, 100)
+    getLeadsByWorkspace(workspaceId, 100, null)
       .then((result) => setLeads(result.leads))
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Failed to load leads");
