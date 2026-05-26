@@ -1,19 +1,26 @@
 import { create } from "zustand";
 import type { Lead } from "@/types";
+import type { DocumentData } from "firebase/firestore";
 import {
   createLead,
   updateLead,
   deleteLead,
   deleteLeads,
-  subscribeToLeads,
+  getLeadsByWorkspace,
   getLeadStats,
 } from "@/lib/firebase/firestore";
 import type { LeadFormData } from "@/lib/schemas/lead";
+
+const PAGE_SIZE = 50;
 
 interface LeadState {
   leads: Lead[];
   filteredLeads: Lead[];
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  totalCount: number;
+  cursor: DocumentData | null;
   error: string | null;
   searchQuery: string;
   selectedIds: Set<string>;
@@ -22,10 +29,10 @@ interface LeadState {
     byStatus: Record<string, number>;
     totalValue: number;
   };
-  unsubscribe: (() => void) | null;
 
   // Actions
-  initialize: (workspaceId: string) => void;
+  initialize: (workspaceId: string) => Promise<void>;
+  loadMore: (workspaceId: string) => Promise<void>;
   addLead: (workspaceId: string, userId: string, data: LeadFormData, customFields?: Record<string, unknown>) => Promise<void>;
   editLead: (id: string, data: Partial<LeadFormData>) => Promise<void>;
   removeLead: (id: string) => Promise<void>;
@@ -42,23 +49,56 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   leads: [],
   filteredLeads: [],
   loading: false,
+  loadingMore: false,
+  hasMore: true,
+  totalCount: 0,
+  cursor: null,
   error: null,
   searchQuery: "",
   selectedIds: new Set(),
   stats: { total: 0, byStatus: {}, totalValue: 0 },
-  unsubscribe: null,
 
-  initialize: (workspaceId: string) => {
-    const existing = get().unsubscribe;
-    if (existing) existing();
+  initialize: async (workspaceId: string) => {
+    set({ loading: true, error: null, leads: [], filteredLeads: [], cursor: null, hasMore: true });
 
-    set({ loading: true });
+    try {
+      const { leads, lastVisible, total } = await getLeadsByWorkspace(workspaceId, PAGE_SIZE);
+      set({
+        leads,
+        filteredLeads: leads,
+        cursor: lastVisible,
+        hasMore: leads.length >= PAGE_SIZE,
+        totalCount: total,
+        loading: false,
+      });
+    } catch {
+      set({ error: "Failed to load leads", loading: false });
+    }
+  },
 
-    const unsub = subscribeToLeads(workspaceId, (leads) => {
-      set({ leads, filteredLeads: leads, loading: false });
-    });
+  loadMore: async (workspaceId: string) => {
+    const { cursor, hasMore, loadingMore } = get();
+    if (!hasMore || loadingMore || !cursor) return;
 
-    set({ unsubscribe: unsub });
+    set({ loadingMore: true });
+
+    try {
+      const { leads: newLeads, lastVisible, total } = await getLeadsByWorkspace(workspaceId, PAGE_SIZE, cursor);
+      const currentLeads = get().leads;
+
+      const merged = [...currentLeads, ...newLeads];
+
+      set({
+        leads: merged,
+        filteredLeads: merged,
+        cursor: lastVisible,
+        hasMore: newLeads.length >= PAGE_SIZE,
+        totalCount: total,
+        loadingMore: false,
+      });
+    } catch {
+      set({ loadingMore: false });
+    }
   },
 
   addLead: async (workspaceId: string, userId: string, data: LeadFormData, customFields?: Record<string, unknown>) => {
@@ -122,6 +162,12 @@ export const useLeadStore = create<LeadState>((set, get) => ({
       if (data.notes !== undefined) updateData.notes = data.notes || null;
 
       await updateLead(id, updateData);
+
+      // Optimistic update
+      set((state) => ({
+        leads: state.leads.map((l) => (l.id === id ? { ...l, ...updateData } : l)),
+        filteredLeads: state.filteredLeads.map((l) => (l.id === id ? { ...l, ...updateData } : l)),
+      }));
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to update lead";
       set({ error: message });
@@ -132,6 +178,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   removeLead: async (id: string) => {
     try {
       await deleteLead(id);
+      set((state) => ({
+        leads: state.leads.filter((l) => l.id !== id),
+        filteredLeads: state.filteredLeads.filter((l) => l.id !== id),
+      }));
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to delete lead";
       set({ error: message });
@@ -143,7 +193,12 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       await deleteLeads(ids);
-      set({ selectedIds: new Set(), loading: false });
+      set((state) => ({
+        leads: state.leads.filter((l) => !ids.includes(l.id)),
+        filteredLeads: state.filteredLeads.filter((l) => !ids.includes(l.id)),
+        selectedIds: new Set(),
+        loading: false,
+      }));
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to delete leads";
       set({ error: message, loading: false });
@@ -154,6 +209,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   updateStatus: async (id: string, status: string) => {
     try {
       await updateLead(id, { status });
+      set((state) => ({
+        leads: state.leads.map((l) => (l.id === id ? { ...l, status } : l)),
+        filteredLeads: state.filteredLeads.map((l) => (l.id === id ? { ...l, status } : l)),
+      }));
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to update status";
       set({ error: message });

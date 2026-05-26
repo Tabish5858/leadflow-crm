@@ -54,6 +54,8 @@ import {
   FileText,
   Calendar,
   Trash2,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { DocumentManager } from "@/components/leads/document-manager";
@@ -470,15 +472,17 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
                   {activeWorkspace.customFields
                     .sort((a, b) => a.order - b.order)
                     .map((field) => {
-                      const value = lead.customFields?.[field.id];
-                      if (!value) return null;
+                      const raw = lead.customFields?.[field.id];
+                      const hasValue = raw !== undefined && raw !== null && raw !== "";
 
-                      let displayValue: React.ReactNode = String(value);
+                      if (!hasValue) return null;
 
-                      if (field.type === "multiselect" && Array.isArray(value)) {
+                      let displayValue: React.ReactNode = String(raw);
+
+                      if (field.type === "multiselect" && Array.isArray(raw)) {
                         displayValue = (
                           <div className="flex flex-wrap gap-1">
-                            {value.map((v: string) => (
+                            {raw.map((v: string) => (
                               <Badge key={v} variant="secondary" className="text-xs">
                                 {v}
                               </Badge>
@@ -486,28 +490,97 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
                           </div>
                         );
                       } else if (field.type === "date") {
-                        displayValue = new Date(value as string).toLocaleDateString("en-US", {
+                        displayValue = new Date(raw as string).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         });
-                      } else if (field.type === "url" || field.type === "email") {
+                      } else if (field.type === "url") {
+                        const urlStr = raw as string;
+                        const href = urlStr.startsWith("http") ? urlStr : `https://${urlStr}`;
                         displayValue = (
-                          <a
-                            href={field.type === "email" ? `mailto:${value}` : (value as string)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
-                          >
-                            {value as string}
-                          </a>
+                          <span className="inline-flex items-center gap-1.5 max-w-[250px] group">
+                            <span className="truncate text-sm text-primary" title={urlStr}>
+                              {urlStr}
+                            </span>
+                            <span className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(urlStr);
+                                  toast.success("Copied to clipboard");
+                                }}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                              >
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </span>
+                          </span>
+                        );
+                      } else if (field.type === "email") {
+                        const emailStr = raw as string;
+                        displayValue = (
+                          <span className="inline-flex items-center gap-1.5 max-w-[250px] group">
+                            <a
+                              href={`mailto:${emailStr}`}
+                              className="truncate text-sm text-primary hover:underline"
+                              title={emailStr}
+                            >
+                              {emailStr}
+                            </a>
+                            <span className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <a
+                                href={`mailto:${emailStr}`}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(emailStr);
+                                  toast.success("Copied to clipboard");
+                                }}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                              >
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </span>
+                          </span>
+                        );
+                      } else {
+                        const textStr = String(raw);
+                        displayValue = (
+                          <span className="inline-flex items-center gap-1.5 max-w-[250px] group">
+                            <span className="truncate text-sm font-medium" title={textStr}>
+                              {textStr}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(textStr);
+                                toast.success("Copied to clipboard");
+                              }}
+                              className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
+                            >
+                              <Copy className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </span>
                         );
                       }
 
                       return (
                         <div key={field.id}>
                           <p className="text-xs text-muted-foreground">{field.name}</p>
-                          <div className="text-sm font-medium">{displayValue}</div>
+                          <div className="mt-0.5">{displayValue}</div>
                         </div>
                       );
                     })}

@@ -3,7 +3,10 @@
 import { useState, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Copy, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 export type InlineEditType = "text" | "number" | "name" | "date" | "email" | "url" | "checkbox";
 
@@ -144,19 +147,88 @@ export function InlineEditCell({
       );
     }
     const displayText = displayValue ?? (value != null && value !== "" ? String(value) : null);
+
+    if (!displayText) {
+      return (
+        <span
+          onClick={startEditing}
+          onKeyDown={(e) => { if (e.key === "Enter") startEditing(); }}
+          className={cn(
+            "cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors text-muted-foreground/50",
+            className
+          )}
+          role="button"
+          tabIndex={0}
+        >
+          {placeholder}
+        </span>
+      );
+    }
+
+    // URL type — show truncated link + external + copy
+    if (type === "url") {
+      const href = displayText.startsWith("http") ? displayText : `https://${displayText}`;
+      return (
+        <span className={cn("inline-flex items-center gap-1 max-w-[200px] group", className)}>
+          <span
+            onClick={startEditing}
+            onKeyDown={(e) => { if (e.key === "Enter") startEditing(); }}
+            className="cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors truncate flex-1 min-w-0"
+            role="button"
+            tabIndex={0}
+            title={displayText}
+          >
+            {displayText}
+          </span>
+          <span className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+            >
+              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+            </a>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(displayText);
+                toast.success("Copied to clipboard");
+              }}
+              className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+            >
+              <Copy className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </span>
+        </span>
+      );
+    }
+
     return (
-      <span
-        onClick={startEditing}
-        onKeyDown={(e) => { if (e.key === "Enter") startEditing(); }}
-        className={cn(
-          "cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors",
-          !displayText && "text-muted-foreground/50",
-          className
-        )}
-        role="button"
-        tabIndex={0}
-      >
-        {displayText || placeholder}
+      <span className={cn("inline-flex items-center gap-1 group max-w-[200px]", className)}>
+        <span
+          onClick={startEditing}
+          onKeyDown={(e) => { if (e.key === "Enter") startEditing(); }}
+          className="cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors truncate flex-1 min-w-0"
+          role="button"
+          tabIndex={0}
+          title={displayText}
+        >
+          {displayText}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(displayText);
+            toast.success("Copied to clipboard");
+          }}
+          className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
+        >
+          <Copy className="h-3 w-3 text-muted-foreground" />
+        </button>
       </span>
     );
   }
