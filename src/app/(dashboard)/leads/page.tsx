@@ -735,7 +735,15 @@ export default function LeadsPage() {
                                     />
                                   </div>
                                   <p className="text-xs text-muted-foreground">
-                                    {lead.email}
+                                    <InlineEditCell
+                                      type="email"
+                                      value={lead.email}
+                                      onSave={async (val) => {
+                                        const { updateLead } = await import("@/lib/firebase/firestore");
+                                        const emailVal = val as string | null;
+                                        await updateLead(lead.id, { email: emailVal || undefined });
+                                      }}
+                                    />
                                   </p>
                                 </div>
                               </div>
