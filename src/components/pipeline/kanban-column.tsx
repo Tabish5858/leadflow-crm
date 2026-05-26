@@ -56,13 +56,7 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
           <KanbanCard key={lead.id} lead={lead} onClick={() => onLeadClick?.(lead.id)} />
         ))}
 
-        {isOver && (
-          <div className="rounded-lg border-2 border-dashed border-primary/40 p-3">
-            <p className="text-xs text-muted-foreground text-center">Drop here</p>
-          </div>
-        )}
-
-        {leads.length === 0 && !isOver && (
+        {leads.length === 0 && (
           <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed p-6">
             <p className="text-xs text-muted-foreground">Drop leads here</p>
           </div>
