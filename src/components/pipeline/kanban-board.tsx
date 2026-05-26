@@ -103,7 +103,7 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
 
       <DragOverlay>
         {activeLead ? (
-          <div className="w-72 rotate-3 opacity-90">
+          <div className="w-72 rotate-3 opacity-90" style={{ width: '18rem' }}>
             <KanbanCard lead={activeLead} isDragging />
           </div>
         ) : null}

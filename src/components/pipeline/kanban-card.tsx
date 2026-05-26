@@ -38,8 +38,8 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20 cursor-grab active:cursor-grabbing",
-        dragging && "shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-[1.02]"
+        "group rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20 cursor-grab active:cursor-grabbing max-h-fit",
+        dragging && "shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-[1.02] max-h-[10]!"
       )}
     >
       {/* Content — click opens detail */}

@@ -48,15 +48,21 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         className={cn(
-          "flex min-h-[200px] flex-1 flex-col gap-2 p-3 transition-colors",
-          isOver && "ring-1 ring-primary/30 rounded-lg"
+          "flex min-h-[200px] flex-col gap-2 p-3 transition-colors",
         )}
       >
         {leads.map((lead) => (
           <KanbanCard key={lead.id} lead={lead} onClick={() => onLeadClick?.(lead.id)} />
         ))}
 
-        {leads.length === 0 && (
+        {/* Drop indicator — only shown when dragging over this column */}
+        {isOver && (
+          <div className="shrink-0 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 px-3 py-6">
+            <p className="text-xs text-center text-muted-foreground">Drop here</p>
+          </div>
+        )}
+
+        {leads.length === 0 && !isOver && (
           <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed p-6">
             <p className="text-xs text-muted-foreground">Drop leads here</p>
           </div>
