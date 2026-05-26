@@ -914,18 +914,13 @@ export default function LeadsPage() {
                 </tbody>
               </table>
 
-              {hasMore && !loading ? (
-                <div className="flex items-center justify-center py-4 border-t">
-                  <Button variant="outline" size="sm" onClick={function() { loadMore(activeWorkspace ? activeWorkspace.id : ""); }} disabled={loadingMore}>
-                    {loadingMore ? "Loading..." : "Load More (" + leads.length + " of " + totalCount + ")"}
-                  </Button>
-                </div>
-              ) : null}
-              {!hasMore && !loading && leads.length > 0 ? (
+              {!hasMore && !loading && leads.length > 0 && (
                 <p className="text-center text-xs text-muted-foreground py-3">Showing all {leads.length} leads</p>
-              ) : null}
-
-              <div ref={sentinelRef} className="h-4" />
+              )}
+              {loadingMore && (
+                <p className="text-center text-xs text-muted-foreground py-3">Loading more leads...</p>
+              )}
+              <div ref={sentinelRef} className={hasMore ? "h-4" : "hidden"} />
             </div>
           )}
 
