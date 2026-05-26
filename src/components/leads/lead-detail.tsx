@@ -422,7 +422,39 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
         <TabsContent value="details" className="mt-4">
           {/* Contact Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email} />
+            {lead.email ? (
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <div className="inline-flex items-center gap-1.5 group">
+                    <a href={`mailto:${lead.email}`} className="text-sm font-medium text-primary hover:underline truncate max-w-[200px]" title={lead.email}>
+                      {lead.email}
+                    </a>
+                    <span className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a
+                        href={`mailto:${lead.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard.writeText(lead.email); toast.success("Copied to clipboard"); }}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+                      >
+                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value="" />
+            )}
             {lead.phone && (
               <InfoItem icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone} />
             )}
