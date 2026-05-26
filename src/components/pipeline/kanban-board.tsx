@@ -3,6 +3,7 @@
 import {
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -16,21 +17,23 @@ import { DEFAULT_PIPELINE_STAGES } from "@/lib/constants";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import type { Lead, PipelineStage } from "@/types";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "@/lib/toast";
 
 export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) => void }) {
   const { activeWorkspace } = useWorkspace();
   const { leads, updateStatus } = useLeadStore();
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [insertState, setInsertState] = useState<{
+    columnId: string | null;
+    index: number;
+  }>({ columnId: null, index: 0 });
 
   const stages: PipelineStage[] = activeWorkspace?.pipeline?.stages || DEFAULT_PIPELINE_STAGES;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     })
   );
 
@@ -39,9 +42,59 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
     if (lead) setActiveLead(lead);
   };
 
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { over, activatorEvent } = event;
+    if (!over) {
+      setInsertState({ columnId: null, index: 0 });
+      return;
+    }
+
+    // Determine which column is being hovered
+    const overId = over.id as string;
+    let columnId: string | null = null;
+
+    if (overId.startsWith("column-")) {
+      columnId = overId.replace("column-", "");
+    } else {
+      const overLead = leads.find((l) => l.id === overId);
+      if (overLead) columnId = overLead.status;
+    }
+
+    if (!columnId) {
+      setInsertState({ columnId: null, index: 0 });
+      return;
+    }
+
+    // Calculate insertion index based on pointer Y versus card midpoints
+    const columnEl = document.querySelector(`[data-droppable="column-${columnId}"]`);
+    if (!columnEl) {
+      setInsertState({ columnId, index: 0 });
+      return;
+    }
+
+    // Only count actual lead cards (not the drop indicator)
+    const cardEls = columnEl.querySelectorAll('[data-draggable="true"]');
+    const pointerY = (activatorEvent as PointerEvent).clientY;
+
+    let index = 0;
+    for (let i = 0; i < cardEls.length; i++) {
+      const rect = cardEls[i].getBoundingClientRect();
+      if (pointerY >= rect.top + rect.height / 2) {
+        index = i + 1;
+      } else {
+        break;
+      }
+    }
+
+    setInsertState((prev) =>
+      prev.columnId === columnId && prev.index === index ? prev : { columnId, index }
+    );
+  }, [leads]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveLead(null);
+    setInsertState({ columnId: null, index: 0 });
 
     if (!over) return;
 
@@ -52,13 +105,10 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
     // Determine the target status from the drop target
     let newStatus: string | null = null;
 
-    // Check if dropped on a column
     const overId = over.id as string;
     if (overId.startsWith("column-")) {
       newStatus = overId.replace("column-", "");
-    }
-    // Check if dropped on a card -- find that card's column
-    else {
+    } else {
       const targetLead = leads.find((l) => l.id === overId);
       if (targetLead) {
         newStatus = targetLead.status;
@@ -74,6 +124,7 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
 
   const handleDragCancel = () => {
     setActiveLead(null);
+    setInsertState({ columnId: null, index: 0 });
   };
 
   // Group leads by status
@@ -87,6 +138,7 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
       sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
@@ -97,13 +149,19 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
             stage={stage}
             leads={leadsByStatus[stage.id] || []}
             onLeadClick={onLeadClick}
+            isOver={
+              insertState.columnId === stage.id
+            }
+            insertIndex={
+              insertState.columnId === stage.id ? insertState.index : -1
+            }
           />
         ))}
       </div>
 
       <DragOverlay>
         {activeLead ? (
-          <div className="w-72 rotate-3 opacity-90" style={{ width: '18rem' }}>
+          <div className="w-72">
             <KanbanCard lead={activeLead} isDragging />
           </div>
         ) : null}

@@ -23,23 +23,23 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     isDragging: isDragged,
   } = useDraggable({ id: lead.id });
 
+  // isDragged = true on the original card when being dragged (hide it)
+  // isDragging = true when rendered inside DragOverlay (show it at full opacity)
   const style = {
-    transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    transform: isDragged ? CSS.Transform.toString(transform) : undefined,
+    opacity: isDragged ? 0 : 1,
     transition: "transform 200ms ease",
   };
-
-  const dragging = isDragging || isDragged;
 
   return (
     <div
       {...attributes}
       {...listeners}
       ref={setNodeRef}
+      data-draggable="true"
       style={style}
       className={cn(
-        "group rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20 cursor-grab active:cursor-grabbing max-h-fit",
-        dragging && "shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-[1.02] max-h-[10]!"
+        "rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20 cursor-grab active:cursor-grabbing",
       )}
     >
       {/* Content — click opens detail */}

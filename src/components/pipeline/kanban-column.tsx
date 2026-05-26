@@ -9,10 +9,12 @@ interface KanbanColumnProps {
   stage: PipelineStage;
   leads: Lead[];
   onLeadClick?: (leadId: string) => void;
+  isOver?: boolean;
+  insertIndex?: number;
 }
 
-export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+export function KanbanColumn({ stage, leads, onLeadClick, isOver, insertIndex = -1 }: KanbanColumnProps) {
+  const { setNodeRef } = useDroppable({
     id: `column-${stage.id}`,
   });
 
@@ -23,7 +25,6 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
       {/* Column Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2.5">
-          {/* Status color indicator */}
           <div
             className="h-2.5 w-2.5 rounded-full"
             style={{ backgroundColor: stage.color }}
@@ -47,21 +48,32 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
       {/* Cards */}
       <div
         ref={setNodeRef}
+        data-droppable={`column-${stage.id}`}
         className={cn(
           "flex min-h-[200px] flex-col gap-2 p-3 transition-colors",
+          isOver && "bg-muted/10"
         )}
       >
-        {leads.map((lead) => (
-          <KanbanCard key={lead.id} lead={lead} onClick={() => onLeadClick?.(lead.id)} />
+        {leads.map((lead, idx) => (
+          <div key={lead.id} className="relative">
+            {/* Insertion line before this card */}
+            {isOver && insertIndex === idx && (
+              <div className="absolute -top-[5px] left-0 right-0 z-10 flex items-center">
+                <div className="h-[3px] flex-1 rounded-full bg-primary" />
+              </div>
+            )}
+            <KanbanCard lead={lead} onClick={() => onLeadClick?.(lead.id)} />
+          </div>
         ))}
 
-        {/* Drop indicator — only shown when dragging over this column */}
-        {isOver && (
-          <div className="shrink-0 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 px-3 py-6">
-            <p className="text-xs text-center text-muted-foreground">Drop here</p>
+        {/* Insertion line at the bottom of the list */}
+        {isOver && insertIndex === leads.length && (
+          <div className="flex items-center">
+            <div className="h-[3px] flex-1 rounded-full bg-primary" />
           </div>
         )}
 
+        {/* Empty column state */}
         {leads.length === 0 && !isOver && (
           <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed p-6">
             <p className="text-xs text-muted-foreground">Drop leads here</p>
