@@ -435,7 +435,7 @@ export default function LeadsPage() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [activeWorkspace?.id]);
+  }, [activeWorkspace?.id, leads.length]);
 
   return (
     <RequireModuleAccess moduleId="leads">

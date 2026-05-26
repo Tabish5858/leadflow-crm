@@ -38,17 +38,19 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
       {...listeners}
       ref={setNodeRef}
       style={style}
-      onClick={() => onClick?.()}
-      onKeyDown={(e) => { if (e.key === "Enter") onClick?.(); }}
-      role="button"
-      tabIndex={0}
       className={cn(
         "group rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/20 hover:scale-[1.01] cursor-grab active:cursor-grabbing active:scale-[0.99]",
         dragging && "shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-[1.02]"
       )}
     >
-      {/* Content */}
-      <div className="space-y-2">
+      {/* Content — click opens detail, drag-and-drop moves cards */}
+      <div
+        className="space-y-2"
+        onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onClick?.(); } }}
+        role="button"
+        tabIndex={0}
+      >
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7 border">
             <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
