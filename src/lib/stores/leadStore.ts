@@ -207,16 +207,22 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   },
 
   updateStatus: async (id: string, status: string) => {
+    // Optimistic update: move card immediately in UI, then sync to Firestore in background
+    const prevLeads = get().leads;
+    const prevFiltered = get().filteredLeads;
+
+    set((state) => ({
+      leads: state.leads.map((l) => (l.id === id ? { ...l, status } : l)),
+      filteredLeads: state.filteredLeads.map((l) => (l.id === id ? { ...l, status } : l)),
+    }));
+
     try {
       await updateLead(id, { status });
-      set((state) => ({
-        leads: state.leads.map((l) => (l.id === id ? { ...l, status } : l)),
-        filteredLeads: state.filteredLeads.map((l) => (l.id === id ? { ...l, status } : l)),
-      }));
     } catch (error: unknown) {
+      // Revert on failure
+      set({ leads: prevLeads, filteredLeads: prevFiltered });
       const message = error instanceof Error ? error.message : "Failed to update status";
       set({ error: message });
-      throw error;
     }
   },
 
