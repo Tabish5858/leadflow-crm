@@ -315,11 +315,23 @@ function AcceptInviteContent() {
 
   if (phase === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading invitation...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-14 w-14 rounded-full bg-muted animate-pulse" />
+            </div>
+            <div className="h-6 w-40 bg-muted rounded animate-pulse mx-auto mb-2" />
+            <div className="h-4 w-56 bg-muted rounded animate-pulse mx-auto" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+            </div>
+            <div className="h-10 w-full bg-muted rounded animate-pulse" />
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -23,10 +23,6 @@ import { canCreateWorkspace } from "@/lib/workspace-permissions";
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [resetEmail, setResetEmail] = useState("");
-  const [showReset, setShowReset] = useState(false);
-  const [resetSending, setResetSending] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
 
   const getPostLoginRedirect = async (uid: string): Promise<string> => {
     try {
@@ -67,32 +63,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    const email = resetEmail.trim() || formData.email.trim();
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    setResetSending(true);
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to send reset email");
-        return;
-      }
-      setResetSent(true);
-      toast.success("Password reset email sent! Check your inbox.");
-    } catch {
-      toast.error("Failed to send reset email. Please try again.");
-    } finally {
-      setResetSending(false);
-    }
-  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -250,13 +220,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <button
-                    type="button"
-                    onClick={() => { setShowReset(!showReset); setResetSent(false); }}
+                  <Link
+                    href="/forgot-password"
                     className="text-xs font-medium text-primary hover:underline"
                   >
                     Forgot password?
-                  </button>
+                  </Link>
                 </div>
                 <Input
                   id="password"
@@ -269,55 +238,6 @@ export default function LoginPage() {
                   autoComplete="current-password"
                 />
               </div>
-
-              {/* Password Reset Inline */}
-              {showReset && (
-                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  {resetSent ? (
-                    <div className="text-sm text-center py-1">
-                      <p className="font-medium text-green-600 dark:text-green-400">
-                        Reset email sent!
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Check your inbox for the password reset link.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <Label className="text-xs font-medium">
-                        Reset your password
-                      </Label>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className="text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => setShowReset(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="flex-1"
-                          onClick={handleForgotPassword}
-                          disabled={resetSending}
-                        >
-                          {resetSending ? "Sending..." : "Send Reset Link"}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing in..." : "Sign In"}
