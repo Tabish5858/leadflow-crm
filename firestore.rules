@@ -24,13 +24,28 @@ service cloud.firestore {
         getWorkspace(workspaceId).memberIds.hasAny([request.auth.uid]);
     }
 
-    // Helper: check user role in workspace
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    // Helper: get user document data
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Helper: check effective workspace role (workspaceRoles map first, fallback to top-level role)
+    function getWorkspaceRole(workspaceId) {
+      let userData = getUserData();
+      let workspaceRoles = userData.workspaceRoles;
+      // Check workspaceRoles map first, fallback to top-level role field
+      return workspaceRoles != null && workspaceRoles[workspaceId] != null
+        ? workspaceRoles[workspaceId]
+        : userData.role;
     }
 
     function hasRole(workspaceId, role) {
-      return isWorkspaceMember(workspaceId) && getUserRole() == role;
+      return isWorkspaceMember(workspaceId) && getWorkspaceRole(workspaceId) == role;
+    }
+
+    // Helper: check if user is NOT a viewer (can write)
+    function canWrite(workspaceId) {
+      return isWorkspaceMember(workspaceId) && getWorkspaceRole(workspaceId) != 'viewer';
     }
 
     // Users collection
@@ -59,9 +74,8 @@ service cloud.firestore {
     match /workspace_invites/{inviteId} {
       // Anyone can read invites (needed for invite acceptance)
       allow read: if isAuthenticated();
-      // Only workspace members/admins/owners can create invites
-      allow create: if isAuthenticated() &&
-        isWorkspaceMember(request.resource.data.workspaceId);
+      // Only workspace members with write access can create invites
+      allow create: if canWrite(request.resource.data.workspaceId);
       // Only the invited user or workspace admin can update
       allow update: if isAuthenticated();
       // Only workspace owner/admin can delete
@@ -73,8 +87,8 @@ service cloud.firestore {
     // Leads
     match /leads/{leadId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
@@ -82,7 +96,7 @@ service cloud.firestore {
     // Activities
     match /activities/{activityId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
       allow update, delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
@@ -90,8 +104,8 @@ service cloud.firestore {
     // Tasks
     match /tasks/{taskId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
@@ -99,8 +113,8 @@ service cloud.firestore {
     // Time entries
     match /timeEntries/{entryId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId) &&
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId) &&
         resource.data.userId == request.auth.uid;
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
@@ -124,49 +138,49 @@ service cloud.firestore {
     // Conversations (messages module)
     match /conversations/{conversationId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId);
     }
 
     // Messages
     match /messages/{messageId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId);
     }
 
     // Meetings
     match /meetings/{meetingId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId);
     }
 
     // Meeting Types
     match /meeting_types/{typeId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId);
     }
 
     // Documents (Cloudinary metadata)
     match /documents/{documentId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId);
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId);
     }
 
     // Emails
     match /emails/{emailId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if isWorkspaceMember(request.resource.data.workspaceId);
-      allow update: if isWorkspaceMember(resource.data.workspaceId);
-      allow delete: if isWorkspaceMember(resource.data.workspaceId) ||
+      allow create: if canWrite(request.resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId);
+      allow delete: if canWrite(resource.data.workspaceId) ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
