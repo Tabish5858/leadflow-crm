@@ -81,6 +81,7 @@ import {
   UserCircle,
   UserCog,
   Users,
+  RefreshCw,
   XCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -299,7 +300,15 @@ export default function SettingsPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to send invite");
+        // Handle known enterprise error codes
+        if (data.code === "duplicate_pending") {
+          toast.error("An invitation has already been sent to this email. You can resend it from the pending invites list.");
+          // Refresh to show the existing pending invite
+          const updated = await getPendingInvitesForWorkspace(activeWorkspace.id);
+          setPendingInvites(updated);
+        } else {
+          toast.error(data.error || "Failed to send invite");
+        }
         return;
       }
 
@@ -327,6 +336,54 @@ export default function SettingsPage() {
       setPendingInvites((prev) => prev.filter((i) => i.id !== inviteId));
     } catch {
       toast.error("Failed to cancel invite");
+    }
+  };
+
+  const handleResendInvite = async (invite: WorkspaceInvite) => {
+    if (!activeWorkspace || !firebaseUser) return;
+    const toastId = toast.loading("Resending invitation...");
+    try {
+      const res = await fetch("/api/workspaces/invite/resend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": firebaseUser.uid,
+          "x-workspace-id": activeWorkspace.id,
+        },
+        body: JSON.stringify({ inviteId: invite.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.dismiss(toastId);
+        if (data.code === "resend_cooldown") {
+          toast.error(data.error);
+        } else {
+          toast.error(data.error || "Failed to resend invitation");
+        }
+        return;
+      }
+
+      toast.dismiss(toastId);
+      toast.success(
+        data.emailSent
+          ? `Invitation re-sent to ${invite.email}`
+          : `Invitation re-sent to ${invite.email} (email sending not configured)`
+      );
+
+      // Refresh expiry date in local state
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      setPendingInvites((prev) =>
+        prev.map((i) =>
+          i.id === invite.id
+            ? { ...i, expiresAt: { ...i.expiresAt, toDate: () => expiresAt } as any }
+            : i
+        )
+      );
+    } catch {
+      toast.dismiss(toastId);
+      toast.error("Failed to resend invitation");
     }
   };
 
@@ -830,15 +887,25 @@ export default function SettingsPage() {
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleCancelInvite(invite.id, invite.email)}
-                        >
-                          <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                          Cancel
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResendInvite(invite)}
+                          >
+                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                            Resend
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleCancelInvite(invite.id, invite.email)}
+                          >
+                            <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
