@@ -1,7 +1,5 @@
 rules_version = '2';
 
-// Auto-deployed via GitHub Actions — see .github/workflows/deploy-firestore.yml
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
