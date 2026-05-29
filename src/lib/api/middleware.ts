@@ -1,6 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import type { ModuleId } from "@/types";
 import { canAccessModule } from "@/lib/permissions";
 
@@ -38,8 +38,7 @@ async function verifyFirebaseToken(
   }
 
   try {
-    const { getAuth } = await import("firebase-admin/auth");
-    const decoded = await getAuth().verifyIdToken(token);
+    const decoded = await getAdminAuth().verifyIdToken(token);
     return { uid: decoded.uid };
   } catch (err) {
     const message =

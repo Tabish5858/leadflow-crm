@@ -1,4 +1,4 @@
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -29,33 +29,7 @@ export async function POST(req: NextRequest) {
     // so we can verify the account exists
     let uid: string | null = null;
     try {
-      const { getAuth } = await import("firebase-admin/auth");
-      // Ensure Admin SDK is initialized (it's already in getAdminDb but auth needs separate init)
-      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
-
-      if (!process.env.FIREBASE_ADMIN_CLIENT_EMAIL || !process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        return NextResponse.json(
-          { error: "Password reset is not configured on this server" },
-          { status: 500 },
-        );
-      }
-
-      const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n");
-      const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
-
-      if (getApps().length === 0) {
-        initializeApp({
-          projectId,
-          credential: cert({
-            projectId,
-            clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-            privateKey,
-          }),
-        });
-      }
-
-      const auth = getAuth();
-      const userRecord = await auth.getUserByEmail(normalizedEmail);
+      const userRecord = await getAdminAuth().getUserByEmail(normalizedEmail);
       uid = userRecord.uid;
     } catch (err: unknown) {
       // If user not found in Firebase Auth, still send a generic response

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
 const RESET_TOKENS_COLLECTION = "password_reset_tokens";
 
@@ -61,32 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const { getAuth } = await import("firebase-admin/auth");
-      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
-
-      if (!process.env.FIREBASE_ADMIN_CLIENT_EMAIL || !process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        return NextResponse.json(
-          { error: "Password reset is not configured on this server" },
-          { status: 500 }
-        );
-      }
-
-      const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n");
-      const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
-
-      if (getApps().length === 0) {
-        initializeApp({
-          projectId,
-          credential: cert({
-            projectId,
-            clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-            privateKey,
-          }),
-        });
-      }
-
-      const auth = getAuth();
-      await auth.updateUser(data.uid, { password: newPassword });
+      await getAdminAuth().updateUser(data.uid, { password: newPassword });
     } catch (err: unknown) {
       console.error("Failed to update password:", err);
       return NextResponse.json(
