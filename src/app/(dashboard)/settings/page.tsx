@@ -381,16 +381,11 @@ export default function SettingsPage() {
           : `Invitation re-sent to ${invite.email} (email sending not configured)`
       );
 
-      // Refresh expiry date in local state
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      setPendingInvites((prev) =>
-        prev.map((i) =>
-          i.id === invite.id
-            ? { ...i, expiresAt: { ...i.expiresAt, toDate: () => expiresAt } as any }
-            : i
-        )
-      );
+      // Refresh pending invites list to get updated expiry
+      if (activeWorkspace) {
+        const updated = await getPendingInvitesForWorkspace(activeWorkspace.id);
+        setPendingInvites(updated);
+      }
     } catch {
       toast.error("Failed to resend invitation");
     } finally {
