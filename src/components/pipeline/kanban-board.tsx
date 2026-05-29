@@ -162,7 +162,11 @@ export function KanbanBoard({ onLeadClick }: { onLeadClick?: (leadId: string) =>
       <DragOverlay>
         {activeLead ? (
           <div className="w-72">
-            <KanbanCard lead={activeLead} isDragging />
+            <KanbanCard
+              lead={activeLead}
+              stageProbability={stages.find((s) => s.name === activeLead.status)?.probability}
+              isDragging
+            />
           </div>
         ) : null}
       </DragOverlay>

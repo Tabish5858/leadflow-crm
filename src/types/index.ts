@@ -197,6 +197,7 @@ export interface Lead {
   updatedAt: Timestamp;
   lastContactedAt: Timestamp | null;
   nextFollowUpAt: Timestamp | null;
+  expectedCloseAt: Timestamp | null;
   createdBy: string;
   sr?: number;
 }

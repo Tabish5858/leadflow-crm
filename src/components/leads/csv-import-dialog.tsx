@@ -187,6 +187,7 @@ export function CsvImportDialog({
         attachments: [],
         lastContactedAt: null,
         nextFollowUpAt: null,
+        expectedCloseAt: null,
         createdBy: "", // Will be set by caller
       });
     }

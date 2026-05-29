@@ -18,6 +18,7 @@ const CSV_HEADERS = [
   "City",
   "Tags",
   "Notes",
+  "Expected Close Date",
 ];
 
 const CSV_HEADER_MAP: Record<string, keyof Lead> = {
@@ -38,6 +39,7 @@ const CSV_HEADER_MAP: Record<string, keyof Lead> = {
   city: "city",
   tags: "tags",
   notes: "notes",
+  "expected close date": "expectedCloseAt",
 };
 
 export function leadsToCsv(leads: Lead[], customFields: CustomField[] = []): string {

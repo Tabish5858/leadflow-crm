@@ -123,6 +123,7 @@ export default function LeadsPage() {
     value: "Value",
     created: "Created",
     score: "Score",
+    expectedClose: "Expected Close",
   };
 
   const STANDARD_TOGGLEABLE = Object.keys(COLUMN_LABELS);
@@ -887,6 +888,15 @@ export default function LeadsPage() {
                                 size="sm"
                               />
                             )}
+                          </td>
+                        );
+                      }
+                      if (colId === "expectedClose") {
+                        return (
+                          <td key="expectedClose" className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
+                            {lead.expectedCloseAt
+                              ? formatDate(lead.expectedCloseAt.toDate())
+                              : "—"}
                           </td>
                         );
                       }

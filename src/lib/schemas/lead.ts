@@ -18,6 +18,7 @@ export const leadSchema = z.object({
   currency: z.string().default("USD"),
   tags: z.array(z.string()).default([]),
   notes: z.string().optional().or(z.literal("")),
+  expectedCloseAt: z.string().optional().or(z.literal("")),
 });
 
 export type LeadFormData = z.infer<typeof leadSchema>;

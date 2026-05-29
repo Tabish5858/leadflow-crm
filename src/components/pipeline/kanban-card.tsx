@@ -6,15 +6,35 @@ import type { Lead } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
-import { Building2, DollarSign } from "lucide-react";
+import { Building2, Calendar, DollarSign } from "lucide-react";
 
 interface KanbanCardProps {
   lead: Lead;
+  stageProbability?: number;
   isDragging?: boolean;
   onClick?: () => void;
 }
 
-export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
+/** Color-code a value badge by range */
+function valueColor(value: number): string {
+  if (value >= 50000) return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+  if (value >= 10000) return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+  if (value >= 1000) return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+  return "bg-muted text-muted-foreground";
+}
+
+/** Format a Firestore Timestamp for display */
+function formatDate(ts: { toDate?: () => Date; seconds?: number } | null): string | null {
+  if (!ts) return null;
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date((ts as { seconds: number }).seconds * 1000);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return null;
+  }
+}
+
+export function KanbanCard({ lead, stageProbability, isDragging, onClick }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -30,6 +50,8 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     opacity: isDragged ? 0 : 1,
     transition: "transform 200ms ease",
   };
+
+  const closeDateStr = formatDate(lead.expectedCloseAt);
 
   return (
     <div
@@ -69,11 +91,29 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
           </div>
         </div>
 
-        {/* Value */}
-        {lead.value && lead.value > 0 && (
-          <div className="flex items-center gap-1 text-xs font-semibold text-success">
-            <DollarSign className="h-3 w-3" />
-            {formatCurrency(lead.value, lead.currency)}
+        {/* Value + Probability row */}
+        <div className="flex items-center gap-2">
+          {lead.value && lead.value > 0 && (
+            <span className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+              valueColor(lead.value)
+            )}>
+              <DollarSign className="h-3 w-3" />
+              {formatCurrency(lead.value, lead.currency)}
+            </span>
+          )}
+          {stageProbability !== undefined && stageProbability > 0 && (
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {stageProbability}%
+            </span>
+          )}
+        </div>
+
+        {/* Expected close date */}
+        {closeDateStr && (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>Close: {closeDateStr}</span>
           </div>
         )}
 
