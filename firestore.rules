@@ -1,5 +1,7 @@
 rules_version = '2';
 
+// Deployed via GitHub Actions CI/CD
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
