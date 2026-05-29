@@ -165,6 +165,7 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         attachments: [],
         lastContactedAt: null,
         nextFollowUpAt: null,
+        expectedCloseAt: data.expectedCloseAt ? Timestamp.fromDate(new Date(data.expectedCloseAt)) : null,
         createdBy: userId,
       });
       // Append new lead to local state (no reload needed)
@@ -196,6 +197,7 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         attachments: [],
         lastContactedAt: null,
         nextFollowUpAt: null,
+        expectedCloseAt: data.expectedCloseAt ? Timestamp.fromDate(new Date(data.expectedCloseAt)) : null,
         createdBy: userId,
         createdAt: now,
         updatedAt: now,
@@ -240,6 +242,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
       if (data.currency !== undefined) updateData.currency = data.currency;
       if (data.tags !== undefined) updateData.tags = data.tags;
       if (data.notes !== undefined) updateData.notes = data.notes || null;
+      if (data.expectedCloseAt !== undefined)
+        updateData.expectedCloseAt = data.expectedCloseAt
+          ? Timestamp.fromDate(new Date(data.expectedCloseAt))
+          : null;
 
       await updateLead(id, updateData);
 

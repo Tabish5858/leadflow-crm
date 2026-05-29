@@ -53,6 +53,7 @@ import {
   User,
   FileText,
   Calendar,
+  CalendarCheck,
   Trash2,
   ExternalLink,
   Copy,
@@ -490,6 +491,17 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
                 icon={<DollarSign className="h-4 w-4" />}
                 label="Deal Value"
                 value={formatCurrency(lead.value, lead.currency)}
+              />
+            )}
+            {lead.expectedCloseAt && (
+              <InfoItem
+                icon={<CalendarCheck className="h-4 w-4" />}
+                label="Expected Close"
+                value={lead.expectedCloseAt.toDate().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               />
             )}
           </div>

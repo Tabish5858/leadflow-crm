@@ -18,7 +18,7 @@ import {
   getCountFromServer,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import type { Lead } from "@/types";
+import type { Lead, PipelineStage } from "@/types";
 
 const LEADS_COLLECTION = "leads";
 
@@ -188,28 +188,48 @@ export function subscribeToLeads(
 
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
-export async function getLeadStats(workspaceId: string): Promise<{
+export async function getLeadStats(
+  workspaceId: string,
+  stages?: PipelineStage[],
+): Promise<{
   total: number;
   byStatus: Record<string, number>;
   totalValue: number;
+  forecastedRevenue: number;
 }> {
   const leadsRef = collection(db, LEADS_COLLECTION);
   const q = query(leadsRef, where("workspaceId", "==", workspaceId));
   const snapshot = await getDocs(q);
 
+  // Build stage name → probability map
+  const stageProbMap: Record<string, number> = {};
+  if (stages) {
+    stages.forEach((s) => { stageProbMap[s.name] = s.probability; });
+  }
+
   let totalValue = 0;
+  let forecastedRevenue = 0;
   const byStatus: Record<string, number> = {};
+  const wonOrLost = new Set(["won", "lost"]);
 
   snapshot.docs.forEach((docSnap) => {
     const lead = docSnap.data() as Lead;
-    totalValue += lead.value || 0;
+    const val = lead.value || 0;
+    totalValue += val;
     const status = lead.status || "unknown";
     byStatus[status] = (byStatus[status] || 0) + 1;
+
+    // Weighted forecast: exclude won/lost, apply stage probability
+    if (!wonOrLost.has(status) && val > 0) {
+      const prob = stageProbMap[status] ?? 0;
+      forecastedRevenue += (val * prob) / 100;
+    }
   });
 
   return {
     total: snapshot.size,
     byStatus,
     totalValue,
+    forecastedRevenue,
   };
 }

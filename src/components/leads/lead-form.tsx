@@ -59,6 +59,7 @@ export function LeadForm({ onSuccess, userId, workspaceId, defaultValues, custom
       website: defaultValues?.website || "",
       linkedin: defaultValues?.linkedin || "",
       value: defaultValues?.value || 0,
+      expectedCloseAt: defaultValues?.expectedCloseAt || "",
       currency: defaultValues?.currency || "USD",
       tags: defaultValues?.tags || [],
       notes: defaultValues?.notes || "",
@@ -236,6 +237,20 @@ export function LeadForm({ onSuccess, userId, workspaceId, defaultValues, custom
         <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
           <Input id="website" {...form.register("website")} placeholder="https://example.com" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="expectedCloseAt">Expected Close Date</Label>
+          <Input
+            id="expectedCloseAt"
+            type="date"
+            {...form.register("expectedCloseAt")}
+          />
+        </div>
+        <div className="space-y-2">
+          {/* spacer */ }
         </div>
       </div>
 

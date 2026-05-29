@@ -123,6 +123,7 @@ export default function LeadsPage() {
     value: "Value",
     created: "Created",
     score: "Score",
+    expectedClose: "Expected Close",
   };
 
   const STANDARD_TOGGLEABLE = Object.keys(COLUMN_LABELS);
@@ -161,7 +162,7 @@ export default function LeadsPage() {
   const allCustomPrefixed = allCustomFields
     .filter((cf) => cf.name !== "SR.")
     .map((cf) => `cf_${cf.id}`);
-  const defaultOrder = ["sr", "name", "company", "website", "country", "status", "value", ...allCustomPrefixed, "created", "score"];
+  const defaultOrder = ["sr", "name", "company", "website", "country", "status", "value", "expectedClose", ...allCustomPrefixed, "created", "score"];
 
   const effectiveOrder = useMemo(() => {
     // If saved order is missing any standard column, reset to default
@@ -656,11 +657,11 @@ export default function LeadsPage() {
                       ? cf?.name || colId
                       : COLUMN_LABELS[colId] || colId;
                     const minWidth = isCustom ? 120 : STANDARD_TOGGLEABLE.includes(colId)
-                      ? ({ name: 180, company: 140, website: 140, status: 120, value: 100, created: 120, score: 90 } as Record<string, number>)[colId] || 72
+                      ? ({ name: 180, company: 140, website: 140, status: 120, value: 100, expectedClose: 120, created: 120, score: 90 } as Record<string, number>)[colId] || 72
                       : 72;
                     const responsiveClass = isCustom
                       ? "hidden lg:table-cell"
-                      : ({ name: "", company: "hidden md:table-cell", website: "hidden md:table-cell", status: "hidden lg:table-cell", value: "hidden lg:table-cell", created: "hidden xl:table-cell", score: "" } as Record<string, string>)[colId] || "";
+                      : ({ name: "", company: "hidden md:table-cell", website: "hidden md:table-cell", status: "hidden lg:table-cell", value: "hidden lg:table-cell", expectedClose: "hidden xl:table-cell", created: "hidden xl:table-cell", score: "" } as Record<string, string>)[colId] || "";
 
                     return (
                       <SortableColumnHeader
@@ -887,6 +888,15 @@ export default function LeadsPage() {
                                 size="sm"
                               />
                             )}
+                          </td>
+                        );
+                      }
+                      if (colId === "expectedClose") {
+                        return (
+                          <td key="expectedClose" className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
+                            {lead.expectedCloseAt
+                              ? formatDate(lead.expectedCloseAt.toDate())
+                              : "—"}
                           </td>
                         );
                       }

@@ -34,6 +34,11 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver, insertIndex = 
             {leads.length}
           </span>
         </div>
+        {stage.probability > 0 && (
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {stage.probability}% win rate
+          </span>
+        )}
       </div>
 
       {/* Column Total */}
@@ -62,7 +67,7 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver, insertIndex = 
                 <div className="h-[3px] flex-1 rounded-full bg-primary" />
               </div>
             )}
-            <KanbanCard lead={lead} onClick={() => onLeadClick?.(lead.id)} />
+            <KanbanCard lead={lead} stageProbability={stage.probability} onClick={() => onLeadClick?.(lead.id)} />
           </div>
         ))}
 

@@ -17,13 +17,14 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { getLeadStats } from "@/lib/firebase/firestore";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { formatCurrency } from "@/lib/utils";
-import { DollarSign, Plus, Target, TrendingUp, Users } from "lucide-react";
+import { BarChart3, DollarSign, Plus, Target, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Stats {
   total: number;
   totalValue: number;
+  forecastedRevenue: number;
   byStatus: Record<string, number>;
 }
 
@@ -37,7 +38,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!activeWorkspace) return;
-    getLeadStats(activeWorkspace.id)
+    getLeadStats(activeWorkspace.id, activeWorkspace.pipeline?.stages)
       .then((data) => {
         setStats(data);
       })
@@ -106,7 +107,7 @@ export default function DashboardPage() {
     <RequireModuleAccess moduleId="dashboard">
       <div className="space-y-6">
         {/* KPI Cards — filtered by module access */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {canAccess("leads") && (
             <StatCard
               title="Total Leads"
@@ -131,12 +132,20 @@ export default function DashboardPage() {
               accentColor="success"
             />
           )}
+          {canAccess("pipeline") && (
+            <StatCard
+              title="Forecasted Revenue"
+              value={formatCurrency(stats?.forecastedRevenue ?? 0)}
+              icon={<BarChart3 className="h-5 w-5" />}
+              accentColor="warning"
+            />
+          )}
           {canAccess("analytics") && (
             <StatCard
               title="Conversion Rate"
               value={`${conversionRate}%`}
               icon={<TrendingUp className="h-5 w-5" />}
-              accentColor="warning"
+              accentColor="info"
             />
           )}
         </div>
