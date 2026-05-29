@@ -59,6 +59,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { DocumentManager } from "@/components/leads/document-manager";
+import { getApiAuthHeaders } from "@/lib/api/client";
 
 interface LeadDetailProps {
   leadId: string;
@@ -203,8 +204,7 @@ export function LeadDetail({ leadId }: LeadDetailProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": user.id,
-          "x-workspace-id": activeWorkspace.id,
+          ...(await getApiAuthHeaders(activeWorkspace.id)),
         },
         body: JSON.stringify({
           leadId: lead.id,

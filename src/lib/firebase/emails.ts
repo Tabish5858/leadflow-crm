@@ -8,6 +8,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { getApiAuthHeaders } from "@/lib/api/client";
 
 const EMAILS_COLLECTION = "emails";
 
@@ -40,8 +41,7 @@ export async function sendEmail(data: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-user-id": data.createdBy,
-      "x-workspace-id": data.workspaceId,
+      ...(await getApiAuthHeaders(data.workspaceId)),
     },
     body: JSON.stringify({
       to: data.to,

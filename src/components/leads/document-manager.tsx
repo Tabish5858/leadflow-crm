@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatFileSize, getFileIcon, canPreview } from "@/lib/documents";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "@/lib/cloudinary";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import {
   Upload,
   Download,
@@ -84,10 +85,7 @@ export function DocumentManager({
   const fetchDocuments = useCallback(async () => {
     try {
       const res = await fetch(`/api/documents/list?leadId=${leadId}&workspaceId=${workspaceId}`, {
-        headers: {
-          "x-user-id": userId,
-          "x-workspace-id": workspaceId,
-        },
+        headers: await getApiAuthHeaders(workspaceId),
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
@@ -194,7 +192,6 @@ export function DocumentManager({
 
             xhr.addEventListener("error", () => reject(new Error("Network error")));
             xhr.open("POST", "/api/documents/upload");
-            xhr.setRequestHeader("x-user-id", userId);
             xhr.setRequestHeader("x-workspace-id", workspaceId);
             xhr.send(formData);
           });
@@ -255,8 +252,7 @@ export function DocumentManager({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": userId,
-          "x-workspace-id": workspaceId,
+          ...(await getApiAuthHeaders(workspaceId)),
         },
         body: JSON.stringify({ documentId }),
       });

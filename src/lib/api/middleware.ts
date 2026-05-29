@@ -11,8 +11,56 @@ export interface AuthContext {
 }
 
 /**
+ * Verifies the Firebase ID token from the Authorization header and extracts
+ * the authenticated user ID. Returns the verified uid or a NextResponse error.
+ */
+async function verifyFirebaseToken(
+  req: NextRequest
+): Promise<{ uid: string } | NextResponse> {
+  const authHeader = req.headers.get("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json(
+      {
+        error:
+          "Authentication required. Provide Authorization: Bearer <firebase-id-token>.",
+      },
+      { status: 401 }
+    );
+  }
+
+  const token = authHeader.slice(7); // Strip "Bearer "
+  if (!token) {
+    return NextResponse.json(
+      { error: "Empty token provided." },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { getAuth } = await import("firebase-admin/auth");
+    const decoded = await getAuth().verifyIdToken(token);
+    return { uid: decoded.uid };
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? `Invalid or expired token: ${err.message}`
+        : "Invalid or expired token.";
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+}
+
+/**
  * Verifies that the request comes from an authenticated user who belongs
  * to the specified workspace. Optionally checks module-level permissions.
+ *
+ * Requires:
+ *   - Authorization: Bearer <firebase-id-token> header
+ *   - x-workspace-id header
+ *
+ * The token is verified via Firebase Admin SDK. The user ID from the
+ * decoded token is authoritative — the x-user-id header is NOT used
+ * (and is ignored) to prevent impersonation attacks.
  *
  * Returns `AuthContext` on success or a `NextResponse` error on failure.
  */
@@ -20,15 +68,13 @@ export async function requireAuth(
   req: NextRequest,
   moduleId?: ModuleId
 ): Promise<AuthContext | NextResponse> {
-  const userId = req.headers.get("x-user-id");
   const workspaceId = req.headers.get("x-workspace-id");
 
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Authentication required. Provide x-user-id header." },
-      { status: 401 }
-    );
-  }
+  // Step 1: Verify Firebase ID token — this gives us the trusted userId
+  const tokenResult = await verifyFirebaseToken(req);
+  if (tokenResult instanceof NextResponse) return tokenResult;
+  const userId = tokenResult.uid;
+
   if (!workspaceId) {
     return NextResponse.json(
       { error: "Workspace ID required. Provide x-workspace-id header." },
@@ -36,7 +82,7 @@ export async function requireAuth(
     );
   }
 
-  // Verify user exists
+  // Step 2: Verify user exists in Firestore
   const userSnap = await getAdminDb().collection("users").doc(userId).get();
 
   if (!userSnap.exists) {
@@ -51,7 +97,7 @@ export async function requireAuth(
     userData.workspaceRoles || {};
   let role = workspaceRoles[workspaceId] || null;
 
-  // Fetch workspace once (used for fallback role + module permissions)
+  // Step 3: Fetch workspace once (used for fallback role + module permissions)
   const workspaceSnap = await getAdminDb().collection("workspaces").doc(workspaceId).get();
   const workspaceData = workspaceSnap.exists ? workspaceSnap.data() : null;
 
@@ -75,7 +121,7 @@ export async function requireAuth(
     );
   }
 
-  // Module-level permission check (owner/admin bypass)
+  // Step 4: Module-level permission check (owner/admin bypass)
   if (moduleId && role !== "owner" && role !== "admin" && workspaceData) {
     const modulePermissions = workspaceData.modulePermissions || null;
 

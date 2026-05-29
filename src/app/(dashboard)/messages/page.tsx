@@ -9,6 +9,7 @@ import { NewConversationDialog } from "@/components/messages/new-conversation-di
 import { NewGroupDialog } from "@/components/messages/new-group-dialog";
 import { NewMemberConversationDialog } from "@/components/messages/new-member-conversation-dialog";
 import { RequireModuleAccess } from "@/components/shared/require-module-access";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -379,12 +380,12 @@ export default function MessagesPage() {
       formData.append("file", file);
       formData.append("leadId", selected?.leadId || "");
 
+      const authHeaders = activeWorkspace?.id
+        ? await getApiAuthHeaders(activeWorkspace.id)
+        : {};
       const res = await fetch("/api/documents/upload", {
         method: "POST",
-        headers: {
-          "x-user-id": user?.id || "",
-          "x-workspace-id": activeWorkspace?.id || "",
-        },
+        headers: authHeaders,
         body: formData,
       });
 

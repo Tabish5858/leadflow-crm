@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar, Loader2, AlertCircle, Video } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { getApiAuthHeaders } from "@/lib/api/client";
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -50,10 +51,7 @@ export function CreateMeetingDialog({
       try {
         // Step 1: Check if Google Calendar is connected
         const statusRes = await fetch(`/api/calendar/status`, {
-          headers: {
-            "x-user-id": userId,
-            "x-workspace-id": workspaceId,
-          },
+          headers: await getApiAuthHeaders(workspaceId),
         });
         const statusData = await statusRes.json();
 
@@ -68,11 +66,7 @@ export function CreateMeetingDialog({
         setState("creating");
         const meetRes = await fetch("/api/meetings/instant", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId,
-            "x-workspace-id": workspaceId,
-          },
+          headers: await getApiAuthHeaders(workspaceId),
           body: JSON.stringify({
             attendees,
             conversationId,

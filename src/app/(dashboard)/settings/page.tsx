@@ -51,6 +51,7 @@ import {
   updateWorkspaceName,
 } from "@/lib/firebase/workspaces";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { toast } from "@/lib/toast";
@@ -287,12 +288,12 @@ export default function SettingsPage() {
     }
     setInviting(true);
     try {
+      const authHeaders = await getApiAuthHeaders(activeWorkspace.id);
       const res = await fetch("/api/workspaces/invite", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": firebaseUser.uid,
-          "x-workspace-id": activeWorkspace.id,
+          ...authHeaders,
         },
         body: JSON.stringify({
           email: inviteEmail.trim(),
@@ -355,12 +356,12 @@ export default function SettingsPage() {
     setProcessingInvites((prev) => new Set(prev).add(invite.id));
     toast.info("Resending invitation...");
     try {
+      const authHeaders = await getApiAuthHeaders(activeWorkspace.id);
       const res = await fetch("/api/workspaces/invite/resend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": firebaseUser.uid,
-          "x-workspace-id": activeWorkspace.id,
+          ...authHeaders,
         },
         body: JSON.stringify({ inviteId: invite.id }),
       });

@@ -30,6 +30,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiAuthHeaders } from "@/lib/api/client";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -305,8 +306,7 @@ export function MeetingTypeDialog({
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": userId,
-            "x-workspace-id": workspaceId,
+            ...(await getApiAuthHeaders(workspaceId)),
           },
           body: JSON.stringify(body),
         });
@@ -315,8 +315,7 @@ export function MeetingTypeDialog({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": userId,
-            "x-workspace-id": workspaceId,
+            ...(await getApiAuthHeaders(workspaceId)),
           },
           body: JSON.stringify(body),
         });

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { usePermissions } from "@/lib/hooks/use-permissions";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { MeetingTypeDialog } from "@/components/meetings/meeting-type-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,12 +84,10 @@ export default function MeetingTypesPage() {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
+      const authHeaders = await getApiAuthHeaders(activeWorkspace?.id);
       const res = await fetch(`/api/meetings/types/${id}`, {
         method: "DELETE",
-        headers: {
-          "x-user-id": user?.id || "",
-          "x-workspace-id": activeWorkspace?.id || "",
-        },
+        headers: authHeaders,
       });
       if (!res.ok) {
         const data = await res.json();

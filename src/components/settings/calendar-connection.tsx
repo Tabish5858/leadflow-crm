@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,27 +29,23 @@ export function CalendarConnection({ onConnect }: CalendarConnectionProps) {
   useEffect(() => {
     if (!user || !activeWorkspace) return;
 
-    fetch(`/api/calendar/events?maxResults=5`, {
-      headers: {
-        "x-user-id": user.id,
-        "x-workspace-id": activeWorkspace.id,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const headers = await getApiAuthHeaders(activeWorkspace.id);
+        const res = await fetch(`/api/calendar/events?maxResults=5`, { headers });
+        const data = await res.json();
         if (data.error && data.error.includes("not connected")) {
           setConnected(false);
           setEmail(null);
         } else {
           setConnected(true);
         }
-      })
-      .catch(() => {
+      } catch {
         setConnected(false);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    })();
   }, [user, activeWorkspace]);
 
   useEffect(() => {
@@ -76,11 +73,7 @@ export function CalendarConnection({ onConnect }: CalendarConnectionProps) {
     try {
       const res = await fetch("/api/calendar/events", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": user.id,
-          "x-workspace-id": activeWorkspace.id,
-        },
+        headers: await getApiAuthHeaders(activeWorkspace.id),
       });
 
       if (res.ok) {

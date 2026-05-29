@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/types";
 import type { WorkspaceMember } from "@/types";
+import { getApiAuthHeaders } from "@/lib/api/client";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -505,8 +506,7 @@ export function ScheduleMeetingDialog({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": userId,
-          "x-workspace-id": workspaceId,
+          ...(await getApiAuthHeaders(workspaceId)),
         },
         body: JSON.stringify({
           title: `${selectedType.name}${allAttendees.length > 0 ? ` — ${allAttendees[0].name || allAttendees[0].email}` : ""}`,
