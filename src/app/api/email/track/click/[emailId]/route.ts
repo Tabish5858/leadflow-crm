@@ -44,7 +44,7 @@ export async function GET(
     // Rate limit: max 50 clicks per email per 5 minutes (anti-abuse)
     const ip = getClientIp(req);
     if (!checkRateLimit(`click:${emailId}`, 50, 300_000)) {
-      return NextResponse.redirect(targetUrl, 302);
+      return NextResponse.redirect(new URL("/", req.url));
     }
 
     const emailRef = getAdminDb().collection(EMAILS_COLLECTION).doc(emailId);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const RESET_TOKENS_COLLECTION = "password_reset_tokens";
 
@@ -11,6 +12,15 @@ const RESET_TOKENS_COLLECTION = "password_reset_tokens";
  */
 export async function GET(req: NextRequest) {
   try {
+    // Rate limit: max 30 token verifications per IP per minute (cost protection)
+    const ip = getClientIp(req);
+    if (!checkRateLimit(`verifytoken:${ip}`, 30, 60_000)) {
+      return NextResponse.json(
+        { valid: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const token = req.nextUrl.searchParams.get("token");
 
     if (!token || typeof token !== "string") {

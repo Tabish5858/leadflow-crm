@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMeetingTypeByToken } from "@/lib/firebase/server-admin";
 import { computeAvailableSlots } from "@/lib/availability";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * GET /api/meetings/availability?token=<bookingToken>&date=2026-05-25
@@ -10,6 +11,15 @@ import { computeAvailableSlots } from "@/lib/availability";
  */
 export async function GET(req: NextRequest) {
   try {
+    // Rate limit: max 100 availability checks per IP per minute
+    const ip = getClientIp(req);
+    if (!checkRateLimit(`avail:ip:${ip}`, 100, 60_000)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const token = req.nextUrl.searchParams.get("token");
     const dateStr = req.nextUrl.searchParams.get("date");
 

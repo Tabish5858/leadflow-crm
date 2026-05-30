@@ -10,10 +10,19 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
  * No auth required — this is consumed by the public booking UI.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Rate limit: max 60 booking page loads per IP per minute
+    const ip = getClientIp(req);
+    if (!checkRateLimit(`bookget:ip:${ip}`, 60, 60_000)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { token } = await params;
     const meetingType = await getMeetingTypeByToken(token);
     if (!meetingType) {
