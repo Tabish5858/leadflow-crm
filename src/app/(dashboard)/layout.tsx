@@ -44,6 +44,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/analytics", label: "Analytics", icon: BarChart3, moduleId: "analytics" },
   { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
   { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
+  { href: "/calendar", label: "Calendar", icon: Calendar, moduleId: "meetings" },
   { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
   { href: "/settings", label: "Settings", icon: Settings, moduleId: "settings" },
 ];
