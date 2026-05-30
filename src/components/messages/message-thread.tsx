@@ -21,6 +21,7 @@ import { TooltipButton } from "@/components/ui/tooltip-button";
 import { Pencil, Trash2, X, Check, Smile, File as FileIcon, Download, Reply } from "lucide-react";
 import type { Message } from "@/types";
 import { MeetingCard } from "@/components/messages/meeting-card";
+import { VoiceMessage } from "@/components/messages/voice-message";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -292,7 +293,13 @@ export function MessageThread({
                       {/* File attachment */}
                       {msg.attachment && (
                         <div className="mb-2 max-w-[280px]">
-                          {msg.attachment.type === "image" ? (
+                          {msg.attachment.type === "voice" ? (
+                            <VoiceMessage
+                              url={msg.attachment.url}
+                              duration={msg.attachment.duration}
+                              isOwn={isOwn}
+                            />
+                          ) : msg.attachment.type === "image" ? (
                             <div className="group relative">
                               <a
                                 href={msg.attachment.url}

@@ -4,15 +4,17 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, Loader2, Paperclip, X, File, Reply } from "lucide-react";
+import { Send, Loader2, Paperclip, X, File, Reply, Mic } from "lucide-react";
+import { VoiceRecorder } from "./voice-recorder";
 
 interface MessageInputProps {
   onSend: (body: string, attachment?: {
-    type: "image" | "document";
+    type: "image" | "document" | "voice";
     url: string;
     name: string;
     size: number;
     mimeType: string;
+    duration?: number;
   }, replyTo?: string, replyPreview?: string) => Promise<void>;
   placeholder?: string;
   uploading?: boolean;
@@ -22,6 +24,7 @@ interface MessageInputProps {
   replyTo?: string | null;
   replyPreview?: string | null;
   onCancelReply?: () => void;
+  onVoiceRecording?: (blob: Blob, duration: number) => Promise<{ type: "voice"; url: string; name: string; size: number; mimeType: string; duration?: number }>;
 }
 
 export function MessageInput({
@@ -33,9 +36,12 @@ export function MessageInput({
   replyTo,
   replyPreview,
   onCancelReply,
+  onVoiceRecording,
 }: MessageInputProps) {
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [recording, setRecording] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +64,26 @@ export function MessageInput({
 
   const handleFileClick = useCallback(() => {
     fileInputRef.current?.click();
+  }, []);
+
+  const handleVoiceRecordingComplete = useCallback(
+    async (blob: Blob, duration: number) => {
+      if (!onVoiceRecording) return;
+      setRecording(false);
+      setShowVoiceRecorder(false);
+      try {
+        const attachment = await onVoiceRecording(blob, duration);
+        await onSend(`Voice message (${Math.round(duration)}s)`, attachment, replyTo || undefined, replyPreview || undefined);
+      } catch {
+        // Error handled by parent
+      }
+    },
+    [onVoiceRecording, onSend, replyTo, replyPreview]
+  );
+
+  const handleCancelVoice = useCallback(() => {
+    setShowVoiceRecorder(false);
+    setRecording(false);
   }, []);
 
   const isLoading = sending || uploading;
@@ -102,6 +128,14 @@ export function MessageInput({
         </div>
       )}
 
+      {/* Voice recorder */}
+      {showVoiceRecorder && (
+        <VoiceRecorder
+          onRecordingComplete={handleVoiceRecordingComplete}
+          onCancel={handleCancelVoice}
+        />
+      )}
+
       <form onSubmit={handleSubmit} className="flex gap-2">
         {/* File upload button */}
         <input
@@ -112,7 +146,6 @@ export function MessageInput({
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              // Pass file up to parent for upload + send
               const event = new CustomEvent("message-file-selected", { detail: file });
               window.dispatchEvent(event);
             }
@@ -125,11 +158,26 @@ export function MessageInput({
           size="icon"
           className="shrink-0"
           onClick={handleFileClick}
-          disabled={isLoading}
+          disabled={isLoading || recording}
           title="Attach file"
         >
           <Paperclip className="h-4 w-4" />
         </Button>
+
+        {/* Voice recorder toggle */}
+        {onVoiceRecording && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`shrink-0 ${recording ? "text-red-500" : ""}`}
+            onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+            disabled={isLoading}
+            title="Record voice message"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+        )}
 
         <Input
           ref={inputRef}
@@ -137,7 +185,7 @@ export function MessageInput({
           onChange={(e) => setValue(e.target.value)}
           placeholder={pendingFile ? "Add a caption (optional)..." : placeholder}
           className="flex-1"
-          disabled={isLoading}
+          disabled={isLoading || recording}
           autoComplete="off"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -148,7 +196,7 @@ export function MessageInput({
         />
         <Button
           type="submit"
-          disabled={(!value.trim() && !pendingFile) || isLoading}
+          disabled={(!value.trim() && !pendingFile) || isLoading || recording}
           size="icon"
           aria-label="Send message"
         >
