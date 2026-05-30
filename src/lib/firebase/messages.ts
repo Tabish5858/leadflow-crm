@@ -11,6 +11,7 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
+  writeBatch,
   QuerySnapshot,
   DocumentData,
   type QueryConstraint,
@@ -306,4 +307,64 @@ export async function fixConversationNames(
   }
 
   return fixed;
+}
+
+// ─── Read Receipts ─────────────────────────────────────────────────────────
+
+/**
+ * Mark messages as read by the current user.
+ * Adds userId to each message's readBy array (if not already present).
+ */
+export async function markMessagesAsRead(
+  messageIds: string[],
+  userId: string
+): Promise<void> {
+  if (!messageIds.length || !userId) return;
+
+  const batch = writeBatch(db);
+  for (const id of messageIds) {
+    const msgRef = doc(db, MESSAGES_COLLECTION, id);
+    // Read the doc to get current readBy array
+    const snap = await getDoc(msgRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const readBy: string[] = data.readBy || [];
+      if (!readBy.includes(userId)) {
+        batch.update(msgRef, { readBy: [...readBy, userId] });
+      }
+    }
+  }
+  await batch.commit();
+}
+
+/**
+ * Mark all messages in a conversation as read by the current user.
+ */
+export async function markConversationAsRead(
+  conversationId: string,
+  userId: string
+): Promise<void> {
+  if (!conversationId || !userId) return;
+
+  try {
+    const q = query(
+      collection(db, MESSAGES_COLLECTION),
+      where("conversationId", "==", conversationId)
+    );
+    const snapshot = await getDocs(q);
+
+    const batch = writeBatch(db);
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data();
+      const readBy: string[] = data.readBy || [];
+      if (!readBy.includes(userId)) {
+        batch.update(docSnap.ref, {
+          readBy: [...readBy, userId],
+        });
+      }
+    }
+    await batch.commit();
+  } catch {
+    // Non-critical — read receipts are best-effort
+  }
 }

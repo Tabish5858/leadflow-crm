@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { TooltipButton } from "@/components/ui/tooltip-button";
-import { Pencil, Trash2, X, Check, Smile, File as FileIcon, Download } from "lucide-react";
+import { Pencil, Trash2, X, Check, Smile, File as FileIcon, Download, Reply } from "lucide-react";
 import type { Message } from "@/types";
 import { MeetingCard } from "@/components/messages/meeting-card";
 
@@ -30,6 +30,7 @@ interface MessageThreadProps {
   onEditMessage: (messageId: string, newBody: string) => Promise<void>;
   onDeleteMessage: (messageId: string) => Promise<void>;
   onToggleReaction?: (messageId: string, emoji: string) => Promise<void>;
+  onReply?: (messageId: string, preview: string) => void;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -42,6 +43,7 @@ export function MessageThread({
   onEditMessage,
   onDeleteMessage,
   onToggleReaction,
+  onReply,
 }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -265,6 +267,18 @@ export function MessageThread({
                   ) : (
                     /* Normal message */
                     <>
+                      {/* Reply preview */}
+                      {msg.replyTo && msg.replyPreview && (
+                        <div className="mb-1 rounded-md border-l-2 border-primary/40 bg-primary/5 px-2 py-1">
+                          <p className="text-[10px] font-medium text-primary truncate">
+                            Reply to message
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {msg.replyPreview}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Meeting card */}
                       {msg.meetingCard && (
                         <div className="mb-2 max-w-[280px]">
@@ -372,6 +386,18 @@ export function MessageThread({
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
+                        {/* Read receipt indicator for own messages */}
+                        {isOwn && msg.readBy && msg.readBy.length > 1 && (
+                          <span className="text-[#53bdeb]">
+                            <Check className="inline h-3 w-3" />
+                            <Check className="inline h-3 w-3 -ml-1.5" />
+                          </span>
+                        )}
+                        {isOwn && (!msg.readBy || msg.readBy.length <= 1) && (
+                          <span className="text-[#667781] dark:text-[#8696a0]">
+                            <Check className="inline h-3 w-3" />
+                          </span>
+                        )}
                       </span>
                     </>
                   )}
@@ -406,6 +432,19 @@ export function MessageThread({
                           </div>
                         </PopoverContent>
                       </Popover>
+                    )}
+                    {/* Reply button */}
+                    {onReply && !isOwn && (
+                      <button
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={() => {
+                          const preview = msg.body?.slice(0, 80) || "Message";
+                          onReply(msg.id, preview);
+                        }}
+                        title="Reply"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
                     )}
                     {isOwn && (
                       <>

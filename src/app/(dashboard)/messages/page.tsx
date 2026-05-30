@@ -126,6 +126,10 @@ export default function MessagesPage() {
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [manageGroupOpen, setManageGroupOpen] = useState(false);
 
+  // Reply state
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyPreview, setReplyPreview] = useState<string | null>(null);
+
   // Delete conversation
   const [deleteConvTarget, setDeleteConvTarget] = useState<Conversation | null>(null);
   const [deletingConv, setDeletingConv] = useState(false);
@@ -289,6 +293,27 @@ export default function MessagesPage() {
     },
     []
   );
+
+  // ─── Reply to message ─────────────────────────────────────────────
+
+  const handleReply = useCallback((messageId: string, preview: string) => {
+    setReplyTo(messageId);
+    setReplyPreview(preview);
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyTo(null);
+    setReplyPreview(null);
+  }, []);
+
+  // ─── Mark conversation as read ────────────────────────────────────
+
+  useEffect(() => {
+    if (!selected || !user?.id) return;
+    import("@/lib/firebase/messages").then(({ markConversationAsRead }) => {
+      markConversationAsRead(selected.id, user.id);
+    });
+  }, [selected, user?.id, messages]);
 
   // ─── Delete conversation ──────────────────────────────────────────────
 
@@ -459,7 +484,7 @@ export default function MessagesPage() {
   }, [user, activeWorkspace, selected, draftMember, uploadAndAttachFile]);
 
   const handleSendMessage = useCallback(
-    async (body: string) => {
+    async (body: string, _attachment?: unknown, msgReplyTo?: string, msgReplyPreview?: string) => {
       if (!user || !activeWorkspace) return;
 
       // Draft mode — create conversation + send first message
@@ -470,22 +495,15 @@ export default function MessagesPage() {
           participantIds: [user.id, draftMember.userId],
           participantNames: [user.displayName || "You", draftMember.displayName],
         });
-        // The onSnapshot will pick up the new conversation.
-        // We need to send the message immediately — but sendMessage needs conversationId.
-        // Send message to the new conversation, then the onSnapshot subscription
-        // will kick in when 'selected' is set.
-
-        // Wait briefly for the conversation to appear in onSnapshot,
-        // then select it and send the message
-        // Actually — send the message now with the known convoId
         await sendMessage({
           workspaceId: activeWorkspace.id,
           conversationId: convoId,
           senderId: user.id,
           senderName: user.displayName || "Unknown",
           body,
+          replyTo: msgReplyTo,
+          replyPreview: msgReplyPreview,
         });
-        // Clear draft and wait for onSnapshot to pick up the new conversation
         setDraftMember(null);
         setMessages([
           {
@@ -498,10 +516,12 @@ export default function MessagesPage() {
             deleted: false,
             edited: false,
             createdAt: Timestamp.now(),
+            replyTo: msgReplyTo,
+            replyPreview: msgReplyPreview,
           },
         ]);
-        // onSnapshot will update conversations list, and our auto-detect
-        // useEffect will select the right one
+        setReplyTo(null);
+        setReplyPreview(null);
         return;
       }
 
@@ -513,7 +533,11 @@ export default function MessagesPage() {
         senderId: user.id,
         senderName: user.displayName || "Unknown",
         body,
+        replyTo: msgReplyTo,
+        replyPreview: msgReplyPreview,
       });
+      setReplyTo(null);
+      setReplyPreview(null);
     },
     [selected, draftMember, user, activeWorkspace]
   );
@@ -840,6 +864,7 @@ export default function MessagesPage() {
                   onEditMessage={handleEditMessage}
                   onDeleteMessage={handleDeleteMessage}
                   onToggleReaction={handleToggleReaction}
+                  onReply={handleReply}
                 />
 
                 {/* Input */}
@@ -860,6 +885,9 @@ export default function MessagesPage() {
                         uploading={uploadingFile}
                         pendingFile={pendingFile}
                         onClearFile={handleClearPendingFile}
+                        replyTo={replyTo}
+                        replyPreview={replyPreview}
+                        onCancelReply={handleCancelReply}
                       />
                     </div>
                   </div>

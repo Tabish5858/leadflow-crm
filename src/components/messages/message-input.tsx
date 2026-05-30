@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, Loader2, Paperclip, X, File } from "lucide-react";
+import { Send, Loader2, Paperclip, X, File, Reply } from "lucide-react";
 
 interface MessageInputProps {
   onSend: (body: string, attachment?: {
@@ -13,12 +13,15 @@ interface MessageInputProps {
     name: string;
     size: number;
     mimeType: string;
-  }) => Promise<void>;
+  }, replyTo?: string, replyPreview?: string) => Promise<void>;
   placeholder?: string;
   uploading?: boolean;
   onFileSelect?: (file: File) => void;
   pendingFile?: File | null;
   onClearFile?: () => void;
+  replyTo?: string | null;
+  replyPreview?: string | null;
+  onCancelReply?: () => void;
 }
 
 export function MessageInput({
@@ -27,6 +30,9 @@ export function MessageInput({
   uploading = false,
   pendingFile,
   onClearFile,
+  replyTo,
+  replyPreview,
+  onCancelReply,
 }: MessageInputProps) {
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
@@ -40,7 +46,7 @@ export function MessageInput({
 
     setSending(true);
     try {
-      await onSend(trimmed);
+      await onSend(trimmed, undefined, replyTo || undefined, replyPreview || undefined);
       setValue("");
       inputRef.current?.focus();
     } catch {
@@ -58,6 +64,22 @@ export function MessageInput({
 
   return (
     <div className="space-y-2">
+      {/* Reply preview banner */}
+      {replyTo && replyPreview && (
+        <div className="flex items-center gap-2 rounded-lg bg-primary/5 border-l-2 border-primary px-3 py-2">
+          <Reply className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-medium text-primary">Replying to message</p>
+            <p className="text-xs text-muted-foreground truncate">{replyPreview}</p>
+          </div>
+          {onCancelReply && (
+            <button onClick={onCancelReply} className="text-muted-foreground hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Pending file preview */}
       {pendingFile && (
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 text-xs">
