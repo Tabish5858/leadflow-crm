@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createGoogleMeetEvent } from "@/lib/calendar";
 import { createMeeting, logMeeting } from "@/lib/firebase/server-admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { withAuth } from "@/lib/api/middleware";
 
 export async function POST(req: NextRequest) {
@@ -36,6 +37,33 @@ export async function POST(req: NextRequest) {
         : 30;
 
       const endDate = new Date(startDate.getTime() + duration * 60000);
+
+      // ── Conflict detection: check for overlapping meetings ──────
+      try {
+        const overlappingSnap = await getAdminDb()
+          .collection("meetings")
+          .where("workspaceId", "==", ctx.workspaceId)
+          .where("status", "in", ["scheduled", "in_progress"])
+          .get();
+
+        const hasConflict = overlappingSnap.docs.some((doc) => {
+          const m = doc.data();
+          const mStart = m.startTime?.toDate?.();
+          const mEnd = m.endTime?.toDate?.();
+          if (!mStart || !mEnd) return false;
+          // Overlap: new start < existing end AND new end > existing start
+          return startDate < mEnd && endDate > mStart;
+        });
+
+        if (hasConflict) {
+          return NextResponse.json(
+            { error: "This time slot overlaps with an existing meeting" },
+            { status: 409 }
+          );
+        }
+      } catch {
+        // Non-critical — proceed without conflict check if query fails
+      }
 
       const meetingAttendees = Array.isArray(attendees) && attendees.length > 0
         ? attendees.map((a: { email: string; name?: string }) => ({

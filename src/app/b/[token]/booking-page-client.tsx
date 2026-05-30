@@ -19,6 +19,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+interface BookingQuestion {
+  id: string;
+  question: string;
+  type: "text" | "textarea" | "radio" | "checkbox" | "dropdown" | "phone" | "date";
+  required: boolean;
+  options?: string[];
+}
+
 interface BookingMeetingType {
   id: string;
   name: string;
@@ -31,6 +39,9 @@ interface BookingMeetingType {
     endTime: string;
     timezone: string;
   } | null;
+  bookingQuestions: BookingQuestion[];
+  confirmationPage: "default" | "redirect";
+  redirectUrl: string;
 }
 
 interface AvailabilitySlot {
@@ -211,6 +222,10 @@ export function BookingPageClient({ token }: BookingPageClientProps) {
   const [booking, setBooking] = useState(false);
   const [booked, setBooked] = useState(false);
   const [bookedSlot, setBookedSlot] = useState<{ date: string; time: string } | null>(null);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string | string[]>>({});
+
+  // Confirmation redirect
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   // Track if we've done the initial date selection (prevent overwrite)
   const initialDateSet = useRef(false);
@@ -358,9 +373,21 @@ export function BookingPageClient({ token }: BookingPageClientProps) {
 
   // ── Booking submission ─────────────────────────────────────────
   const handleBook = async () => {
-    if (!selectedDate || !selectedTime || !name.trim() || !email.trim()) {
+    if (!selectedDate || !selectedTime || !name.trim() || !email.trim() || !meetingType) {
       toast.error("Please fill in all required fields");
       return;
+    }
+
+    // Validate required booking questions
+    if (meetingType?.bookingQuestions?.length > 0) {
+      for (const q of meetingType.bookingQuestions) {
+        if (!q.required) continue;
+        const answer = questionAnswers[q.id];
+        if (!answer || (Array.isArray(answer) && answer.length === 0) || (typeof answer === "string" && !answer.trim())) {
+          toast.error(`Please answer: "${q.question}"`);
+          return;
+        }
+      }
     }
 
     const tz = meetingType?.availability?.timezone || "UTC";
@@ -382,12 +409,21 @@ export function BookingPageClient({ token }: BookingPageClientProps) {
           name: name.trim(),
           email: email.trim(),
           notes: notes.trim() || undefined,
+          questionAnswers: Object.keys(questionAnswers).length > 0 ? questionAnswers : undefined,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
         toast.error(data.error || "Failed to book meeting");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Handle confirmation redirect
+      if (meetingType.confirmationPage === "redirect" && meetingType.redirectUrl) {
+        setRedirectUrl(meetingType.redirectUrl);
         return;
       }
 
@@ -483,6 +519,43 @@ export function BookingPageClient({ token }: BookingPageClientProps) {
             </p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // ── Redirect screen ──────────────────────────────────────
+  if (redirectUrl) {
+    // Only allow same-origin or relative redirects (prevent open redirect)
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(redirectUrl, window.location.origin);
+        if (url.origin === window.location.origin || redirectUrl.startsWith("/")) {
+          window.location.href = url.href;
+        } else {
+          // External redirect blocked — show success instead
+          setBooked(true);
+          setBookedSlot({
+            date: formatDate(selectedDate!),
+            time: formatSlotWithTz(selectedTime, meetingType?.availability?.timezone || "UTC", selectedDate!),
+          });
+          setRedirectUrl(null);
+        }
+      } catch {
+        // Invalid URL — show success instead
+        setBooked(true);
+        setBookedSlot({
+          date: formatDate(selectedDate!),
+          time: formatSlotWithTz(selectedTime, meetingType?.availability?.timezone || "UTC", selectedDate!),
+        });
+        setRedirectUrl(null);
+      }
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
       </div>
     );
   }
@@ -743,6 +816,84 @@ export function BookingPageClient({ token }: BookingPageClientProps) {
                       onChange={(e) => setNotes(e.target.value)}
                     />
                   </div>
+
+                  {/* Dynamic booking questions */}
+                  {meetingType.bookingQuestions?.length > 0 &&
+                    meetingType.bookingQuestions.map((q) => (
+                      <div key={q.id} className="space-y-1.5">
+                        <Label htmlFor={`book-q-${q.id}`}>
+                          {q.question}
+                          {q.required && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
+                        {q.type === "text" || q.type === "phone" || q.type === "date" ? (
+                          <Input
+                            id={`book-q-${q.id}`}
+                            type={q.type === "date" ? "date" : q.type === "phone" ? "tel" : "text"}
+                            placeholder={q.type === "phone" ? "+1 (555) 000-0000" : ""}
+                            value={(questionAnswers[q.id] as string) || ""}
+                            onChange={(e) =>
+                              setQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                          />
+                        ) : q.type === "textarea" ? (
+                          <Textarea
+                            id={`book-q-${q.id}`}
+                            rows={2}
+                            value={(questionAnswers[q.id] as string) || ""}
+                            onChange={(e) =>
+                              setQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                          />
+                        ) : q.type === "radio" || q.type === "dropdown" ? (
+                          <select
+                            id={`book-q-${q.id}`}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            value={(questionAnswers[q.id] as string) || ""}
+                            onChange={(e) =>
+                              setQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
+                          >
+                            <option value="">Select...</option>
+                            {q.options?.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : q.type === "checkbox" ? (
+                          <div className="flex flex-wrap gap-2">
+                            {q.options?.map((opt) => {
+                              const checked = ((questionAnswers[q.id] as string[]) || []).includes(opt);
+                              return (
+                                <label
+                                  key={opt}
+                                  className="flex items-center gap-1.5 text-sm cursor-pointer"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => {
+                                      setQuestionAnswers((prev) => {
+                                        const current = (prev[q.id] as string[]) || [];
+                                        const next = checked
+                                          ? current.filter((v) => v !== opt)
+                                          : [...current, opt];
+                                        return { ...prev, [q.id]: next };
+                                      });
+                                    }}
+                                    className="rounded border-input"
+                                  />
+                                  {opt}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+
                   <Button
                     className="w-full"
                     onClick={handleBook}
