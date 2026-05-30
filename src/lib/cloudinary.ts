@@ -22,6 +22,11 @@ export const ALLOWED_FILE_TYPES = [
   "image/webp",
   "text/plain",
   "text/csv",
+  "audio/webm",
+  "audio/webm;codecs=opus",
+  "audio/ogg",
+  "audio/mpeg",
+  "audio/wav",
 ];
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -36,5 +41,6 @@ export function getFileType(mimeType: string): string {
   if (mimeType.includes("word") || mimeType.includes("msword")) return "document";
   if (mimeType.includes("excel") || mimeType.includes("spreadsheet")) return "spreadsheet";
   if (mimeType.includes("text")) return "text";
+  if (mimeType.includes("audio")) return "voice";
   return "other";
 }

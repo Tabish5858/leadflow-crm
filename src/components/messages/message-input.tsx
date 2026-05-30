@@ -73,7 +73,7 @@ export function MessageInput({
       setShowVoiceRecorder(false);
       try {
         const attachment = await onVoiceRecording(blob, duration);
-        await onSend(`Voice message (${Math.round(duration)}s)`, attachment, replyTo || undefined, replyPreview || undefined);
+        await onSend(`🎤 Voice message (${Math.round(duration)}s)`, attachment, replyTo || undefined, replyPreview || undefined);
       } catch {
         // Error handled by parent
       }
@@ -84,6 +84,12 @@ export function MessageInput({
   const handleCancelVoice = useCallback(() => {
     setShowVoiceRecorder(false);
     setRecording(false);
+  }, []);
+
+  const handleMicClick = useCallback(() => {
+    // Toggle voice recorder — clicking mic starts recording immediately
+    setShowVoiceRecorder(true);
+    setRecording(true);
   }, []);
 
   const isLoading = sending || uploading;
@@ -165,13 +171,13 @@ export function MessageInput({
         </Button>
 
         {/* Voice recorder toggle */}
-        {onVoiceRecording && (
+        {onVoiceRecording && !showVoiceRecorder && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className={`shrink-0 ${recording ? "text-red-500" : ""}`}
-            onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+            className="shrink-0"
+            onClick={handleMicClick}
             disabled={isLoading}
             title="Record voice message"
           >

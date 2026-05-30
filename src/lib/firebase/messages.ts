@@ -132,6 +132,7 @@ export async function sendMessage(data: {
     body: data.body,
     deleted: false,
     edited: false,
+    readBy: [data.senderId], // Initialize with sender so readBy is never empty
     createdAt: serverTimestamp(),
   };
 
@@ -143,13 +144,17 @@ export async function sendMessage(data: {
 
   const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), docData);
 
-  // Update conversation's last message preview
+  // Update conversation's last message preview + unread count
   try {
     const preview = data.meetingCard ? "📹 Google Meet" : data.attachment ? `📎 ${data.attachment.name}` : data.body.slice(0, 100);
     const convRef = doc(db, CONVERSATIONS_COLLECTION, data.conversationId);
+    const convSnap = await getDoc(convRef);
+    const convData = convSnap.data();
+    const currentUnread = convData?.unreadCount || 0;
     await updateDoc(convRef, {
       lastMessage: preview,
       lastMessageAt: serverTimestamp(),
+      unreadCount: currentUnread + 1,
     });
   } catch {
     console.warn("Failed to update conversation preview");
@@ -339,6 +344,7 @@ export async function markMessagesAsRead(
 
 /**
  * Mark all messages in a conversation as read by the current user.
+ * Also resets the conversation's unreadCount.
  */
 export async function markConversationAsRead(
   conversationId: string,
@@ -364,6 +370,14 @@ export async function markConversationAsRead(
       }
     }
     await batch.commit();
+
+    // Reset unread count on conversation
+    try {
+      const convRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+      await updateDoc(convRef, { unreadCount: 0 });
+    } catch {
+      // Non-critical
+    }
   } catch {
     // Non-critical — read receipts are best-effort
   }
