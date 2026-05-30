@@ -343,8 +343,8 @@ export async function markMessagesAsRead(
 }
 
 /**
- * Mark all messages in a conversation as read by the current user.
- * Also resets the conversation's unreadCount.
+ * Mark a conversation as read by the current user.
+ * Resets unreadCount to 0. Individual message readBy is handled on send.
  */
 export async function markConversationAsRead(
   conversationId: string,
@@ -353,30 +353,31 @@ export async function markConversationAsRead(
   if (!conversationId || !userId) return;
 
   try {
+    // Reset unread count on conversation
+    const convRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+    await updateDoc(convRef, { unreadCount: 0 });
+
+    // Also update readBy on messages this user RECEIVED (not sent by them)
+    // Use individual updates instead of batch to avoid silent failures
     const q = query(
       collection(db, MESSAGES_COLLECTION),
-      where("conversationId", "==", conversationId)
+      where("conversationId", "==", conversationId),
+      where("senderId", "!=", userId)
     );
     const snapshot = await getDocs(q);
 
-    const batch = writeBatch(db);
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       const readBy: string[] = data.readBy || [];
       if (!readBy.includes(userId)) {
-        batch.update(docSnap.ref, {
-          readBy: [...readBy, userId],
-        });
+        try {
+          await updateDoc(docSnap.ref, {
+            readBy: [...readBy, userId],
+          });
+        } catch {
+          // Individual message update failed — continue with others
+        }
       }
-    }
-    await batch.commit();
-
-    // Reset unread count on conversation
-    try {
-      const convRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
-      await updateDoc(convRef, { unreadCount: 0 });
-    } catch {
-      // Non-critical
     }
   } catch {
     // Non-critical — read receipts are best-effort

@@ -425,7 +425,7 @@ export default function MessagesPage() {
       const data = await res.json();
 
       const attachment = {
-        type: (file.type.startsWith("image/") ? "image" : file.type.startsWith("audio/") ? "voice" : "document") as "image" | "document" | "voice",
+        type: (file.type.startsWith("image/") ? "image" : "document") as "image" | "document",
         url: data.url || data.cloudinaryUrl,
         name: file.name,
         size: file.size,
@@ -438,44 +438,6 @@ export default function MessagesPage() {
       setPendingFile(null);
     }
   }, [activeWorkspace, selected, user]);
-
-  // ─── Voice recording upload ──────────────────────────────────────
-
-  const handleVoiceRecording = useCallback(
-    async (blob: Blob, duration: number) => {
-      if (!activeWorkspace) throw new Error("No workspace");
-
-      const file = new File([blob], `voice-${Date.now()}.webm`, {
-        type: "audio/webm",
-      });
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("leadId", selected?.leadId || "");
-
-      const authHeaders = await getApiAuthHeaders(activeWorkspace.id);
-      const res = await fetch("/api/documents/upload", {
-        method: "POST",
-        headers: authHeaders,
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Voice upload failed");
-      }
-
-      const data = await res.json();
-      return {
-        type: "voice" as const,
-        url: data.url || data.cloudinaryUrl,
-        name: file.name,
-        size: file.size,
-        mimeType: "audio/webm",
-        duration,
-      };
-    },
-    [activeWorkspace, selected]
-  );
 
   // Listen for file selection from MessageInput
   useEffect(() => {
@@ -926,7 +888,6 @@ export default function MessagesPage() {
                         replyTo={replyTo}
                         replyPreview={replyPreview}
                         onCancelReply={handleCancelReply}
-                        onVoiceRecording={handleVoiceRecording}
                       />
                     </div>
                   </div>
