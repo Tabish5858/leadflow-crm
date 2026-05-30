@@ -6,6 +6,7 @@ import { usePermissions } from "@/lib/hooks/use-permissions";
 import { getApiAuthHeaders } from "@/lib/api/client";
 import { MeetingTypeDialog } from "@/components/meetings/meeting-type-dialog";
 import { ScheduleMeetingDialog } from "@/components/meetings/schedule-meeting-dialog";
+import { CalendarTab } from "@/components/meetings/calendar-tab";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -422,6 +423,9 @@ export default function MeetingsPage() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="calendar">
+              Calendar
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-3 mt-4">
@@ -630,6 +634,11 @@ export default function MeetingsPage() {
                 })}
               </div>
             )}
+          </TabsContent>
+
+          {/* Calendar tab */}
+          <TabsContent value="calendar" className="mt-4">
+            <CalendarTab />
           </TabsContent>
         </Tabs>
       )}
