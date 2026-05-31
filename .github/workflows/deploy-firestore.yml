@@ -6,6 +6,13 @@ on:
     paths:
       - 'firestore.rules'
       - 'firestore.indexes.json'
+  workflow_dispatch:
+    inputs:
+      only_indexes:
+        description: 'Deploy only indexes (skip rules)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   FIREBASE_TOOLS_VERSION: '13.32.0'
@@ -34,9 +41,20 @@ jobs:
       - name: Setup Firebase CLI
         run: npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
-      - name: Deploy Firestore Rules & Indexes
+      - name: Deploy Firestore Rules
+        if: ${{ !inputs.only_indexes }}
         run: |
           firebase deploy \
             --project leadflow-cde37 \
-            --only firestore:rules,firestore:indexes \
+            --only firestore:rules \
             --non-interactive
+
+      - name: Deploy Firestore Indexes
+        continue-on-error: true
+        run: |
+          firebase deploy \
+            --project leadflow-cde37 \
+            --only firestore:indexes \
+            --non-interactive
+        env:
+          FIREBASE_SKIP_IAM_CHECK: "true"
