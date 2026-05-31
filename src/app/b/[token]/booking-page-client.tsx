@@ -229,7 +229,7 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
       toast.error("Please fill in all required fields");
       return;
     }
-    const tz = meetingType.availability?.timezone || "UTC";
+    const tz = displayTimezone || meetingType.availability?.timezone || "UTC";
     const startDateTimeISO = dateAndSlotToISO(selectedDate, selectedTime, tz);
     if (new Date(startDateTimeISO) <= new Date()) {
       toast.error("This time has already passed");
@@ -302,6 +302,7 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
         selectedDate={selectedDate!}
         selectedSlot={bookedSlot}
         email={bookedEmail}
+        displayTimezone={displayTimezone}
       />
     );
   }
@@ -318,7 +319,7 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
           setBookedSlot({
             time: selectedTime,
             display: formatSlotTime(selectedTime),
-            label: formatSlotWithTz(selectedTime, meetingType.availability?.timezone || "UTC", selectedDate!),
+            label: formatSlotWithTz(selectedTime, displayTimezone || meetingType.availability?.timezone || "UTC", selectedDate!),
           });
           setRedirectUrl(null);
         }
@@ -328,7 +329,7 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
         setBookedSlot({
           time: selectedTime,
           display: formatSlotTime(selectedTime),
-          label: formatSlotWithTz(selectedTime, meetingType.availability?.timezone || "UTC", selectedDate!),
+          label: formatSlotWithTz(selectedTime, displayTimezone || meetingType.availability?.timezone || "UTC", selectedDate!),
         });
         setRedirectUrl(null);
       }

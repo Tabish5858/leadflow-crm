@@ -9,6 +9,7 @@ interface BookingConfirmationProps {
   selectedDate: Date;
   selectedSlot: AvailabilitySlot;
   email: string;
+  displayTimezone?: string;
 }
 
 export function BookingConfirmation({
@@ -16,8 +17,9 @@ export function BookingConfirmation({
   selectedDate,
   selectedSlot,
   email,
+  displayTimezone,
 }: BookingConfirmationProps) {
-  const tz = meetingType.availability?.timezone || "UTC";
+  const tz = displayTimezone || meetingType.availability?.timezone || "UTC";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
