@@ -151,12 +151,14 @@ export async function getWorkspaceMembers(
 
   return snapshot.docs.map((d) => {
     const user = d.data();
+    // Read workspace-specific role first, fall back to top-level role
+    const workspaceRole = user.workspaceRoles?.[workspaceId] || user.role || "member";
     return {
       userId: d.id,
       email: user.email || "",
       displayName: user.displayName || "",
       photoURL: user.photoURL || null,
-      role: user.role || "member",
+      role: workspaceRole,
       joinedAt: user.createdAt || Timestamp.now(),
     } as WorkspaceMember;
   });
@@ -213,7 +215,7 @@ export async function removeMemberFromWorkspace(
 export async function updateMemberRole(
   workspaceId: string,
   userId: string,
-  role: "admin" | "member" | "viewer"
+  role: "admin" | "member" | "viewer" | "client"
 ): Promise<void> {
   const userRef = doc(db, USERS_COLLECTION, userId);
 
@@ -260,7 +262,7 @@ export async function createInvite(
   workspaceId: string,
   email: string,
   invitedBy: string,
-  role: "admin" | "member" | "viewer" = "member"
+  role: "admin" | "member" | "viewer" | "client" = "member"
 ): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);

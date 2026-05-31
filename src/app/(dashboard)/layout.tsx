@@ -30,6 +30,7 @@ import {
   Moon,
   Settings,
   Sun,
+  UserCheck,
   Users,
   X,
 } from "lucide-react";
@@ -47,6 +48,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
   { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
   { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
+  { href: "/clients", label: "Clients", icon: UserCheck, moduleId: "clients" },
   { href: "/settings", label: "Settings", icon: Settings, moduleId: "settings" },
 ];
 
@@ -152,6 +154,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     );
+  }
+
+  // Clients use the dedicated client portal, not the dashboard
+  if (user?.role === "client") {
+    router.push("/client/dashboard");
+    return null;
   }
 
   return (

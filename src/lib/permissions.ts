@@ -10,17 +10,35 @@ import { DEFAULT_MEMBER_PERMISSIONS, DEFAULT_VIEWER_PERMISSIONS } from "@/types"
  * Owner and Admin always get full access to all modules.
  * Member and Viewer get their configured permissions (falling back to defaults).
  */
+const ALL_MODULES: ModuleId[] = [
+  "dashboard", "leads", "pipeline", "analytics",
+  "time_tracker", "messages", "automations", "meetings",
+  "settings", "clients",
+];
+
+function fullPermissionsMap(): ModulePermissionsMap {
+  const full: ModulePermissionsMap = {} as ModulePermissionsMap;
+  for (const key of ALL_MODULES) {
+    full[key] = true;
+  }
+  return full;
+}
+
+function noPermissionsMap(): ModulePermissionsMap {
+  const none: ModulePermissionsMap = {} as ModulePermissionsMap;
+  for (const key of ALL_MODULES) {
+    none[key] = false;
+  }
+  return none;
+}
+
 export function getEffectivePermissions(
   permissions: ModulePermissionsByRole | null | undefined,
   role: string
 ): ModulePermissionsMap {
   // Owner and Admin get full access
   if (role === "owner" || role === "admin") {
-    const full: ModulePermissionsMap = {} as ModulePermissionsMap;
-    for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "meetings", "settings"] as ModuleId[]) {
-      full[key] = true;
-    }
-    return full;
+    return fullPermissionsMap();
   }
 
   if (role === "member") {
@@ -41,12 +59,13 @@ export function getEffectivePermissions(
     return perms;
   }
 
-  // Unknown role — no access
-  const none: ModulePermissionsMap = {} as ModulePermissionsMap;
-  for (const key of ["dashboard", "leads", "pipeline", "analytics", "time_tracker", "messages", "automations", "meetings", "settings"] as ModuleId[]) {
-    none[key] = false;
+  // Client role — no module access (uses dedicated /client/* portal)
+  if (role === "client") {
+    return noPermissionsMap();
   }
-  return none;
+
+  // Unknown role — no access
+  return noPermissionsMap();
 }
 
 /**

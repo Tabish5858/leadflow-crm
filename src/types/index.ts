@@ -7,7 +7,7 @@ export interface User {
   email: string;
   displayName: string;
   photoURL: string | null;
-  role: "owner" | "admin" | "member" | "viewer";
+  role: "owner" | "admin" | "member" | "viewer" | "client";
   timezone: string;
   language: string;
   currency: string;
@@ -95,7 +95,8 @@ export type ModuleId =
   | "messages"
   | "automations"
   | "meetings"
-  | "settings";
+  | "settings"
+  | "clients";
 
 export type ModulePermissionsMap = Record<ModuleId, boolean>;
 
@@ -114,6 +115,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   automations: "Automations",
   meetings: "Meetings",
   settings: "Settings",
+  clients: "Clients",
 } as const;
 
 export const DEFAULT_MEMBER_PERMISSIONS: ModulePermissionsMap = {
@@ -126,6 +128,7 @@ export const DEFAULT_MEMBER_PERMISSIONS: ModulePermissionsMap = {
   automations: false,
   meetings: true,
   settings: true,
+  clients: true,
 };
 
 export const DEFAULT_VIEWER_PERMISSIONS: ModulePermissionsMap = {
@@ -138,6 +141,7 @@ export const DEFAULT_VIEWER_PERMISSIONS: ModulePermissionsMap = {
   automations: false,
   meetings: false,
   settings: true,
+  clients: true,
 };
 
 export interface WorkspaceMember {
@@ -145,7 +149,7 @@ export interface WorkspaceMember {
   email: string;
   displayName: string;
   photoURL: string | null;
-  role: "owner" | "admin" | "member" | "viewer";
+  role: "owner" | "admin" | "member" | "viewer" | "client";
   joinedAt: Timestamp;
 }
 
@@ -154,7 +158,7 @@ export interface WorkspaceInvite {
   workspaceId: string;
   email: string;
   invitedBy: string;
-  role: "admin" | "member" | "viewer";
+  role: "admin" | "member" | "viewer" | "client";
   status: "pending" | "accepted" | "expired";
   expiresAt: Timestamp;
   createdAt: Timestamp;

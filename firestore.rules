@@ -43,9 +43,18 @@ service cloud.firestore {
       return isWorkspaceMember(workspaceId) && getWorkspaceRole(workspaceId) == role;
     }
 
-    // Helper: check if user is NOT a viewer (can write)
+    // Helper: check if user can write (owner, admin, or member — not viewer or client)
     function canWrite(workspaceId) {
-      return isWorkspaceMember(workspaceId) && getWorkspaceRole(workspaceId) != 'viewer';
+      return isWorkspaceMember(workspaceId) && (
+        getWorkspaceRole(workspaceId) == 'owner' ||
+        getWorkspaceRole(workspaceId) == 'admin' ||
+        getWorkspaceRole(workspaceId) == 'member'
+      );
+    }
+
+    // Helper: check if user has client role in this workspace
+    function isClient(workspaceId) {
+      return isWorkspaceMember(workspaceId) && getWorkspaceRole(workspaceId) == 'client';
     }
 
     // Users collection
@@ -80,6 +89,27 @@ service cloud.firestore {
       allow update: if isAuthenticated();
       // Only workspace owner/admin can delete
       allow delete: if isAuthenticated() &&
+        (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+         hasRole(resource.data.workspaceId, 'admin'));
+    }
+
+    // Client invites
+    match /client_invites/{inviteId} {
+      // Authenticated users can read (for invite verification)
+      allow read: if isAuthenticated();
+      // Only workspace owner/admin can create
+      allow create: if isAuthenticated() &&
+        (request.resource.data.role == 'client') &&
+        exists(/databases/$(database)/documents/workspaces/$(request.resource.data.workspaceId)) &&
+        (get(/databases/$(database)/documents/workspaces/$(request.resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+         hasRole(request.resource.data.workspaceId, 'admin'));
+      // Workspace owner/admin can update (cancel/resend)
+      allow update: if isAuthenticated() &&
+        (resource.data.workspaceId is string) &&
+        (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+         hasRole(resource.data.workspaceId, 'admin'));
+      allow delete: if isAuthenticated() &&
+        (resource.data.workspaceId is string) &&
         (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
          hasRole(resource.data.workspaceId, 'admin'));
     }

@@ -168,6 +168,85 @@ function dividerHtml(): string {
   </table>`;
 }
 
+// ─── Template: Client Invitation ────────────────────────────────────────────
+
+interface ClientInviteEmailOptions {
+  inviterName: string;
+  workspaceName: string;
+  acceptUrl: string;
+  message?: string;
+}
+
+export function renderClientInviteEmail(opts: ClientInviteEmailOptions): string {
+  const { inviterName, workspaceName, acceptUrl, message } = opts;
+
+  const body = `
+    <!-- Heading -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px 0;">
+      <tr>
+        <td style="font-size:12px; font-weight:600; color:#64748b; letter-spacing:0.4px; text-transform:uppercase; padding-bottom:8px;">
+          Client Portal Access
+        </td>
+      </tr>
+      <tr>
+        <td style="font-size:22px; font-weight:700; color:#0f172a; letter-spacing:-0.2px; line-height:1.35;">
+          You've been invited to ${escapeHtml(workspaceName)}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Body Text -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 24px 0;">
+      <tr>
+        <td style="font-size:16px; line-height:1.6; color:#475569;">
+          <p style="margin:0 0 12px 0;">
+            <strong style="color:#0f172a;">${escapeHtml(inviterName)}</strong> has invited you to access the client portal for <strong style="color:#0f172a;">${escapeHtml(workspaceName)}</strong>.
+          </p>
+          <p style="margin:0 0 12px 0;">
+            Through this portal, you can track project progress, view shared files, and communicate with your service provider.
+          </p>
+          ${message ? `<p style="margin:0 0 12px 0; font-style:italic; color:#64748b;">"${escapeHtml(message)}"</p>` : ""}
+          <p style="margin:0;">
+            Click the button below to get started.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    ${dividerHtml()}
+
+    <!-- CTA -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;">
+      <tr>
+        <td style="font-size:15px; font-weight:600; color:#0f172a; padding-bottom:16px;">
+          Access your client portal
+        </td>
+      </tr>
+      <tr>
+        <td align="center">
+          ${buttonHtml(acceptUrl, "Access Portal")}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Expiry Notice -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 0 0;">
+      <tr>
+        <td style="font-size:13px; line-height:1.5; color:#94a3b8;">
+          <p style="margin:0;">
+            This invitation expires in <strong style="color:#64748b;">7 days</strong>.
+            If you do not yet have an account, you will be asked to create one when you accept.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return baseHtml(body, {
+    previewText: `Access the client portal for ${workspaceName}.`,
+  });
+}
+
 // ─── Template: Workspace Invitation ──────────────────────────────────────────
 
 interface InviteEmailOptions {
