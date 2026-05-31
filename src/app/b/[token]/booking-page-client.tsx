@@ -8,6 +8,8 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { BookingTimeSlots } from "@/components/booking/BookingTimeSlots";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { BookingConfirmation } from "@/components/booking/BookingConfirmation";
+import { BookingStepIndicator } from "@/components/booking/BookingStepIndicator";
+import type { BookingStep } from "@/components/booking/BookingStepIndicator";
 import { BookingSkeleton } from "@/components/booking/BookingSkeleton";
 import type { BookingMeetingType, AvailabilitySlot } from "@/components/booking/types";
 import {
@@ -352,6 +354,11 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
 
   // ── Main booking page ──────────────────────────────────────
   const hasTimeSelected = !!selectedTime;
+  const currentStep: BookingStep = booked && bookedSlot
+    ? "confirmed"
+    : hasTimeSelected
+      ? "details"
+      : "select";
 
   return (
     <div className="min-h-screen bg-background">
@@ -376,8 +383,14 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
 
             {/* ═══ RIGHT PANEL ═══ */}
             <div className="flex-1 p-6 md:p-8">
+              {/* Step indicator */}
+              <BookingStepIndicator currentStep={currentStep} />
+
               {!hasTimeSelected ? (
-                <div className="flex flex-col lg:flex-row gap-8">
+                <div
+                  key="step-select"
+                  className="flex flex-col lg:flex-row gap-8 page-enter"
+                >
                   <div className="flex-1">
                     <BookingCalendar
                       calendarYear={calendarYear}
@@ -404,14 +417,19 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
                   </div>
                 </div>
               ) : (
-                <BookingForm
-                  meetingType={meetingType}
-                  selectedDate={selectedDate!}
-                  selectedSlot={slots.find((s) => s.time === selectedTime)!}
-                  onBack={handleBackFromForm}
-                  onSubmit={handleBook}
-                  booking={booking}
-                />
+                <div
+                  key="step-details"
+                  className="page-enter"
+                >
+                  <BookingForm
+                    meetingType={meetingType}
+                    selectedDate={selectedDate!}
+                    selectedSlot={slots.find((s) => s.time === selectedTime)!}
+                    onBack={handleBackFromForm}
+                    onSubmit={handleBook}
+                    booking={booking}
+                  />
+                </div>
               )}
             </div>
           </div>

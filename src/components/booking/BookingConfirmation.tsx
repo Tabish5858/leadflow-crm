@@ -22,7 +22,7 @@ export function BookingConfirmation({
   const tz = displayTimezone || meetingType.availability?.timezone || "UTC";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background page-enter">
       <div className="w-full max-w-lg mx-4 text-center">
         {/* Success Icon */}
         <div className="flex justify-center mb-6">
