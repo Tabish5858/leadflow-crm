@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
 
     // 2. If Google Calendar is connected, fetch events from selected calendars
     //    and filter out slots that conflict with Google Calendar events.
-    let googleConflictingMinutes: Array<{ start: number; end: number }> = [];
+    const googleConflictingMinutes: Array<{ start: number; end: number }> = [];
     try {
       const auth = await getGoogleAuth(meetingType.workspaceId);
       if (auth) {
