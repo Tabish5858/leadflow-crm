@@ -28,6 +28,7 @@ import {
   Plus,
   Save,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getApiAuthHeaders } from "@/lib/api/client";
@@ -138,6 +139,23 @@ export function MeetingTypeDialog({
   const [redirectUrl, setRedirectUrl] = useState("");
   const [bookingQuestions, setBookingQuestions] = useState<BookingQuestion[]>([]);
   const [reminders, setReminders] = useState<ReminderConfig[]>([]);
+
+  // Calendar connection check
+  const [calendarConnected, setCalendarConnected] = useState(true); // optimistic default
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    (async () => {
+      try {
+        const headers = await getApiAuthHeaders(workspaceId);
+        const res = await fetch("/api/calendar/status", { headers });
+        const data = await res.json();
+        setCalendarConnected(data.connected === true);
+      } catch {
+        setCalendarConnected(false);
+      }
+    })();
+  }, [workspaceId]);
 
   // Question builder modal state
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
@@ -434,6 +452,23 @@ export function MeetingTypeDialog({
                   <SelectItem value="none">In Person</SelectItem>
                 </SelectContent>
               </Select>
+              {videoTool === "google_meet" && !calendarConnected && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Google Calendar is not connected.{" "}
+                    <a
+                      href="/settings"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-medium"
+                    >
+                      Connect it in Settings
+                    </a>{" "}
+                    so Google Meet links are created for bookings.
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Buffer Time */}

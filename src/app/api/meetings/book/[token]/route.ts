@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMeetingTypeByToken, createMeeting, getWorkspace } from "@/lib/firebase/server-admin";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { createGoogleMeetEvent } from "@/lib/calendar";
+import { createGoogleMeetEvent, checkGoogleCalendarConflicts } from "@/lib/calendar";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
@@ -152,24 +152,35 @@ export async function POST(
       console.error("Conflict detection query failed, proceeding without check:", err);
     }
 
-    // Create Google Meet if enabled
+    // ── Google Calendar conflict check ────────────────────────
+    try {
+      const { hasConflict } = await checkGoogleCalendarConflicts(
+        meetingType.workspaceId,
+        startDate,
+        endDate
+      );
+      if (hasConflict) {
+        return NextResponse.json(
+          { error: "This time slot conflicts with an existing Google Calendar event" },
+          { status: 409 }
+        );
+      }
+    } catch (err) {
+      console.error("Google Calendar conflict check failed, proceeding without:", err);
+    }
+
+    // Create Google Meet if enabled (workspace-level calendar)
     let meetResult: { meetLink: string; calendarEventId: string; calendarEventUrl: string } | null = null;
 
     if (meetingType.videoTool === "google_meet") {
       try {
-        // Use the workspace owner's calendar for Meet creation
-        const wsData = await getWorkspace(meetingType.workspaceId);
-        if (wsData) {
-          const ownerId = (wsData as { ownerId?: string }).ownerId;
-          if (ownerId) {
-            meetResult = await createGoogleMeetEvent(ownerId, attendees, {
-              title: `Meeting: ${meetingType.name}`,
-              startTime: startDate,
-              durationMinutes: meetingType.duration,
-              description: `Booked via scheduling page\n\nAttendee: ${attendeeName} (${attendeeEmail})${descriptionText ? `\n\n${descriptionText}` : ""}`,
-            });
-          }
-        }
+        // Use the workspace's connected Google Calendar for Meet creation
+        meetResult = await createGoogleMeetEvent(meetingType.workspaceId, attendees, {
+          title: `Meeting: ${meetingType.name}`,
+          startTime: startDate,
+          durationMinutes: meetingType.duration,
+          description: `Booked via scheduling page\n\nAttendee: ${attendeeName} (${attendeeEmail})${descriptionText ? `\n\n${descriptionText}` : ""}`,
+        });
       } catch (err) {
         console.error("Failed to create Google Meet for booking:", err);
       }
@@ -184,7 +195,7 @@ export async function POST(
       endTime: endDate,
       timezone: meetingType.availability?.timezone || "UTC",
       attendees,
-      conferencingTool: meetResult ? "google_meet" : "google_meet",
+      conferencingTool: meetResult ? "google_meet" : "none",
       googleMeetLink: meetResult?.meetLink || "",
       calendarEventId: meetResult?.calendarEventId || "",
       calendarEventUrl: meetResult?.calendarEventUrl || undefined,

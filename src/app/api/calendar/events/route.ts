@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCalendarEvent, getUpcomingEvents, disconnectCalendar, getCalendarConnectionStatus } from "@/lib/calendar";
+import {
+  createCalendarEvent,
+  getUpcomingEvents,
+  disconnectCalendar,
+  getCalendarConnectionStatus,
+} from "@/lib/calendar";
 import { getLead } from "@/lib/firebase/firestore";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { withAuth } from "@/lib/api/middleware";
 
 export async function POST(req: NextRequest) {
@@ -25,7 +31,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const event = await createCalendarEvent(ctx.userId, lead, followUpDate);
+      const event = await createCalendarEvent(ctx.workspaceId, lead, followUpDate);
       return NextResponse.json({ event });
     } catch (error) {
       console.error("Create calendar event error:", error);
@@ -43,7 +49,7 @@ export async function GET(req: NextRequest) {
     try {
       const maxResults = parseInt(req.nextUrl.searchParams.get("maxResults") || "5", 10);
 
-      const status = await getCalendarConnectionStatus(ctx.userId);
+      const status = await getCalendarConnectionStatus(ctx.workspaceId);
 
       if (!status.connected) {
         return NextResponse.json(
@@ -52,7 +58,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      const events = await getUpcomingEvents(ctx.userId, maxResults);
+      const events = await getUpcomingEvents(ctx.workspaceId, maxResults);
       return NextResponse.json({ events, connected: true, email: status.email });
     } catch (error) {
       console.error("Get upcoming events error:", error);
@@ -68,7 +74,20 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   return withAuth(req, async (ctx) => {
     try {
-      await disconnectCalendar(ctx.userId);
+      // Only workspace owner can disconnect calendar
+      const wsSnap = await getAdminDb().collection("workspaces").doc(ctx.workspaceId).get();
+      if (!wsSnap.exists) {
+        return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+      }
+      const wsData = wsSnap.data()!;
+      if (wsData.ownerId !== ctx.userId) {
+        return NextResponse.json(
+          { error: "Only the workspace owner can disconnect Google Calendar" },
+          { status: 403 }
+        );
+      }
+
+      await disconnectCalendar(ctx.workspaceId);
       return NextResponse.json({ success: true });
     } catch (error) {
       console.error("Disconnect calendar error:", error);

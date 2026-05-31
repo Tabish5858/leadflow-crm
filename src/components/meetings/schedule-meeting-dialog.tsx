@@ -14,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { BookingCalendar } from "@/components/booking/BookingCalendar";
+import { BookingTimeSlots } from "@/components/booking/BookingTimeSlots";
+import { generateAvailableDates, formatDate } from "@/components/booking/utils";
+import type { AvailabilitySlot } from "@/components/booking/types";
 import {
   Calendar,
   Check,
@@ -72,76 +76,6 @@ type DialogStep = "select-type" | "datetime" | "details" | "submitting" | "succe
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-/** Format "HH:MM" → "9:00 AM" */
-function formatSlotTime(time24: string): string {
-  const [h, m] = time24.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
-}
-
-/** Generate time slots in 30-min increments within a range */
-function generateTimeSlots(
-  startTime: string,
-  endTime: string,
-): { time: string; display: string }[] {
-  const slots: { time: string; display: string }[] = [];
-  const [startH, startM] = startTime.split(":").map(Number);
-  const [endH, endM] = endTime.split(":").map(Number);
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
-
-  for (let m = startMinutes; m + 30 <= endMinutes; m += 30) {
-    const h = Math.floor(m / 60);
-    const min = m % 60;
-    const time = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-    slots.push({ time, display: formatSlotTime(time) });
-  }
-  return slots;
-}
-
-/** Generate an array of Dates for today + next 30 days */
-function generateAvailableDates(): Date[] {
-  const dates: Date[] = [];
-  const today = new Date();
-  for (let i = 0; i <= 30; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    dates.push(d);
-  }
-  return dates;
-}
-
-function generateMonthCalendar(year: number, month: number): (number | null)[][] {
-  const weeks: (number | null)[][] = [];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  let week: (number | null)[] = [];
-  for (let d = 0; d < firstDay; d++) week.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    week.push(d);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
-  }
-  if (week.length > 0) {
-    while (week.length < 7) week.push(null);
-    weeks.push(week);
-  }
-  return weeks;
-}
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
 /** Get initials for avatar fallback */
 function getInitials(name: string): string {
   return name
@@ -172,13 +106,13 @@ export function ScheduleMeetingDialog({
   const [selectedType, setSelectedType] = useState<MeetingTypeOption | null>(null);
 
   // ── Step 2: Date & Time ────────────────────────────────────────
-  const [useNow, setUseNow] = useState(true);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [slots, setSlots] = useState<{ time: string; display: string }[]>([]);
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
 
   // ── Step 3: Details ────────────────────────────────────────────
@@ -232,30 +166,6 @@ export function ScheduleMeetingDialog({
     );
   }, [leads, leadSearch]);
 
-  // Calendar derived
-  const calendarGrid = generateMonthCalendar(calendarYear, calendarMonth);
-  const monthLabel = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(calendarYear, calendarMonth));
-
-  const isDateAvailable = (day: number) =>
-    availableDates.some(
-      (d) =>
-        d.getFullYear() === calendarYear &&
-        d.getMonth() === calendarMonth &&
-        d.getDate() === day,
-    );
-
-  const isDateSelected = (day: number) => {
-    if (!selectedDate) return false;
-    return (
-      selectedDate.getFullYear() === calendarYear &&
-      selectedDate.getMonth() === calendarMonth &&
-      selectedDate.getDate() === day
-    );
-  };
-
   // ── Effects ─────────────────────────────────────────────────────
 
   // Close member dropdown on outside click
@@ -306,8 +216,16 @@ export function ScheduleMeetingDialog({
   // Generate available dates when meeting type is selected
   useEffect(() => {
     if (!selectedType) return;
-    const dates = generateAvailableDates();
+    const daysOfWeek = selectedType.availability?.daysOfWeek;
+    const dates = daysOfWeek && daysOfWeek.length > 0
+      ? generateAvailableDates(daysOfWeek)
+      : Array.from({ length: 31 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() + i);
+          return d;
+        });
     setAvailableDates(dates);
+    setSlotsError(null);
     if (dates.length > 0) {
       setSelectedDate(dates[0]);
       setCalendarYear(dates[0].getFullYear());
@@ -315,20 +233,73 @@ export function ScheduleMeetingDialog({
     }
   }, [selectedType]);
 
-  // Generate time slots when date changes
+  // Fetch available time slots from API (includes Google Calendar conflict filtering)
+  const slotsFetchRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
-    if (!selectedDate || useNow || !selectedType) return;
+    if (!selectedDate || !selectedType) return;
+
+    slotsFetchRef.current?.abort();
+    const controller = new AbortController();
+    slotsFetchRef.current = controller;
+
+    setSlots([]);
     setSlotsLoading(true);
+    setSlotsError(null);
     setSelectedTime("");
 
-    // Generate slots based on meeting type availability or default 9-5
-    const avail = selectedType.availability;
-    const start = avail?.startTime || "09:00";
-    const end = avail?.endTime || "17:00";
-    const generatedSlots = generateTimeSlots(start, end);
-    setSlots(generatedSlots);
-    setSlotsLoading(false);
-  }, [selectedDate, useNow, selectedType]);
+    const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/meetings/availability?token=${selectedType.bookingToken}&date=${dateStr}&timezone=${encodeURIComponent(tz)}`,
+          { signal: controller.signal }
+        );
+        if (controller.signal.aborted) return;
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Failed to load slots" }));
+          if (controller.signal.aborted) return;
+          setSlotsError(err.error || "Failed to load available times");
+          setSlotsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (controller.signal.aborted) return;
+
+        setSlots(
+          (data.slots || []).map((s: string) => ({
+            time: s,
+            display: (() => {
+              const [h, m] = s.split(":").map(Number);
+              const period = h >= 12 ? "PM" : "AM";
+              const h12 = h % 12 || 12;
+              return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+            })(),
+            label: (() => {
+              const [h, m] = s.split(":").map(Number);
+              const period = h >= 12 ? "PM" : "AM";
+              const h12 = h % 12 || 12;
+              return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+            })(),
+          }))
+        );
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setSlotsError("Failed to load available times");
+        setSlots([]);
+      } finally {
+        if (!controller.signal.aborted) setSlotsLoading(false);
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [selectedDate, selectedType]);
 
   // Load data when dialog opens
   useEffect(() => {
@@ -336,10 +307,10 @@ export function ScheduleMeetingDialog({
     setStep("select-type");
     setErrorMessage("");
     setSelectedType(null);
-    setUseNow(true);
     setSelectedDate(null);
     setSelectedTime("");
     setSlots([]);
+    setSlotsError(null);
     setSelectedMemberIds([]);
     setMemberSearch("");
     setSelectedLeadId(preselectedLeadId || "");
@@ -408,7 +379,6 @@ export function ScheduleMeetingDialog({
 
   const handleSelectType = (type: MeetingTypeOption) => {
     setSelectedType(type);
-    setUseNow(true);
     setStep("datetime");
   };
 
@@ -418,7 +388,7 @@ export function ScheduleMeetingDialog({
   };
 
   const handleContinueToDetails = () => {
-    if (!useNow && !selectedTime) {
+    if (!selectedTime) {
       toast.error("Please select a time slot");
       return;
     }
@@ -445,23 +415,16 @@ export function ScheduleMeetingDialog({
   const handleSubmit = async () => {
     if (!selectedType) return;
 
-    // Compute start time
-    let startDateTime: Date;
-    if (useNow) {
-      startDateTime = new Date();
-      startDateTime.setMinutes(startDateTime.getMinutes() + 5);
-    } else {
-      if (!selectedDate || !selectedTime) {
-        toast.error("Please select a date and time");
-        return;
-      }
-      const [h, m] = selectedTime.split(":").map(Number);
-      startDateTime = new Date(selectedDate);
-      startDateTime.setHours(h, m, 0, 0);
-      if (startDateTime <= new Date()) {
-        toast.error("Meeting must be scheduled in the future");
-        return;
-      }
+    if (!selectedDate || !selectedTime) {
+      toast.error("Please select a date and time");
+      return;
+    }
+    const [h, m] = selectedTime.split(":").map(Number);
+    const startDateTime = new Date(selectedDate);
+    startDateTime.setHours(h, m, 0, 0);
+    if (startDateTime <= new Date()) {
+      toast.error("Meeting must be scheduled in the future");
+      return;
     }
 
     if (selectedMemberIds.length === 0 && !preselectedLeadId && !selectedLeadId) {
@@ -541,38 +504,85 @@ export function ScheduleMeetingDialog({
     }
   };
 
-  // ── Calendar navigation ─────────────────────────────────────────
-  const prevMonth = () => {
-    if (calendarMonth === 0) {
-      setCalendarYear(calendarYear - 1);
-      setCalendarMonth(11);
-    } else {
-      setCalendarMonth(calendarMonth - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (calendarMonth === 11) {
-      setCalendarYear(calendarYear + 1);
-      setCalendarMonth(0);
-    } else {
-      setCalendarMonth(calendarMonth + 1);
-    }
-  };
-
-  const handleDayClick = (day: number) => {
-    const date = new Date(calendarYear, calendarMonth, day);
-    setSelectedDate(date);
-    setSelectedTime("");
-  };
-
   // ═══════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════
 
+  // Step indicator config
+  const SCHEDULE_STEPS = [
+    { key: "select-type" as const, label: "Type" },
+    { key: "datetime" as const, label: "Date & Time" },
+    { key: "details" as const, label: "Details" },
+    { key: "success" as const, label: "Confirmed" },
+  ];
+
+  const currentStepIndex = step === "select-type" ? 0
+    : step === "datetime" ? 1
+    : step === "details" ? 2
+    : 3; // submitting / success / error
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`max-h-[90vh] overflow-y-auto ${
+        step === "datetime" ? "sm:max-w-2xl" : "sm:max-w-lg"
+      }`}>
+        {/* Step Indicator (hidden on error) */}
+        {step !== "error" && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between max-w-md mx-auto">
+              {SCHEDULE_STEPS.map((s, i) => {
+                const completed = i < currentStepIndex;
+                const active = i === currentStepIndex;
+
+                return (
+                  <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`
+                          w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold
+                          transition-all duration-300 ease-in-out
+                          ${
+                            completed
+                              ? "bg-foreground text-background"
+                              : active
+                                ? "bg-foreground text-background ring-4 ring-foreground/20"
+                                : "bg-muted text-muted-foreground border border-border"
+                          }
+                        `}
+                      >
+                        {completed ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          i + 1
+                        )}
+                      </div>
+                      <span
+                        className={`
+                          text-xs mt-2 whitespace-nowrap transition-colors duration-300
+                          ${active ? "text-foreground font-medium" : "text-muted-foreground"}
+                        `}
+                      >
+                        {s.label}
+                      </span>
+                    </div>
+
+                    {/* Connector line */}
+                    {i < SCHEDULE_STEPS.length - 1 && (
+                      <div className="flex-1 h-px mx-3 mb-6 relative">
+                        <div className="absolute inset-0 bg-muted-foreground/20 transition-all duration-500" />
+                        <div
+                          className="absolute inset-y-0 left-0 bg-foreground transition-all duration-500"
+                          style={{ width: completed ? "100%" : "0%" }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ══════════ STEP 1: SELECT TYPE ══════════ */}
         {step === "select-type" && (
           <>
@@ -665,206 +675,80 @@ export function ScheduleMeetingDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              {/* Now / Pick Date & Time toggle */}
-              <div className="space-y-2">
-                <Label>When</Label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseNow(true);
-                      setSelectedTime("");
-                    }}
-                    className={`flex-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                      useNow
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-accent text-foreground"
-                    }`}
-                  >
-                    <Clock className="h-3.5 w-3.5 inline mr-1.5" />
-                    Now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseNow(false)}
-                    className={`flex-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                      !useNow
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-accent text-foreground"
-                    }`}
-                  >
-                    <Calendar className="h-3.5 w-3.5 inline mr-1.5" />
-                    Pick Date &amp; Time
-                  </button>
-                </div>
+            {/* Side-by-side Calendar + Time Slots */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-2">
+              {/* Left: Calendar */}
+              <div className="sm:col-span-2">
+                <BookingCalendar
+                  calendarYear={calendarYear}
+                  calendarMonth={calendarMonth}
+                  selectedDate={selectedDate}
+                  availableDates={availableDates}
+                  onPrevMonth={() => {
+                    if (calendarMonth === 0) {
+                      setCalendarYear((y) => y - 1);
+                      setCalendarMonth(11);
+                    } else {
+                      setCalendarMonth((m) => m - 1);
+                    }
+                  }}
+                  onNextMonth={() => {
+                    if (calendarMonth === 11) {
+                      setCalendarYear((y) => y + 1);
+                      setCalendarMonth(0);
+                    } else {
+                      setCalendarMonth((m) => m + 1);
+                    }
+                  }}
+                  onDayClick={(day: number) => {
+                    const date = new Date(calendarYear, calendarMonth, day);
+                    setSelectedDate(date);
+                    setSelectedTime("");
+                  }}
+                  canSelectNextMonth={true}
+                />
               </div>
 
-              {/* Calendar view when "Pick Date & Time" is selected */}
-              {!useNow && (
-                <>
-                  {/* Month navigation */}
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={prevMonth}
-                      className="h-8 w-8"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-medium">{monthLabel}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={nextMonth}
-                      className="h-8 w-8"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+              {/* Right: Time Slots */}
+              <div>
+                <BookingTimeSlots
+                  selectedDate={selectedDate}
+                  slots={slots}
+                  slotsLoading={slotsLoading}
+                  slotsError={slotsError}
+                  selectedTime={selectedTime}
+                  onSelectTime={setSelectedTime}
+                />
+              </div>
+            </div>
 
-                  {/* Day headers */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                      (d) => (
-                        <div
-                          key={d}
-                          className="text-center text-xs font-medium text-muted-foreground py-1"
-                        >
-                          {d}
-                        </div>
-                      ),
-                    )}
-                  </div>
-
-                  {/* Calendar days */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {calendarGrid.flat().map((day, i) => {
-                      if (day === null) {
-                        return (
-                          <div key={`empty-${i}`} className="h-9" />
-                        );
-                      }
-
-                      const available = isDateAvailable(day);
-                      const selected = isDateSelected(day);
-                      const today = new Date();
-                      const isPast =
-                        calendarYear < today.getFullYear() ||
-                        (calendarYear === today.getFullYear() &&
-                          calendarMonth < today.getMonth()) ||
-                        (calendarYear === today.getFullYear() &&
-                          calendarMonth === today.getMonth() &&
-                          day < today.getDate());
-
-                      return (
-                        <button
-                          key={`day-${day}`}
-                          type="button"
-                          disabled={!available || isPast}
-                          onClick={() => handleDayClick(day)}
-                          className={`h-9 rounded-md text-sm font-medium transition-all ${
-                            selected
-                              ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1"
-                              : available && !isPast
-                                ? "cursor-pointer text-foreground"
-                                : isPast
-                                  ? "text-muted-foreground/30 cursor-not-allowed"
-                                  : "text-muted-foreground"
-                          } ${
-                            available && !selected && !isPast
-                              ? "bg-accent/50 font-semibold"
-                              : ""
-                          }`}
-                        >
-                          {day}
-                          {available && !isPast && (
-                            <div className="h-1 w-1 rounded-full bg-primary mx-auto mt-0.5" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Time slots */}
-                  {selectedDate && (
-                    <div className="border-t pt-4">
-                      <p className="text-sm font-medium mb-3">
-                        {formatDate(selectedDate)}
-                      </p>
-
-                      {slotsLoading ? (
-                        <div className="flex items-center justify-center py-6">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : slots.length === 0 ? (
-                        <div className="text-center py-6">
-                          <Clock className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">
-                            No available times on this day.
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Try selecting a different date.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          {slots.map((slot) => (
-                            <button
-                              key={slot.time}
-                              type="button"
-                              onClick={() => setSelectedTime(slot.time)}
-                              className={`px-2 py-2.5 rounded-md text-xs font-medium transition-colors ${
-                                selectedTime === slot.time
-                                  ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1"
-                                  : "bg-muted hover:bg-accent text-foreground"
-                              }`}
-                            >
-                              {slot.display}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Selected time summary */}
-                  {selectedTime && selectedDate && (
-                    <div className="rounded-md bg-muted/50 p-3 text-sm space-y-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        <span>{formatDate(selectedDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 shrink-0" />
-                        <span>
-                          {formatSlotTime(selectedTime)} ·{" "}
-                          {selectedType.duration} min
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* "Now" info */}
-              {useNow && (
-                <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
+            {/* Selected time summary below */}
+            {selectedTime && selectedDate && (
+              <div className="rounded-md bg-muted/50 p-3 text-sm space-y-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  <span>{formatDate(selectedDate)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
                   <span>
-                    Meeting will start in about 5 minutes from now.
+                    {(() => {
+                      const [h, m] = selectedTime.split(":").map(Number);
+                      const period = h >= 12 ? "PM" : "AM";
+                      const h12 = h % 12 || 12;
+                      return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+                    })()} · {selectedType.duration} min
                   </span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button variant="outline" onClick={handleBackToTypes}>
                 <ChevronLeft className="mr-1.5 h-4 w-4" />
                 Back
               </Button>
-              <Button onClick={handleContinueToDetails}>
+              <Button onClick={handleContinueToDetails} disabled={!selectedTime}>
                 Continue
                 <ChevronRight className="ml-1.5 h-4 w-4" />
               </Button>
@@ -885,11 +769,14 @@ export function ScheduleMeetingDialog({
                 {selectedType.videoTool === "google_meet"
                   ? " · Google Meet"
                   : ""}
-                {useNow
-                  ? " · Starting soon"
-                  : selectedTime && selectedDate
-                    ? ` · ${formatDate(selectedDate)} at ${formatSlotTime(selectedTime)}`
-                    : ""}
+                {selectedTime && selectedDate
+                  ? ` · ${formatDate(selectedDate)} at ${(() => {
+                      const [h, m] = selectedTime.split(":").map(Number);
+                      const period = h >= 12 ? "PM" : "AM";
+                      const h12 = h % 12 || 12;
+                      return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+                    })()}`
+                  : ""}
               </DialogDescription>
             </DialogHeader>
 

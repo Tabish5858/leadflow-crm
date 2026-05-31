@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/contexts/workspace-context";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import {
   Card,
   CardContent,
@@ -24,32 +25,31 @@ interface CalendarEvent {
 }
 
 export function UpcomingEvents() {
-  const { user } = useWorkspace();
+  const { activeWorkspace } = useWorkspace();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!activeWorkspace) return;
 
-    fetch(`/api/calendar/events?userId=${user.id}&maxResults=5`)
-      .then((res) => {
+    (async () => {
+      try {
+        const headers = await getApiAuthHeaders(activeWorkspace.id);
+        const res = await fetch(`/api/calendar/events?maxResults=5`, { headers });
         if (!res.ok) {
           throw new Error("Failed to fetch events");
         }
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         setEvents(data.events || []);
         setError(null);
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => {
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load events");
+      } finally {
         setLoading(false);
-      });
-  }, [user]);
+      }
+    })();
+  }, [activeWorkspace]);
 
   const formatEventTime = (event: CalendarEvent): string => {
     const start = event.start?.dateTime || event.start?.date;

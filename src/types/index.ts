@@ -46,6 +46,22 @@ export interface Workspace {
   memberIds: string[];
   modulePermissions?: ModulePermissionsByRole;
   analyticsCards?: AnalyticsCardConfig[];
+  googleCalendar?: WorkspaceGoogleCalendarConfig;
+}
+
+export interface WorkspaceGoogleCalendarConfig {
+  connected: boolean;
+  email: string | null;
+  connectedCalendars: GoogleCalendarInfo[];
+  selectedCalendarIds: string[];
+  /** Calendar ID where new events/meetings are created. Defaults to "primary". */
+  targetCalendarId?: string;
+}
+
+export interface GoogleCalendarInfo {
+  id: string;
+  name: string;
+  primary: boolean;
 }
 
 // ─── Analytics Cards ────────────────────────────────────────────────────────

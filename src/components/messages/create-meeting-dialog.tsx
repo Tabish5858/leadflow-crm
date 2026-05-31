@@ -16,7 +16,6 @@ import { getApiAuthHeaders } from "@/lib/api/client";
 interface CreateMeetingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
   workspaceId: string;
   conversationId: string;
   leadId?: string;
@@ -29,7 +28,6 @@ type DialogState = "checking" | "not_connected" | "creating" | "error";
 export function CreateMeetingDialog({
   open,
   onOpenChange,
-  userId,
   workspaceId,
   conversationId,
   leadId,
@@ -109,10 +107,32 @@ export function CreateMeetingDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, userId, workspaceId, conversationId, leadId, attendees, onMeetingCreated, onOpenChange]);
+  }, [open, workspaceId, conversationId, leadId, attendees, onMeetingCreated, onOpenChange]);
 
-  const handleConnectCalendar = () => {
-    window.location.href = `/api/auth/google?userId=${userId}&redirectTo=/messages`;
+  const handleConnectCalendar = async () => {
+    try {
+      const headers = await getApiAuthHeaders(workspaceId);
+      const res = await fetch(
+        `/api/auth/google?workspaceId=${workspaceId}&redirectTo=/messages`,
+        { headers }
+      );
+
+      if (res.redirected) {
+        window.location.href = res.url;
+        return;
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setErrorMessage(data.error || "Failed to connect");
+        setState("error");
+      }
+    } catch {
+      setErrorMessage("Failed to connect Google Calendar");
+      setState("error");
+    }
   };
 
   return (

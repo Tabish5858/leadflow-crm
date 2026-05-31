@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 1. Create Google Calendar event with Google Meet
-      const meetResult = await createGoogleMeetEvent(ctx.userId, attendees);
+      // 1. Create Google Calendar event with Google Meet (workspace-level)
+      const meetResult = await createGoogleMeetEvent(ctx.workspaceId, attendees);
 
       // 2. Store meeting in Firestore
       const startTime = new Date();
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       console.error("Failed to create instant meeting:", error);
 
-      const message = "Failed to create meeting";
+      const message = error instanceof Error ? error.message : "Failed to create meeting";
 
       if (message.includes("Google Calendar not connected")) {
         return NextResponse.json({ error: message, needsCalendarAuth: true }, { status: 401 });

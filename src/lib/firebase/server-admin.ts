@@ -28,7 +28,7 @@ export interface CreateMeetingInput {
   endTime: Date;
   timezone: string;
   attendees: { email: string; name: string }[];
-  conferencingTool: "google_meet";
+  conferencingTool: "google_meet" | "none";
   googleMeetLink: string;
   calendarEventId: string;
   calendarEventUrl?: string;

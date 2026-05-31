@@ -1,32 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUrl } from "@/lib/calendar";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import { cookies } from "next/headers";
 
-// OAuth state encryption — prevents leaking userId via plain base64
+// OAuth state encryption
 function encryptState(payload: Record<string, string>): string {
-  // Simple obfuscation using base64 + random prefix
-  // The state is stored in an httpOnly cookie (already secure),
-  // this prevents casual decoding if the cookie is intercepted
   const json = JSON.stringify(payload);
   const encoded = Buffer.from(json).toString("base64");
-  // Add a random prefix to make the state unpredictable
   const prefix = Math.random().toString(36).substring(2, 10);
   return `${prefix}.${encoded}`;
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get("userId");
+    const workspaceId = req.nextUrl.searchParams.get("workspaceId");
     const redirectTo = req.nextUrl.searchParams.get("redirectTo") || "/settings";
 
-    if (!userId) {
+    if (!workspaceId) {
       return NextResponse.json(
-        { error: "userId is required" },
+        { error: "workspaceId is required" },
         { status: 400 }
       );
     }
 
-    const state = encryptState({ userId, redirectTo });
+    // Verify the requesting user is the workspace owner
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.slice(7);
+    let decoded;
+    try {
+      decoded = await getAdminAuth().verifyIdToken(token);
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid token" },
+        { status: 401 }
+      );
+    }
+
+    // Check workspace exists and requester is owner
+    const wsSnap = await getAdminDb().collection("workspaces").doc(workspaceId).get();
+    if (!wsSnap.exists) {
+      return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+    }
+
+    const wsData = wsSnap.data()!;
+    if (wsData.ownerId !== decoded.uid) {
+      return NextResponse.json(
+        { error: "Only the workspace owner can connect Google Calendar" },
+        { status: 403 }
+      );
+    }
+
+    const state = encryptState({ workspaceId, redirectTo });
 
     const cookieStore = await cookies();
     cookieStore.set("calendar_oauth_state", state, {
@@ -39,7 +70,7 @@ export async function GET(req: NextRequest) {
 
     const authUrl = getAuthUrl(state);
 
-    return NextResponse.redirect(authUrl);
+    return NextResponse.json({ url: authUrl });
   } catch (error) {
     console.error("Google OAuth initiation error:", error);
     return NextResponse.json(

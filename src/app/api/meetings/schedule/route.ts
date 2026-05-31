@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createGoogleMeetEvent } from "@/lib/calendar";
+import { createGoogleMeetEvent, checkGoogleCalendarConflicts } from "@/lib/calendar";
 import { createMeeting, logMeeting } from "@/lib/firebase/server-admin";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { withAuth } from "@/lib/api/middleware";
@@ -65,6 +65,29 @@ export async function POST(req: NextRequest) {
         console.error("Conflict detection query failed, proceeding without check:", err);
       }
 
+      // ── Google Calendar conflict check ────────────────────────
+      try {
+        const { hasConflict, conflictingEvents } = await checkGoogleCalendarConflicts(
+          ctx.workspaceId,
+          startDate,
+          endDate
+        );
+        if (hasConflict) {
+          return NextResponse.json(
+            {
+              error: "This time slot conflicts with an existing Google Calendar event",
+              conflictingEvents: conflictingEvents.map((e) => ({
+                summary: e.summary,
+                start: e.start,
+              })),
+            },
+            { status: 409 }
+          );
+        }
+      } catch (err) {
+        console.error("Google Calendar conflict check failed, proceeding without:", err);
+      }
+
       const meetingAttendees = Array.isArray(attendees) && attendees.length > 0
         ? attendees.map((a: { email: string; name?: string }) => ({
             email: a.email,
@@ -74,12 +97,12 @@ export async function POST(req: NextRequest) {
 
       const meetingTimezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
-      // ── 1. Create Google Calendar event with Meet ───────────────
+      // ── 1. Create Google Calendar event with Meet (workspace-level) ─────
       let meetResult: { meetLink: string; calendarEventId: string; calendarEventUrl: string } | null = null;
 
       if (meetingAttendees.length > 0) {
         try {
-          meetResult = await createGoogleMeetEvent(ctx.userId, meetingAttendees, {
+          meetResult = await createGoogleMeetEvent(ctx.workspaceId, meetingAttendees, {
             title: title.trim(),
             durationMinutes: duration,
             description: description || "",
@@ -106,7 +129,7 @@ export async function POST(req: NextRequest) {
         endTime: endDate,
         timezone: meetingTimezone,
         attendees: meetingAttendees,
-        conferencingTool: meetResult ? "google_meet" : "google_meet",
+        conferencingTool: meetResult ? "google_meet" : "none",
         googleMeetLink: meetResult?.meetLink || "",
         calendarEventId: meetResult?.calendarEventId || "",
         calendarEventUrl: meetResult?.calendarEventUrl || undefined,

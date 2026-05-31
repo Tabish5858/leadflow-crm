@@ -5,7 +5,7 @@ import { withAuth } from "@/lib/api/middleware";
 export async function GET(req: NextRequest) {
   return withAuth(req, async (ctx) => {
     try {
-      const status = await getCalendarConnectionStatus(ctx.userId);
+      const status = await getCalendarConnectionStatus(ctx.workspaceId);
       return NextResponse.json(status);
     } catch (error) {
       console.error("Failed to check calendar status:", error);

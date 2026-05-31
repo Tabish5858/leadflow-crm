@@ -996,7 +996,6 @@ export default function MessagesPage() {
           <CreateMeetingDialog
             open={meetingDialogOpen}
             onOpenChange={setMeetingDialogOpen}
-            userId={user.id}
             workspaceId={activeWorkspace.id}
             conversationId={selected.id}
             leadId={selected.leadId}
