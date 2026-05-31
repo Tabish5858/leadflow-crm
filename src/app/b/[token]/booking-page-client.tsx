@@ -250,7 +250,13 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
       });
       if (!res.ok) {
         const errData = await res.json();
-        toast.error(errData.error || "Failed to book meeting");
+        if (res.status === 409) {
+          toast.error("This time was just booked. Please choose another time.");
+          setSelectedTime("");
+          if (selectedDate) fetchSlotsForDate(selectedDate, displayTimezone);
+        } else {
+          toast.error(errData.error || "Failed to book meeting");
+        }
         return;
       }
       if (meetingType.confirmationPage === "redirect" && meetingType.redirectUrl) {
