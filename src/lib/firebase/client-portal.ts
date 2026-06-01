@@ -1,9 +1,9 @@
 import {
   doc,
   getDoc,
-  setDoc,
   updateDoc,
   Timestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type {
@@ -19,7 +19,9 @@ const CHECKLIST_PROGRESS_COLLECTION = "client_checklist_progress";
 
 /**
  * Get portal settings for a workspace.
- * If none exist, creates default settings and returns them.
+ * If none exist in Firestore, returns default settings from memory.
+ * (Agency creates the doc via settings page in Phase 4 — clients
+ *  don't have write permission, so we can't auto-create here.)
  */
 export async function getClientPortalSettings(
   workspaceId: string
@@ -31,8 +33,8 @@ export async function getClientPortalSettings(
     return snap.data() as ClientPortalSettings;
   }
 
-  // Create default settings
-  const defaults: ClientPortalSettings = {
+  // Return defaults from memory — doc will be created by agency settings page
+  return {
     modules: DEFAULT_CLIENT_PORTAL_SETTINGS.modules ?? {
       projects: true,
       messages: true,
@@ -65,9 +67,6 @@ export async function getClientPortalSettings(
     updatedAt: Timestamp.now(),
     updatedBy: "system",
   };
-
-  await setDoc(ref, defaults);
-  return defaults;
 }
 
 /**

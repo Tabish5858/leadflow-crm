@@ -59,7 +59,27 @@ export default function ClientsPage() {
     if (!activeWorkspace?.id) return;
     loadClients();
     loadPendingInvites();
+    // Initialize default portal settings if owner/admin
+    if (canInvite) {
+      initPortalSettings(activeWorkspace.id);
+    }
   }, [activeWorkspace?.id]);
+
+  async function initPortalSettings(wsId: string) {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+      await fetch("/api/workspaces/clients/init-portal", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "x-workspace-id": wsId,
+        },
+      });
+    } catch {
+      // Non-critical — settings will be created on first agency settings page visit
+    }
+  }
 
   async function loadClients() {
     if (!activeWorkspace?.id) return;
