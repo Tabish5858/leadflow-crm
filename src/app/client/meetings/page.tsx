@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useClientUser } from "@/contexts/client-user-context";
 import { fetchClientMeetings } from "@/lib/client/client-data";
-import { Calendar, ExternalLink, Video, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Calendar, ExternalLink, Video } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ErrorState, PageHeader, SkeletonList } from "@/components/client/module-layout";
 
@@ -28,8 +27,9 @@ export default function ClientMeetingsPage() {
       .finally(() => setLoading(false));
   }, [clientWorkspaceId, email]);
 
+  const nowRef = useRef(Date.now());
   const { upcoming, past } = useMemo(() => {
-    const now = Date.now();
+    const now = nowRef.current;
     const up: typeof meetings = [];
     const pa: typeof meetings = [];
     for (const m of meetings) {
