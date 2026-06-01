@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/shared/theme-provider";
+import { Providers } from "@/components/shared/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
@@ -61,10 +62,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delayDuration={300} skipDelayDuration={100}>
-            <main id="main-content" tabIndex={-1} className="flex-1">
-              {children}
-            </main>
-            <Toaster />
+            <Providers>
+              <main id="main-content" tabIndex={-1} className="flex-1">
+                {children}
+              </main>
+              <Toaster />
+            </Providers>
           </TooltipProvider>
         </ThemeProvider>
 

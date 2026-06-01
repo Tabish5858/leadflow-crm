@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RequireModuleAccess } from "@/components/shared/require-module-access";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { db } from "@/lib/firebase/client";
+import { useClientPreview } from "@/lib/hooks/use-client-preview";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { ClientPortalSettings } from "@/types";
@@ -44,6 +45,7 @@ import {
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -146,6 +148,8 @@ const DEFAULT_FORM: PortalSettingsForm = {
 
 export default function ClientPortalSettingsPage() {
   const { user, activeWorkspace } = useWorkspace();
+  const { enterPreview } = useClientPreview();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -557,11 +561,23 @@ export default function ClientPortalSettingsPage() {
               Configure what clients see and can do in their portal.
             </p>
           </div>
-          <Button variant="outline" asChild className="shrink-0">
-            <NextLink href="/client/dashboard" target="_blank">
-              <Eye className="mr-2 h-4 w-4" />
-              Preview Portal
-            </NextLink>
+          <Button
+            variant="outline"
+            className="shrink-0"
+            onClick={() => {
+              // Save current draft settings to sessionStorage for preview
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem(
+                  "leadflow_client_portal_preview_settings",
+                  JSON.stringify(settings)
+                );
+              }
+              enterPreview("preview-client", "Preview Client");
+              router.push("/client/dashboard");
+            }}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Preview Portal
           </Button>
         </div>
 
@@ -1060,11 +1076,21 @@ export default function ClientPortalSettingsPage() {
               Changes are saved immediately to Firestore.
             </p>
             <div className="flex items-center gap-3 ml-auto">
-              <Button variant="outline" asChild>
-                <NextLink href="/client/dashboard" target="_blank">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Preview
-                </NextLink>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem(
+                      "leadflow_client_portal_preview_settings",
+                      JSON.stringify(settings)
+                    );
+                  }
+                  enterPreview("preview-client", "Preview Client");
+                  router.push("/client/dashboard");
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Preview
               </Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? (

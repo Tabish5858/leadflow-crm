@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { fetchClientProjects, type ProjectSummary } from "@/lib/client/client-data";
 import { FolderKanban, Loader2, Search } from "lucide-react";
@@ -37,7 +38,7 @@ const PRIORITY_ORDER: Record<string, number> = {
   low: 3,
 };
 
-export default function ClientProjectsPage() {
+function ClientProjectsPage() {
   const { clientWorkspaceId, uid } = useClientUser();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,5 +214,13 @@ export default function ClientProjectsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientProjectsPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="projects">
+      <ClientProjectsPage />
+    </ModuleGuard>
   );
 }

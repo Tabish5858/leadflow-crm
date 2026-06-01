@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { db } from "@/lib/firebase/client";
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, where } from "firebase/firestore";
 import {
   Clock,
   Loader2,
@@ -18,8 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import type { ClientPortalSettings } from "@/types";
-import { DEFAULT_CLIENT_PORTAL_SETTINGS } from "@/types";
+
 import {
   ErrorState,
   PageHeader,
@@ -50,10 +49,8 @@ function formatDate(date: Date) {
   });
 }
 
-export default function ClientTimeTrackerPage() {
-  const router = useRouter();
+function ClientTimeTrackerPage() {
   const { clientWorkspaceId, uid } = useClientUser();
-  const [checkingAccess, setCheckingAccess] = useState(true);
   const [entries, setEntries] = useState<TimeEntryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -66,27 +63,6 @@ export default function ClientTimeTrackerPage() {
   const [billable, setBillable] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
-
-  // Check portal access
-  useEffect(() => {
-    if (!clientWorkspaceId) return;
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, "client_portal_settings", clientWorkspaceId));
-        const settings: ClientPortalSettings = snap.exists()
-          ? (snap.data() as ClientPortalSettings)
-          : (DEFAULT_CLIENT_PORTAL_SETTINGS as ClientPortalSettings);
-        if (!settings.modules.time_tracking) {
-          router.replace("/client/dashboard");
-          return;
-        }
-      } catch {
-        router.replace("/client/dashboard");
-        return;
-      }
-      setCheckingAccess(false);
-    })();
-  }, [clientWorkspaceId, router]);
 
   const fetchEntries = async () => {
     if (!clientWorkspaceId || !uid) return;
@@ -184,15 +160,6 @@ export default function ClientTimeTrackerPage() {
   const billableHours = entries
     .filter((e) => e.billable)
     .reduce((sum, e) => sum + e.duration, 0);
-
-  if (checkingAccess) {
-    return (
-      <div>
-        <PageHeader title="Time Tracker" description="Loading..." />
-        <SkeletonList count={5} height="h-16" />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -371,5 +338,13 @@ export default function ClientTimeTrackerPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientTimeTrackerPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="time_tracking">
+      <ClientTimeTrackerPage />
+    </ModuleGuard>
   );
 }

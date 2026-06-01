@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase/client";
@@ -763,7 +764,7 @@ function ClientMessagesContent() {
 
 // ─── Main Page Export — wrapped in Suspense for useSearchParams ─────────────
 
-export default function ClientMessagesPage() {
+function ClientMessagesPage() {
   return (
     <Suspense fallback={
       <div className="h-[calc(100vh-8rem)] -m-4 sm:-m-6 flex items-center justify-center">
@@ -775,5 +776,13 @@ export default function ClientMessagesPage() {
     }>
       <ClientMessagesContent />
     </Suspense>
+  );
+}
+
+export default function ClientMessagesPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="messages">
+      <ClientMessagesPage />
+    </ModuleGuard>
   );
 }

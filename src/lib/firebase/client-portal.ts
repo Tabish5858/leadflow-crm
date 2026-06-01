@@ -35,6 +35,7 @@ export async function getClientPortalSettings(
 
   // Return defaults from memory — doc will be created by agency settings page
   return {
+    enabled: true,
     modules: DEFAULT_CLIENT_PORTAL_SETTINGS.modules ?? {
       projects: true,
       messages: true,

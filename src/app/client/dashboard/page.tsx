@@ -32,8 +32,9 @@ export default function ClientDashboardPage() {
         ]);
         setSettings(portalSettings);
 
-        // Show welcome card if not dismissed and (first visit or always show)
+        // Show welcome card if not dismissed and enabled
         const shouldShow =
+          portalSettings.welcomeCard.enabled !== false &&
           !progress.dismissedWelcomeCard &&
           (portalSettings.welcomeCard.showOnFirstVisitOnly
             ? !progress.dismissedWelcomeCard

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { fetchClientDocuments } from "@/lib/client/client-data";
 import type { DocumentSummary } from "@/lib/client/client-data";
@@ -47,7 +48,7 @@ function formatDate(date: Date) {
   });
 }
 
-export default function ClientDocumentsPage() {
+function ClientDocumentsPage() {
   const { clientWorkspaceId, uid } = useClientUser();
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,5 +170,13 @@ export default function ClientDocumentsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientDocumentsPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="documents">
+      <ClientDocumentsPage />
+    </ModuleGuard>
   );
 }

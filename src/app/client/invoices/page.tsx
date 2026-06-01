@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { fetchClientInvoices } from "@/lib/client/client-data";
 import type { InvoiceSummary } from "@/lib/client/client-data";
@@ -40,7 +41,7 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
-export default function ClientInvoicesPage() {
+function ClientInvoicesPage() {
   const { clientWorkspaceId, uid } = useClientUser();
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,5 +217,13 @@ export default function ClientInvoicesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientInvoicesPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="invoices">
+      <ClientInvoicesPage />
+    </ModuleGuard>
   );
 }

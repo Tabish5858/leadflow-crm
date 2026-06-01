@@ -579,6 +579,8 @@ export interface Invoice {
 // ─── Client Portal Settings ──────────────────────────────────────────────────
 
 export interface ClientPortalSettings {
+  /** Master toggle — when disabled, clients see a maintenance page */
+  enabled: boolean;
   /** Module visibility toggles — which modules clients can see */
   modules: {
     projects: boolean;
@@ -650,7 +652,8 @@ export interface ClientChecklistProgress {
 }
 
 /** Default portal settings when none exist yet */
-export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> = {
+export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> & { enabled: boolean } = {
+  enabled: true,
   modules: {
     projects: true,
     messages: true,

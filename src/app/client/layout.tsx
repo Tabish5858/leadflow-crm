@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ClientPreviewBanner } from "@/components/client/ClientPreviewBanner";
 import { ClientUserProvider } from "@/contexts/client-user-context";
+import { ClientPortalProvider } from "@/contexts/client-portal-context";
 import { auth, db } from "@/lib/firebase/client";
 import { useClientPreview } from "@/lib/hooks/use-client-preview";
 import { cn } from "@/lib/utils";
@@ -110,8 +111,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = ALL_NAV_ITEMS.filter((item) => {
     if (!item.moduleKey) return true; // Dashboard and Settings always shown
     if (!portalSettings) return true; // Default to showing all until settings load
-    // Time tracking is internal-only, disabled for clients by default
-    if (item.moduleKey === "time_tracking") return false;
+    // Respect the module setting from client_portal_settings
     return portalSettings.modules[item.moduleKey] !== false;
   });
 
@@ -136,8 +136,27 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Preview mode: use mock data
+    // Preview mode: use mock data + saved settings from sessionStorage
     if (isPreviewing && previewClientId) {
+      // Try to load preview settings from sessionStorage
+      let previewSettings: ClientPortalSettings | null = null;
+      if (typeof window !== "undefined") {
+        try {
+          const stored = sessionStorage.getItem("leadflow_client_portal_preview_settings");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            previewSettings = {
+              ...(DEFAULT_CLIENT_PORTAL_SETTINGS as ClientPortalSettings),
+              ...parsed,
+              modules: { ...(DEFAULT_CLIENT_PORTAL_SETTINGS.modules as ClientPortalSettings["modules"]), ...(parsed.modules || {}) },
+              welcomeCard: { ...(DEFAULT_CLIENT_PORTAL_SETTINGS.welcomeCard as ClientPortalSettings["welcomeCard"]), ...(parsed.welcomeCard || {}) },
+              checklist: { ...(DEFAULT_CLIENT_PORTAL_SETTINGS.checklist as ClientPortalSettings["checklist"]), ...(parsed.checklist || {}) },
+            } as ClientPortalSettings;
+          }
+        } catch {
+          // Invalid preview data — use defaults
+        }
+      }
       setClientUser({
         uid: previewClientId,
         displayName: previewClientName || "Preview Client",
@@ -146,7 +165,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         clientWorkspaceId: "preview",
         workspaceName: "Workspace (Preview)",
       });
-      setPortalSettings(DEFAULT_CLIENT_PORTAL_SETTINGS as ClientPortalSettings);
+      setPortalSettings(previewSettings || (DEFAULT_CLIENT_PORTAL_SETTINGS as ClientPortalSettings));
       setLoading(false);
       return;
     }
@@ -246,8 +265,54 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
   if (!clientUser) return null;
 
+  // Maintenance mode: portal disabled via settings
+  const isPortalDisabled = portalSettings?.enabled === false && !isAuthRoute;
+
+  // Show maintenance page when portal is disabled
+  if (isPortalDisabled) {
+    return (
+      <ClientUserProvider clientUser={clientUser}>
+        <ClientPortalProvider settings={portalSettings}>
+          <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+            <div className="mx-auto max-w-md text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted mx-auto">
+                <svg
+                  className="h-10 w-10 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight mb-2">
+                Portal Under Maintenance
+              </h1>
+              <p className="text-muted-foreground mb-8">
+                The client portal is currently disabled. Please check back later
+                or contact your service provider for more information.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+              >
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </ClientPortalProvider>
+      </ClientUserProvider>
+    );
+  }
+
   return (
     <ClientUserProvider clientUser={clientUser}>
+      <ClientPortalProvider settings={portalSettings}>
       <div className="flex h-screen">
         {/* Mobile overlay */}
         {mobileOpen && (
@@ -515,6 +580,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+      </ClientPortalProvider>
     </ClientUserProvider>
   );
 }

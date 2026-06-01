@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
 import { fetchClientMeetings } from "@/lib/client/client-data";
 import { Calendar, Video } from "lucide-react";
@@ -10,7 +11,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorState, PageHeader, SkeletonList } from "@/components/client/module-layout";
 
-export default function ClientMeetingsPage() {
+function ClientMeetingsPage() {
   const { clientWorkspaceId, email } = useClientUser();
   const [allMeetings, setAllMeetings] = useState<
     Awaited<ReturnType<typeof fetchClientMeetings>>
@@ -208,5 +209,13 @@ function MeetingCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+export default function ClientMeetingsPageWrapper() {
+  return (
+    <ModuleGuard moduleKey="meetings">
+      <ClientMeetingsPage />
+    </ModuleGuard>
   );
 }
