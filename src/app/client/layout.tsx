@@ -110,6 +110,8 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = ALL_NAV_ITEMS.filter((item) => {
     if (!item.moduleKey) return true; // Dashboard and Settings always shown
     if (!portalSettings) return true; // Default to showing all until settings load
+    // Time tracking is internal-only, disabled for clients by default
+    if (item.moduleKey === "time_tracking") return false;
     return portalSettings.modules[item.moduleKey] !== false;
   });
 
