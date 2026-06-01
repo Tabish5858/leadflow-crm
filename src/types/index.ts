@@ -279,6 +279,7 @@ export interface Meeting {
   id: string;
   workspaceId: string;
   leadId?: string;
+  clientId?: string;
   conversationId?: string;
   title: string;
   description?: string;
@@ -642,7 +643,7 @@ export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> = {
     meetings: true,
     invoices: true,
     documents: true,
-    time_tracking: true,
+    time_tracking: false,
     project_requests: true,
   },
   welcomeCard: {

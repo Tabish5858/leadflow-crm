@@ -36,6 +36,7 @@ export interface CreateMeetingInput {
   meetingType: "instant" | "scheduled";
   createdBy: string;
   leadId?: string;
+  clientId?: string;
   conversationId?: string;
 }
 
@@ -58,6 +59,7 @@ export async function createMeeting(data: CreateMeetingInput): Promise<string> {
   };
 
   if (data.leadId) docData.leadId = data.leadId;
+  if (data.clientId) docData.clientId = data.clientId;
   if (data.conversationId) docData.conversationId = data.conversationId;
   if (data.description) docData.description = data.description;
   if (data.calendarEventUrl) docData.calendarEventUrl = data.calendarEventUrl;

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   return withAuth(req, async (ctx) => {
     try {
       const body = await req.json();
-      const { attendees, conversationId, leadId } = body;
+      const { attendees, conversationId, leadId, clientId } = body;
 
       if (!attendees || !Array.isArray(attendees) || attendees.length === 0) {
         return NextResponse.json({ error: "At least one attendee is required" }, { status: 400 });
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       const meetingId = await createMeeting({
         workspaceId: ctx.workspaceId,
         leadId: leadId || undefined,
+        clientId: clientId || undefined,
         conversationId: conversationId || undefined,
         title: `Meeting with ${attendees.map((a: { name?: string; email: string }) => a.name || a.email).join(", ")}`,
         startTime,

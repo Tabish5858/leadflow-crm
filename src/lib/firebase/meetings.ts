@@ -37,6 +37,7 @@ export async function createMeeting(data: Omit<Meeting, "id" | "createdAt" | "up
   };
 
   if (data.leadId) docData.leadId = data.leadId;
+  if (data.clientId) docData.clientId = data.clientId;
   if (data.conversationId) docData.conversationId = data.conversationId;
   if (data.description) docData.description = data.description;
   if (data.calendarEventUrl) docData.calendarEventUrl = data.calendarEventUrl;

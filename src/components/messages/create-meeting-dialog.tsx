@@ -18,7 +18,7 @@ interface CreateMeetingDialogProps {
   onOpenChange: (open: boolean) => void;
   workspaceId: string;
   conversationId: string;
-  leadId?: string;
+  clientId?: string;
   attendees: { email: string; name?: string }[];
   onMeetingCreated: (meetLink: string, calendarEventUrl?: string) => Promise<void>;
 }
@@ -30,7 +30,7 @@ export function CreateMeetingDialog({
   onOpenChange,
   workspaceId,
   conversationId,
-  leadId,
+  clientId,
   attendees,
   onMeetingCreated,
 }: CreateMeetingDialogProps) {
@@ -68,7 +68,7 @@ export function CreateMeetingDialog({
           body: JSON.stringify({
             attendees,
             conversationId,
-            leadId,
+            clientId,
           }),
         });
 
@@ -107,7 +107,7 @@ export function CreateMeetingDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, workspaceId, conversationId, leadId, attendees, onMeetingCreated, onOpenChange]);
+  }, [open, workspaceId, conversationId, clientId, attendees, onMeetingCreated, onOpenChange]);
 
   const handleConnectCalendar = async () => {
     try {

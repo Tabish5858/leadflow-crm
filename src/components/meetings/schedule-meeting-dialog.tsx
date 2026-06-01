@@ -33,8 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { Lead } from "@/types";
-import type { WorkspaceMember } from "@/types";
+import type { WorkspaceMember, User } from "@/types";
 import { getApiAuthHeaders } from "@/lib/api/client";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -44,8 +43,8 @@ interface ScheduleMeetingDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   workspaceId: string;
-  /** Pre-selected lead (e.g. coming from lead detail page) */
-  preselectedLeadId?: string;
+  /** Pre-selected client */
+  preselectedClientId?: string;
   /** Pre-set attendees */
   presetAttendees?: { email: string; name: string }[];
   onMeetingScheduled?: (data: {
@@ -93,7 +92,7 @@ export function ScheduleMeetingDialog({
   onOpenChange,
   userId,
   workspaceId,
-  preselectedLeadId,
+  preselectedClientId,
   presetAttendees,
   onMeetingScheduled,
 }: ScheduleMeetingDialogProps) {
@@ -124,13 +123,13 @@ export function ScheduleMeetingDialog({
   const memberContainerRef = useRef<HTMLDivElement>(null);
   const memberInputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId || "");
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [leadsLoading, setLeadsLoading] = useState(false);
-  const [leadDropdownOpen, setLeadDropdownOpen] = useState(false);
-  const [leadSearch, setLeadSearch] = useState("");
-  const leadContainerRef = useRef<HTMLDivElement>(null);
-  const leadInputRef = useRef<HTMLInputElement>(null);
+  const [selectedClientId, setSelectedClientId] = useState(preselectedClientId || "");
+  const [clients, setClients] = useState<User[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const clientContainerRef = useRef<HTMLDivElement>(null);
+  const clientInputRef = useRef<HTMLInputElement>(null);
 
   const [description, setDescription] = useState("");
 
@@ -150,21 +149,20 @@ export function ScheduleMeetingDialog({
     );
   }, [members, memberSearch]);
 
-  const selectedLead = useMemo(
-    () => leads.find((l) => l.id === selectedLeadId),
-    [leads, selectedLeadId],
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === selectedClientId),
+    [clients, selectedClientId],
   );
 
-  const filteredLeads = useMemo(() => {
-    if (!leadSearch.trim()) return leads;
-    const q = leadSearch.toLowerCase();
-    return leads.filter(
-      (l) =>
-        `${l.firstName} ${l.lastName}`.toLowerCase().includes(q) ||
-        (l.company || "").toLowerCase().includes(q) ||
-        (l.email || "").toLowerCase().includes(q),
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return clients;
+    const q = clientSearch.toLowerCase();
+    return clients.filter(
+      (c) =>
+        c.displayName.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q),
     );
-  }, [leads, leadSearch]);
+  }, [clients, clientSearch]);
 
   // ── Effects ─────────────────────────────────────────────────────
 
@@ -190,28 +188,28 @@ export function ScheduleMeetingDialog({
     }
   }, [memberDropdownOpen]);
 
-  // Close lead dropdown on outside click
+  // Close client dropdown on outside click
   useEffect(() => {
-    if (!leadDropdownOpen) return;
+    if (!clientDropdownOpen) return;
     const handler = (e: MouseEvent) => {
       if (
-        leadContainerRef.current &&
-        !leadContainerRef.current.contains(e.target as Node)
+        clientContainerRef.current &&
+        !clientContainerRef.current.contains(e.target as Node)
       ) {
-        setLeadDropdownOpen(false);
-        setLeadSearch("");
+        setClientDropdownOpen(false);
+        setClientSearch("");
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [leadDropdownOpen]);
+  }, [clientDropdownOpen]);
 
-  // Focus lead search when opened
+  // Focus client search when opened
   useEffect(() => {
-    if (leadDropdownOpen && leadInputRef.current) {
-      leadInputRef.current.focus();
+    if (clientDropdownOpen && clientInputRef.current) {
+      clientInputRef.current.focus();
     }
-  }, [leadDropdownOpen]);
+  }, [clientDropdownOpen]);
 
   // Generate available dates when meeting type is selected
   useEffect(() => {
@@ -313,8 +311,8 @@ export function ScheduleMeetingDialog({
     setSlotsError(null);
     setSelectedMemberIds([]);
     setMemberSearch("");
-    setSelectedLeadId(preselectedLeadId || "");
-    setLeadSearch("");
+    setSelectedClientId(preselectedClientId || "");
+    setClientSearch("");
     setDescription("");
 
     // Fetch meeting types
@@ -349,31 +347,30 @@ export function ScheduleMeetingDialog({
       }
     })();
 
-    // Fetch leads
+    // Fetch workspace clients (users with workspaceRoles[workspaceId] === "client")
     (async () => {
-      setLeadsLoading(true);
+      setClientsLoading(true);
       try {
-        const { getDocs, collection, query, where, orderBy } = await import(
+        const { getDocs, collection, query, where } = await import(
           "firebase/firestore"
         );
         const { db } = await import("@/lib/firebase/client");
         const q = query(
-          collection(db, "leads"),
-          where("workspaceId", "==", workspaceId),
-          orderBy("createdAt", "desc"),
+          collection(db, "users"),
+          where(`workspaceRoles.${workspaceId}`, "==", "client"),
         );
         const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(
-          (d) => ({ id: d.id, ...d.data() }) as Lead,
-        );
-        setLeads(items);
+        const items = snapshot.docs
+          .map((d) => ({ id: d.id, ...d.data() }) as User)
+          .filter((u) => u.id !== userId);
+        setClients(items);
       } catch {
         // Non-critical
       } finally {
-        setLeadsLoading(false);
+        setClientsLoading(false);
       }
     })();
-  }, [open, workspaceId, preselectedLeadId, userId]);
+  }, [open, workspaceId, preselectedClientId, userId]);
 
   // ── Handlers ────────────────────────────────────────────────────
 
@@ -427,7 +424,7 @@ export function ScheduleMeetingDialog({
       return;
     }
 
-    if (selectedMemberIds.length === 0 && !preselectedLeadId && !selectedLeadId) {
+    if (selectedMemberIds.length === 0 && !preselectedClientId && !selectedClientId) {
       toast.error("Please add at least one attendee");
       return;
     }
@@ -442,17 +439,17 @@ export function ScheduleMeetingDialog({
         name: m.displayName,
       }));
 
-      // Build attendee from selected lead (if not already in members)
-      const selectedLeadData = leads.find((l) => l.id === selectedLeadId);
+      // Build attendee from selected client (if not already in members)
+      const selectedClientData = clients.find((c) => c.id === selectedClientId);
 
       const allAttendees = [
         ...memberAttendees,
-        ...(selectedLeadData &&
-        !memberAttendees.some((a) => a.email === selectedLeadData.email)
+        ...(selectedClientData &&
+        !memberAttendees.some((a) => a.email === selectedClientData.email)
           ? [
               {
-                email: selectedLeadData.email,
-                name: `${selectedLeadData.firstName} ${selectedLeadData.lastName}`,
+                email: selectedClientData.email,
+                name: selectedClientData.displayName,
               },
             ]
           : []),
@@ -460,7 +457,7 @@ export function ScheduleMeetingDialog({
           (pa) =>
             !memberAttendees.some((a) => a.email === pa.email) &&
             !(
-              selectedLeadData && selectedLeadData.email === pa.email
+              selectedClientData && selectedClientData.email === pa.email
             ),
         ),
       ].filter((a) => a.email);
@@ -478,7 +475,8 @@ export function ScheduleMeetingDialog({
           durationMinutes: selectedType.duration,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           attendees: allAttendees,
-          leadId: selectedLeadId || preselectedLeadId || undefined,
+          leadId: undefined,
+          clientId: selectedClientId || preselectedClientId || undefined,
         }),
       });
 
@@ -923,57 +921,57 @@ export function ScheduleMeetingDialog({
                 )}
               </div>
 
-              {/* Lead selector — custom dropdown (CountrySelect pattern) */}
+              {/* Client selector — custom dropdown */}
               <div className="space-y-1.5">
-                <Label>Linked Lead (optional)</Label>
+                <Label>Client (optional)</Label>
 
-                <div ref={leadContainerRef} className="relative">
+                <div ref={clientContainerRef} className="relative">
                   <button
                     type="button"
-                    onClick={() => setLeadDropdownOpen(!leadDropdownOpen)}
-                    disabled={leadsLoading}
+                    onClick={() => setClientDropdownOpen(!clientDropdownOpen)}
+                    disabled={clientsLoading}
                     className={cn(
                       "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
                       "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                       "hover:bg-accent/50 transition-colors cursor-pointer",
-                      !selectedLead && "text-muted-foreground",
+                      !selectedClient && "text-muted-foreground",
                     )}
                   >
                     <span className="truncate">
-                      {selectedLead
-                        ? `${selectedLead.firstName} ${selectedLead.lastName}${selectedLead.company ? ` — ${selectedLead.company}` : ""}`
-                        : leadsLoading
-                          ? "Loading leads..."
-                          : "Select a lead..."}
+                      {selectedClient
+                        ? selectedClient.displayName
+                        : clientsLoading
+                          ? "Loading clients..."
+                          : "Select a client..."}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </button>
 
-                  {leadDropdownOpen && (
+                  {clientDropdownOpen && (
                     <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
                       {/* Search */}
                       <div className="flex items-center gap-1 border-b px-3 py-2">
                         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                         <input
-                          ref={leadInputRef}
-                          value={leadSearch}
-                          onChange={(e) => setLeadSearch(e.target.value)}
-                          placeholder="Search leads..."
+                          ref={clientInputRef}
+                          value={clientSearch}
+                          onChange={(e) => setClientSearch(e.target.value)}
+                          placeholder="Search clients..."
                           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                         />
                       </div>
 
                       {/* List */}
                       <div className="max-h-48 overflow-y-auto p-1">
-                        {leadsLoading ? (
+                        {clientsLoading ? (
                           <div className="flex items-center justify-center py-6">
                             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                           </div>
-                        ) : filteredLeads.length === 0 ? (
+                        ) : filteredClients.length === 0 ? (
                           <div className="px-2 py-3 text-sm text-muted-foreground text-center">
-                            {leadSearch
-                              ? "No leads found"
-                              : "No leads available"}
+                            {clientSearch
+                              ? "No clients found"
+                              : "No clients available"}
                           </div>
                         ) : (
                           <>
@@ -981,47 +979,60 @@ export function ScheduleMeetingDialog({
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedLeadId("");
-                                setLeadDropdownOpen(false);
-                                setLeadSearch("");
+                                setSelectedClientId("");
+                                setClientDropdownOpen(false);
+                                setClientSearch("");
                               }}
                               className={cn(
                                 "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer",
-                                !selectedLeadId && "bg-accent font-medium",
+                                !selectedClientId && "bg-accent font-medium",
                               )}
                             >
                               <span className="flex-1 text-left text-muted-foreground">
                                 None
                               </span>
-                              {!selectedLeadId && (
+                              {!selectedClientId && (
                                 <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                               )}
                             </button>
 
                             <div className="border-t my-1" />
 
-                            {filteredLeads.map((lead) => {
-                              const isSelected = lead.id === selectedLeadId;
+                            {filteredClients.map((client) => {
+                              const isSelected = client.id === selectedClientId;
                               return (
                                 <button
-                                  key={lead.id}
+                                  key={client.id}
                                   type="button"
                                   onClick={() => {
-                                    setSelectedLeadId(lead.id);
-                                    setLeadDropdownOpen(false);
-                                    setLeadSearch("");
+                                    setSelectedClientId(client.id);
+                                    setClientDropdownOpen(false);
+                                    setClientSearch("");
                                   }}
                                   className={cn(
                                     "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer",
                                     isSelected && "bg-accent font-medium",
                                   )}
                                 >
-                                  <span className="flex-1 text-left">
-                                    {lead.firstName} {lead.lastName}
-                                    {lead.company
-                                      ? ` — ${lead.company}`
-                                      : ""}
-                                  </span>
+                                  <Avatar className="h-7 w-7 shrink-0">
+                                    {client.photoURL && (
+                                      <AvatarImage
+                                        src={client.photoURL}
+                                        alt={client.displayName}
+                                      />
+                                    )}
+                                    <AvatarFallback className="text-[10px]">
+                                      {getInitials(client.displayName)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <div className="text-sm font-medium truncate">
+                                      {client.displayName}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {client.email}
+                                    </div>
+                                  </div>
                                   {isSelected && (
                                     <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                                   )}
@@ -1058,8 +1069,8 @@ export function ScheduleMeetingDialog({
                 onClick={handleSubmit}
                 disabled={
                   selectedMemberIds.length === 0 &&
-                  !selectedLeadId &&
-                  !preselectedLeadId
+                  !selectedClientId &&
+                  !preselectedClientId
                 }
               >
                 <Calendar className="mr-1.5 h-4 w-4" />

@@ -653,7 +653,7 @@ export default function ClientsPage() {
                             className="flex items-center gap-3 px-6 py-3 hover:bg-muted/50 transition-colors"
                           >
                             <Link
-                              href={`/dashboard/clients/${client.userId}`}
+                               href={`/clients/${client.userId}`}
                               className="flex items-center gap-3 flex-1 min-w-0"
                             >
                               <Avatar className="h-10 w-10 border">

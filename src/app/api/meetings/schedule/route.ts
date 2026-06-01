@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
         timezone,
         attendees,
         leadId,
+        clientId,
       } = body;
 
       // ── Validation ──────────────────────────────────────────────
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
       const meetingId = await createMeeting({
         workspaceId: ctx.workspaceId,
         leadId: leadId || undefined,
+        clientId: clientId || undefined,
         title: title.trim(),
         description: description || undefined,
         startTime: startDate,

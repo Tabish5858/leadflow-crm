@@ -1,33 +1,39 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientUser } from "@/contexts/client-user-context";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase/client";
+import { toast } from "@/lib/toast";
 import type { Conversation } from "@/types";
 import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
 import {
   ArrowLeft,
-  MessageSquare,
-  Send,
   Loader2,
+  MessageSquare,
+  MessageSquarePlus,
+  Send,
 } from "lucide-react";
+import { nanoid } from "nanoid";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -49,6 +55,13 @@ interface ClientMessage {
   body: string;
   createdAt: Date | null;
   pending?: boolean;
+}
+
+interface WorkspaceContact {
+  id: string;
+  displayName: string;
+  email: string;
+  photoURL: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -244,7 +257,7 @@ function MessageThread({
       const msgsRef = collection(db, "messages");
       const docRef = await addDoc(msgsRef, {
         conversationId,
-        workspaceId: "", // Will be set by the actual query context
+        workspaceId: "",
         senderId: userId,
         senderName: displayName,
         body: text,
@@ -414,6 +427,134 @@ function MessageThread({
   );
 }
 
+// ─── New Message Dialog ──────────────────────────────────────────────────────
+
+function NewMessageDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+  clientId,
+  onSelectContact,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workspaceId: string;
+  clientId: string;
+  onSelectContact: (contactId: string, contactName: string) => void;
+}) {
+  const [contacts, setContacts] = useState<WorkspaceContact[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const wsSnap = await getDoc(doc(db, "workspaces", workspaceId));
+        if (!wsSnap.exists()) {
+          setContacts([]);
+          return;
+        }
+        const memberIds: string[] = wsSnap.data()?.memberIds || [];
+        if (memberIds.length === 0) {
+          setContacts([]);
+          return;
+        }
+        const usersSnap = await getDocs(
+          query(
+            collection(db, "users"),
+            where("__name__", "in", memberIds.slice(0, 10))
+          )
+        );
+        const result: WorkspaceContact[] = [];
+        usersSnap.forEach((d) => {
+          const data = d.data();
+          const role = data.workspaceRoles?.[workspaceId];
+          if (
+            d.id !== clientId &&
+            (role === "owner" || role === "admin")
+          ) {
+            result.push({
+              id: d.id,
+              displayName: data.displayName || "Unknown",
+              email: data.email || "",
+              photoURL: data.photoURL || null,
+            });
+          }
+        });
+        setContacts(result);
+      } catch {
+        setError("Failed to load contacts");
+        setContacts([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [open, workspaceId, clientId]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>New Message</DialogTitle>
+          <DialogDescription>
+            Select a team member to start a conversation.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-80 overflow-y-auto -mx-6 px-6">
+          {loading ? (
+            <div className="space-y-3 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <p className="text-sm text-destructive py-4 text-center">{error}</p>
+          ) : contacts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              No contacts available
+            </p>
+          ) : (
+            <div className="py-2 space-y-1">
+              {contacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  onClick={() => onSelectContact(contact.id, contact.displayName)}
+                  className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent"
+                >
+                  <Avatar className="h-10 w-10 border shrink-0">
+                    <AvatarImage src={contact.photoURL || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                      {contact.displayName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {contact.displayName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {contact.email}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function ClientMessagesPage() {
@@ -423,6 +564,7 @@ export default function ClientMessagesPage() {
 
   const [conversations, setConversations] = useState<ClientConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const conversationId = searchParams.get("conversation");
 
@@ -475,6 +617,27 @@ export default function ClientMessagesPage() {
     router.push("/client/messages");
   }, [router]);
 
+  const handleSelectContact = useCallback(
+    async (contactId: string, contactName: string) => {
+      setDialogOpen(false);
+      try {
+        const convId = nanoid();
+        await setDoc(doc(db, "conversations", convId), {
+          workspaceId: clientWorkspaceId,
+          participantIds: [uid, contactId],
+          participantNames: [displayName, contactName],
+          createdAt: serverTimestamp(),
+          lastMessageAt: serverTimestamp(),
+          unreadCount: 0,
+        });
+        router.push(`/client/messages?conversation=${convId}`);
+      } catch {
+        toast.error("Failed to create conversation");
+      }
+    },
+    [clientWorkspaceId, uid, displayName, router]
+  );
+
   return (
     <div className="h-[calc(100vh-8rem)] -m-4 sm:-m-6">
       <div className="flex h-full">
@@ -486,12 +649,25 @@ export default function ClientMessagesPage() {
           )}
         >
           <div className="border-b px-4 py-3">
-            <h1 className="text-lg font-bold">Messages</h1>
-            <p className="text-xs text-muted-foreground">
-              {loading
-                ? "Loading..."
-                : `${conversations.length} conversation${conversations.length !== 1 ? "s" : ""}`}
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-bold">Messages</h1>
+                <p className="text-xs text-muted-foreground">
+                  {loading
+                    ? "Loading..."
+                    : `${conversations.length} conversation${conversations.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setDialogOpen(true)}
+                className="shrink-0"
+                title="New Message"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
@@ -554,6 +730,14 @@ export default function ClientMessagesPage() {
           )}
         </div>
       </div>
+
+      <NewMessageDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        workspaceId={clientWorkspaceId}
+        clientId={uid}
+        onSelectContact={handleSelectContact}
+      />
     </div>
   );
 }

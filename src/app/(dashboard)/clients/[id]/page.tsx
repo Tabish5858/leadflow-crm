@@ -259,7 +259,7 @@ export default function ClientDetailPage({
       }
 
       toast.success("Client removed from workspace");
-      router.push("/dashboard/clients");
+      router.push("/clients");
     } catch (err) {
       console.error("Failed to remove client:", err);
       toast.error("Failed to remove client");
@@ -414,7 +414,7 @@ export default function ClientDetailPage({
           </p>
           <div className="flex gap-3">
             <Button variant="outline" asChild>
-              <Link href="/dashboard/clients">
+              <Link href="/clients">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Clients
               </Link>
@@ -432,7 +432,7 @@ export default function ClientDetailPage({
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <Button variant="ghost" size="icon" asChild className="shrink-0">
-              <Link href="/dashboard/clients">
+              <Link href="/clients">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
