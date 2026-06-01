@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/lib/firebase/client";
-import { collection, getDocs, limit, orderBy, query, Timestamp, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, Timestamp, where } from "firebase/firestore";
 import { FolderKanban, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";

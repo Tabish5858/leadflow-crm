@@ -77,6 +77,7 @@ export function WelcomeCard({
             )}
 
             {card.mediaUrl && card.mediaType === "image" && (
+              /* eslint-disable-next-line @next/next/no-img-element -- dynamic user-uploaded media, unknown dimensions */
               <img
                 src={card.mediaUrl}
                 alt=""

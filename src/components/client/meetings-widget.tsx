@@ -17,6 +17,7 @@ interface ClientMeeting {
   endTime: Date;
   googleMeetLink?: string;
   status: string;
+  isToday: boolean;
 }
 
 interface MeetingsWidgetProps {
@@ -42,24 +43,27 @@ export function MeetingsWidget({ workspaceId, userEmail }: MeetingsWidgetProps) 
         );
         const snap = await getDocs(q);
 
-        const now = new Date();
+        const now = Date.now();
+        const todayCutoff = now + 86400000;
         const upcoming = snap.docs
           .map((d) => {
             const data = d.data();
+            const startTime = (data.startTime as Timestamp)?.toDate() ?? new Date();
             return {
               id: d.id,
               title: data.title || "Untitled Meeting",
-              startTime: (data.startTime as Timestamp)?.toDate() ?? new Date(),
+              startTime,
               endTime: (data.endTime as Timestamp)?.toDate() ?? new Date(),
               googleMeetLink: data.googleMeetLink || "",
               status: data.status || "scheduled",
               attendees: data.attendees || [],
+              isToday: startTime.getTime() < todayCutoff,
             };
           })
           .filter(
             (m) =>
               m.status !== "cancelled" &&
-              m.startTime >= now &&
+              m.startTime.getTime() >= now &&
               m.attendees.some(
                 (a: { email: string }) =>
                   a.email?.toLowerCase() === userEmail.toLowerCase()
@@ -158,7 +162,7 @@ export function MeetingsWidget({ workspaceId, userEmail }: MeetingsWidgetProps) 
                     minute: "2-digit",
                   })}
                 </p>
-                {meeting.startTime < new Date(Date.now() + 86400000) && (
+                {meeting.isToday && (
                   <Badge
                     variant="outline"
                     className="mt-1 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 text-[10px] px-1.5 py-0"
