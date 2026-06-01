@@ -3,6 +3,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ClientUserProvider } from "@/contexts/client-user-context";
+import type { ClientUserData } from "@/contexts/client-user-context";
 import { auth, db } from "@/lib/firebase/client";
 import { cn } from "@/lib/utils";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -145,6 +147,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
   if (!clientUser) return null;
 
   return (
+    <ClientUserProvider clientUser={clientUser}>
     <div className="flex h-screen flex-col">
       {/* Header */}
       <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
@@ -251,6 +254,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="p-4 page-enter sm:p-6">{children}</div>
       </main>
     </div>
+    </ClientUserProvider>
   );
 }
 

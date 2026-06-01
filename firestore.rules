@@ -93,6 +93,25 @@ service cloud.firestore {
          hasRole(resource.data.workspaceId, 'admin'));
     }
 
+    // Client portal settings (per-workspace configuration)
+    match /client_portal_settings/{workspaceId} {
+      // Workspace members can read (clients included, to see what's enabled)
+      allow read: if isWorkspaceMember(workspaceId);
+      // Only owner/admin can write
+      allow write: if isAuthenticated() &&
+        (get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid ||
+         hasRole(workspaceId, 'admin'));
+    }
+
+    // Client checklist progress (per-user)
+    match /client_checklist_progress/{docId} {
+      // User can read/write their own progress only
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if false; // Never delete
+    }
+
     // Client invites
     match /client_invites/{inviteId} {
       // Authenticated users can read (for invite verification)

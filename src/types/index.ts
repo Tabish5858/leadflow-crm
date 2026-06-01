@@ -494,3 +494,109 @@ export interface AuditFilters {
   action?: AuditAction;
   leadSearch?: string;
 }
+
+// ─── Client Portal Settings ──────────────────────────────────────────────────
+
+export interface ClientPortalSettings {
+  /** Module visibility toggles — which modules clients can see */
+  modules: {
+    projects: boolean;
+    messages: boolean;
+    meetings: boolean;
+    invoices: boolean;
+    documents: boolean;
+    time_tracking: boolean;
+    project_requests: boolean;
+  };
+  /** Welcome card configuration */
+  welcomeCard: {
+    title: string;
+    description: string;
+    bulletPoints: string[];
+    mediaUrl: string | null;
+    mediaType: "image" | "video" | null;
+    showOnFirstVisitOnly: boolean;
+    enabled: boolean;
+  };
+  /** Onboarding checklist configuration */
+  checklist: {
+    enabled: boolean;
+    steps: ClientChecklistStep[];
+  };
+  /** Curated links displayed on dashboard */
+  helpfulLinks: ClientHelpfulLink[];
+  /** Curated files displayed on dashboard */
+  helpfulFiles: ClientHelpfulFile[];
+  /** Metadata */
+  updatedAt: Timestamp;
+  updatedBy: string;
+}
+
+export interface ClientChecklistStep {
+  id: string;
+  title: string;
+  description: string;
+  videoUrl: string | null;
+  actionLabel: string | null;
+  actionUrl: string | null;
+  order: number;
+}
+
+export interface ClientHelpfulLink {
+  id: string;
+  title: string;
+  url: string;
+  order: number;
+}
+
+export interface ClientHelpfulFile {
+  id: string;
+  title: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+}
+
+/** Per-user progress tracking for client onboarding checklist */
+export interface ClientChecklistProgress {
+  /** Composite key: {workspaceId}_{userId} */
+  id: string;
+  workspaceId: string;
+  userId: string;
+  completedStepIds: string[];
+  dismissedWelcomeCard: boolean;
+  updatedAt: Timestamp;
+}
+
+/** Default portal settings when none exist yet */
+export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> = {
+  modules: {
+    projects: true,
+    messages: true,
+    meetings: true,
+    invoices: true,
+    documents: true,
+    time_tracking: true,
+    project_requests: true,
+  },
+  welcomeCard: {
+    title: "Welcome to the Client Portal",
+    description:
+      "We're excited to have you onboard. Here you can track your projects, communicate with our team, and manage everything in one place.",
+    bulletPoints: [
+      "View real-time project progress and updates",
+      "Send and receive messages with your project team",
+      "Access shared documents and resources",
+    ],
+    mediaUrl: null,
+    mediaType: null,
+    showOnFirstVisitOnly: true,
+    enabled: true,
+  },
+  checklist: {
+    enabled: true,
+    steps: [],
+  },
+  helpfulLinks: [],
+  helpfulFiles: [],
+};
