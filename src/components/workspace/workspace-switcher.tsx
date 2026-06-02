@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { toast } from "@/lib/toast";
-import { canCreateWorkspace } from "@/lib/workspace-permissions";
+import { useCanCreateWorkspace } from "@/lib/hooks/use-can-create-workspace";
 import {
   Building2,
   Check,
@@ -42,6 +42,7 @@ function getWorkspaceInitials(name: string): string {
 
 export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }) {
   const { workspaces, activeWorkspace, switchWorkspace, createNewWorkspace, user } = useWorkspace();
+  const { canCreate } = useCanCreateWorkspace();
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -137,7 +138,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
 
             <DropdownMenuSeparator />
 
-            {canCreateWorkspace(user?.email) && (
+            {canCreate && (
               <DropdownMenuItem
                 onClick={() => setCreateOpen(true)}
                 className="gap-2 cursor-pointer text-primary"

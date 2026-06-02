@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatFileSize, getFileIcon, canPreview } from "@/lib/documents";
-import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "@/lib/cloudinary";
+import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "@/lib/cloudinary-config";
 import { getApiAuthHeaders } from "@/lib/api/client";
 import {
   Upload,
