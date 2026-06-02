@@ -11,6 +11,7 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
+  Timestamp,
   writeBatch,
   QuerySnapshot,
   DocumentData,
@@ -18,6 +19,12 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { Message, Conversation } from "@/types";
+import { demoStore, DEMO_WORKSPACE_ID, DEMO_USER_ID } from "@/lib/demo/demo-data";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 
 const MESSAGES_COLLECTION = "messages";
 const CONVERSATIONS_COLLECTION = "conversations";
@@ -27,6 +34,7 @@ const CONVERSATIONS_COLLECTION = "conversations";
 export async function getConversations(
   workspaceId: string
 ): Promise<Conversation[]> {
+  if (isDemoMode()) return demoStore.getConversations();
   const q = query(
     collection(db, CONVERSATIONS_COLLECTION),
     where("workspaceId", "==", workspaceId),
@@ -45,6 +53,7 @@ export function subscribeToConversations(
   callback: (conversations: Conversation[]) => void,
   onError?: (error: Error) => void
 ): () => void {
+  if (isDemoMode()) return demoStore.subscribeToConversations(callback);
   const q = query(
     collection(db, CONVERSATIONS_COLLECTION),
     where("workspaceId", "==", workspaceId),
@@ -72,6 +81,7 @@ export async function getMessages(
   conversationId: string,
   workspaceId?: string
 ): Promise<Message[]> {
+  if (isDemoMode()) return demoStore.getMessages(conversationId);
   const constraints: QueryConstraint[] = [where("conversationId", "==", conversationId)];
   if (workspaceId) constraints.push(where("workspaceId", "==", workspaceId));
   constraints.push(orderBy("createdAt", "asc"));
@@ -90,6 +100,10 @@ export function subscribeToMessages(
   workspaceId?: string,
   onError?: (error: Error) => void
 ): () => void {
+  if (isDemoMode()) {
+    callback(demoStore.getMessages(conversationId));
+    return () => {};
+  }
   const constraints: QueryConstraint[] = [where("conversationId", "==", conversationId)];
   if (workspaceId) constraints.push(where("workspaceId", "==", workspaceId));
   constraints.push(orderBy("createdAt", "asc"));
@@ -124,6 +138,29 @@ export async function sendMessage(data: {
   replyPreview?: string;
   mentions?: string[];
 }): Promise<string> {
+  if (isDemoMode()) {
+    const msgId = `demo-msg-${Date.now()}`;
+    const msg: Message = {
+      id: msgId,
+      conversationId: data.conversationId,
+      workspaceId: data.workspaceId,
+      senderId: data.senderId,
+      senderName: data.senderName,
+      body: data.body,
+      deleted: false,
+      edited: false,
+      readBy: [data.senderId],
+      createdAt: Timestamp.now(),
+      attachment: data.attachment || null,
+      meetingCard: data.meetingCard || null,
+      replyTo: data.replyTo || null,
+      replyPreview: data.replyPreview || null,
+      mentions: data.mentions || [],
+    };
+    demoStore.sendMessage(msg);
+    return msgId;
+  }
+
   const docData: Record<string, unknown> = {
     conversationId: data.conversationId,
     workspaceId: data.workspaceId,
@@ -217,6 +254,9 @@ export async function createConversation(data: {
   participantIds?: string[];
   participantNames?: string[];
 }): Promise<string> {
+  if (isDemoMode()) {
+    return demoStore.createConversation(data);
+  }
   const docRef = await addDoc(collection(db, CONVERSATIONS_COLLECTION), {
     workspaceId: data.workspaceId,
     type: data.type,
@@ -292,7 +332,7 @@ export async function fixConversationNames(
     const ids = conv.participantIds || [];
     const names = conv.participantNames || [];
 
-    // Already aligned — skip
+    // Already aligned - skip
     if (names.length === ids.length) continue;
 
     // Build correct names from workspace members
@@ -359,7 +399,7 @@ export async function markConversationAsRead(
     await updateDoc(convRef, { unreadCount: 0 });
 
     // Fetch messages, filtered by workspaceId so Firestore rules pass
-    // (isWorkspaceMember check reads resource.data.workspaceId — must match)
+    // (isWorkspaceMember check reads resource.data.workspaceId - must match)
     const constraints: QueryConstraint[] = [where("conversationId", "==", conversationId)];
     if (workspaceId) constraints.push(where("workspaceId", "==", workspaceId));
     const q = query(collection(db, MESSAGES_COLLECTION), ...constraints);
@@ -378,11 +418,11 @@ export async function markConversationAsRead(
           });
           updated++;
         } catch {
-          // Individual message update failed — continue with others
+          // Individual message update failed - continue with others
         }
       }
     }
   } catch {
-    // Non-critical — read receipts are best-effort
+    // Non-critical - read receipts are best-effort
   }
 }

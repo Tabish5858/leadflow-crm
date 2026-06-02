@@ -178,7 +178,7 @@ export default function ClientProjectDetailPage() {
                     month: "short",
                     day: "numeric",
                   })
-                : "—"}
+                : "-"}
             </div>
             {project.startDate && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -219,7 +219,7 @@ export default function ClientProjectDetailPage() {
             <div className="text-2xl font-bold">
               {project.budget != null
                 ? `${project.currency || "USD"} ${project.budget.toLocaleString()}`
-                : "—"}
+                : "-"}
             </div>
           </CardContent>
         </Card>

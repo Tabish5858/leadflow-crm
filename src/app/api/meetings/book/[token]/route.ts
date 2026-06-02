@@ -6,8 +6,8 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * GET /api/meetings/book/:token
- * Public — returns meeting type info for the booking page.
- * No auth required — this is consumed by the public booking UI.
+ * Public - returns meeting type info for the booking page.
+ * No auth required - this is consumed by the public booking UI.
  */
 export async function GET(
   req: NextRequest,
@@ -62,7 +62,7 @@ export async function GET(
 
 /**
  * POST /api/meetings/book/:token
- * Public — books a meeting time slot.
+ * Public - books a meeting time slot.
  */
 export async function POST(
   req: NextRequest,
@@ -189,7 +189,7 @@ export async function POST(
     // Store meeting in Firestore
     const meetingId = await createMeeting({
       workspaceId: meetingType.workspaceId,
-      title: `${meetingType.name} — ${attendeeName}`,
+      title: `${meetingType.name} - ${attendeeName}`,
       description: descriptionText || undefined,
       startTime: startDate,
       endTime: endDate,

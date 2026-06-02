@@ -178,7 +178,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
             } as ClientPortalSettings;
           }
         } catch {
-          // Invalid preview data — use defaults
+          // Invalid preview data - use defaults
         }
       }
       setClientUser({
@@ -461,7 +461,7 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
 
           <Separator />
 
-          {/* Footer — user info + theme + logout */}
+          {/* Footer - user info + theme + logout */}
           <div className={cn("p-3 space-y-2", sidebarCollapsed && "px-2")}>
             {/* User info */}
             <div

@@ -153,7 +153,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left Panel — Branding */}
+      {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-12">
         <div className="mx-auto max-w-md space-y-6">
           <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel — Form */}
+      {/* Right Panel - Form */}
       <div className="flex flex-1 items-center justify-center p-6 sm:p-12">
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
           <CardContent className="space-y-6">
@@ -310,7 +310,7 @@ export default function LoginPage() {
               disabled={demoLoading}
             >
               <Sparkles className="h-4 w-4" />
-              {demoLoading ? "Entering Demo..." : "Try Demo — No Signup Required"}
+              {demoLoading ? "Entering Demo..." : "Try Demo - No Signup Required"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">

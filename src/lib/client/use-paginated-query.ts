@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface PaginatedQueryOptions<T> {
   /** Firestore collection reference */
   collectionRef: ReturnType<typeof collection>;
-  /** Base query constraints (filters) — stable reference recommended */
+  /** Base query constraints (filters) - stable reference recommended */
   baseConstraints?: QueryConstraint[];
   /** Sort field for pagination cursor */
   orderByField: string;
@@ -28,7 +28,7 @@ interface PaginatedQueryOptions<T> {
   orderDirection?: "asc" | "desc";
   /** Page size */
   pageSize?: number;
-  /** Enable total count (uses getCountFromServer — costs 1 read) */
+  /** Enable total count (uses getCountFromServer - costs 1 read) */
   enableCount?: boolean;
   /** Transform raw doc data to typed result */
   transform?: (id: string, data: DocumentData) => T;
@@ -138,7 +138,7 @@ export function usePaginatedQuery<T extends { id: string }>({
         const snap = await getCountFromServer(q);
         if (!cancelled) setTotalCount(snap.data().count);
       } catch {
-        // Count failed — skip
+        // Count failed - skip
       }
     })();
     return () => {

@@ -228,7 +228,7 @@ export default function TimeTrackerPage() {
                     {leads.map((lead) => (
                       <SelectItem key={lead.id} value={lead.id}>
                         {lead.firstName} {lead.lastName}
-                        {lead.company ? ` — ${lead.company}` : ""}
+                        {lead.company ? ` - ${lead.company}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -446,7 +446,7 @@ export default function TimeTrackerPage() {
                             {lead && (
                               <p className="text-xs text-muted-foreground">
                                 {lead.firstName} {lead.lastName}
-                                {lead.company ? ` — ${lead.company}` : ""}
+                                {lead.company ? ` - ${lead.company}` : ""}
                               </p>
                             )}
                             <p className="text-xs text-muted-foreground">

@@ -128,7 +128,7 @@ export function CalendarTab() {
       const data = await getMeetings(activeWorkspace.id);
       setMeetings(data);
     } catch {
-      // Silent fail — parent page handles errors
+      // Silent fail - parent page handles errors
     } finally {
       setLoading(false);
     }

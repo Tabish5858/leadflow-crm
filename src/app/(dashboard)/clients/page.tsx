@@ -129,6 +129,14 @@ export default function ClientsPage() {
     setLoading(true);
     setError(null);
 
+    // Demo mode: return mock client data
+    if (typeof window !== "undefined" && localStorage.getItem("leadflow_demo_mode") === "true") {
+      const { demoStore } = await import("@/lib/demo/demo-data");
+      setClients(demoStore.getClients());
+      setLoading(false);
+      return;
+    }
+
     try {
       const wsSnap = await getDoc(
         doc(db, "workspaces", activeWorkspace.id)
@@ -185,7 +193,7 @@ export default function ClientsPage() {
             displayName: userData.displayName || "",
             photoURL: userData.photoURL || null,
             joinedAt:
-              userData.createdAt?.toDate?.()?.toLocaleDateString() || "—",
+              userData.createdAt?.toDate?.()?.toLocaleDateString() || "-",
             projectCount: projectClientMap.get(d.id) || 0,
           });
         }
@@ -236,10 +244,10 @@ export default function ClientsPage() {
           status: inv.status,
           createdAt: inv.createdAt
             ? new Date(inv.createdAt).toLocaleDateString()
-            : "—",
+            : "-",
           expiresAt: inv.expiresAt
             ? new Date(inv.expiresAt).toLocaleDateString()
-            : "—",
+            : "-",
           invitedByName: inv.invitedByName,
         })
       );

@@ -18,7 +18,7 @@ export interface AuthContext {
  * by ensuring requests originate from the app itself.
  *
  * NOTE: Some clients (mobile apps, Postman) don't send Origin headers.
- * We only reject when the header IS present but DOESN'T match — not
+ * We only reject when the header IS present but DOESN'T match - not
  * when it's absent. This preserves compatibility while blocking
  * most CSRF attack vectors.
  */
@@ -31,7 +31,7 @@ function validateOrigin(req: NextRequest): NextResponse | null {
   const referer = req.headers.get("referer");
   const source = origin || referer;
 
-  // No origin/referer header — skip check (mobile apps, direct API calls)
+  // No origin/referer header - skip check (mobile apps, direct API calls)
   if (!source) return null;
 
   try {
@@ -54,7 +54,7 @@ function validateOrigin(req: NextRequest): NextResponse | null {
       { status: 403 }
     );
   } catch {
-    // Invalid URL in origin/referer — allow to avoid breaking valid clients
+    // Invalid URL in origin/referer - allow to avoid breaking valid clients
     return null;
   }
 }
@@ -104,7 +104,7 @@ async function verifyFirebaseToken(
  *   - x-workspace-id header
  *
  * The token is verified via Firebase Admin SDK. The user ID from the
- * decoded token is authoritative — the x-user-id header is NOT used
+ * decoded token is authoritative - the x-user-id header is NOT used
  * (and is ignored) to prevent impersonation attacks.
  *
  * Returns `AuthContext` on success or a `NextResponse` error on failure.
@@ -119,7 +119,7 @@ export async function requireAuth(
 
   const workspaceId = req.headers.get("x-workspace-id");
 
-  // Step 1: Verify Firebase ID token — this gives us the trusted userId
+  // Step 1: Verify Firebase ID token - this gives us the trusted userId
   const tokenResult = await verifyFirebaseToken(req);
   if (tokenResult instanceof NextResponse) return tokenResult;
   const userId = tokenResult.uid;

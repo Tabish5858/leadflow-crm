@@ -147,7 +147,7 @@ export async function computeAvailableSlots(
       })
       .filter((m): m is NonNullable<typeof m> => m !== null);
   } catch {
-    // Non-critical — proceed without conflict checking
+    // Non-critical - proceed without conflict checking
   }
 
   // 5. Enforce minimum notice: slots must be at least `minimumNotice` minutes from now

@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
           console.error("Failed to send invite email:", err);
         }
       } else {
-        console.warn("RESEND_API_KEY not configured — invite created without email");
+        console.warn("RESEND_API_KEY not configured - invite created without email");
       }
 
       return NextResponse.json({

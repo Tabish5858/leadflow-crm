@@ -56,7 +56,7 @@ function getConversationName(
     const names = conv.participantNames || [];
     const isGroup = ids.length > 2 || !!conv.groupName;
 
-    // Group conversation — use groupName or list of names
+    // Group conversation - use groupName or list of names
     if (isGroup) {
       if (conv.groupName) {
         const otherCount = ids.filter((id) => id !== currentUserId).length;
@@ -210,7 +210,7 @@ export default function MessagesPage() {
     fixConversationNames(conversations, memberMapForMigration)
       .then((count) => {
         if (count > 0) {
-          // Migration complete — names synced
+          // Migration complete - names synced
         }
       })
       .catch(() => { })
@@ -267,7 +267,7 @@ export default function MessagesPage() {
     }
   }, [conversations, draftMember, selected, user]);
 
-  // ─── Select conversation (no double-fetch — snapshot handles it) ──────
+  // ─── Select conversation (no double-fetch - snapshot handles it) ──────
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelected(conv);
@@ -290,7 +290,7 @@ export default function MessagesPage() {
         setDraftMember(null);
         return;
       }
-      // No conversation yet — enter draft mode
+      // No conversation yet - enter draft mode
       setSelected(null);
       setDraftMember(member);
       setMessages([]);
@@ -510,7 +510,7 @@ export default function MessagesPage() {
     async (body: string, _attachment?: unknown, msgReplyTo?: string, msgReplyPreview?: string) => {
       if (!user || !activeWorkspace) return;
 
-      // Draft mode — create conversation + send first message
+      // Draft mode - create conversation + send first message
       if (draftMember && !selected) {
         const convoId = await createConversation({
           workspaceId: activeWorkspace.id,
@@ -754,7 +754,7 @@ export default function MessagesPage() {
     return sections;
   }, [filteredConversations, roleMap, user?.id, hasClientsInWorkspace]);
 
-  // Members without an existing conversation (exclude current user + exclude clients — they have their own section)
+  // Members without an existing conversation (exclude current user + exclude clients - they have their own section)
   const membersWithoutConvo = workspaceMembers.filter(
     (m) =>
       m.userId !== user?.id &&
@@ -975,7 +975,7 @@ export default function MessagesPage() {
                 </div>
               </>
             ) : draftMember ? (
-              /* Draft mode — member selected, no conversation yet */
+              /* Draft mode - member selected, no conversation yet */
               <>
                 <div className="border-b px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -1015,7 +1015,7 @@ export default function MessagesPage() {
                 </div>
               </>
             ) : (
-              /* Empty state — no conversation selected */
+              /* Empty state - no conversation selected */
               <div className="flex h-full flex-col items-center justify-center p-6 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                   <Mail className="h-8 w-8 text-muted-foreground/40" />

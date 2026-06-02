@@ -15,11 +15,11 @@ export function DemoBanner() {
         <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">
-            You are in demo mode — data is not saved. Deploy your own instance to
+            You are in demo mode - data is not saved. Deploy your own instance to
             keep your data.
           </span>
           <span className="sm:hidden">
-            Demo mode — data not saved.
+            Demo mode - data not saved.
           </span>
           <a
             href="https://github.com/Tabish5858/leadflow"

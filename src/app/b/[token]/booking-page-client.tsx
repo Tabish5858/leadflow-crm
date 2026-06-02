@@ -62,7 +62,7 @@ export function BookingPageClient({ token, detectedTimezone }: BookingPageClient
   // ── Auto-detect timezone ────────────────────────────────────
   useEffect(() => {
     if (detectedTimezone) {
-      // 1. Server-detected (Cloudflare cf-timezone) — handles VPN
+      // 1. Server-detected (Cloudflare cf-timezone) - handles VPN
       setDisplayTimezone(detectedTimezone);
     } else {
       // 2. OS-level via Intl API

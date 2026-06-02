@@ -92,7 +92,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Dynamically loaded tab content — only loaded when user clicks the tab
+// Dynamically loaded tab content - only loaded when user clicks the tab
 const PipelineEditor = dynamic(() => import("@/components/settings/pipeline-editor").then((mod) => mod.PipelineEditor), {
   loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
 });
@@ -507,7 +507,7 @@ export default function SettingsPage() {
   const isAdminOrOwner = user?.role === "owner" || user?.role === "admin";
 
   // Dashboard and Settings access is controlled by frontend guards (nav filtering + route guards),
-  // not by module permissions — so exclude them from the toggle grid
+  // not by module permissions - so exclude them from the toggle grid
   const controlledModuleIds = (Object.keys(MODULE_LABELS) as ModuleId[]).filter(
     (mod) => mod !== "dashboard" && mod !== "settings"
   );
@@ -974,10 +974,10 @@ export default function SettingsPage() {
                       ].map(([permission, owner, admin, member, viewer]) => (
                         <tr key={permission as string} className="hover:bg-muted/20">
                           <td className="py-2.5">{permission as string}</td>
-                          <td className="py-2.5 text-center">{(owner as boolean) ? "✓" : "—"}</td>
-                          <td className="py-2.5 text-center">{(admin as boolean) ? "✓" : "—"}</td>
-                          <td className="py-2.5 text-center">{(member as boolean) ? "✓" : "—"}</td>
-                          <td className="py-2.5 text-center">{(viewer as boolean) ? "✓" : "—"}</td>
+                          <td className="py-2.5 text-center">{(owner as boolean) ? "✓" : "-"}</td>
+                          <td className="py-2.5 text-center">{(admin as boolean) ? "✓" : "-"}</td>
+                          <td className="py-2.5 text-center">{(member as boolean) ? "✓" : "-"}</td>
+                          <td className="py-2.5 text-center">{(viewer as boolean) ? "✓" : "-"}</td>
                         </tr>
                       ))}
                     </tbody>

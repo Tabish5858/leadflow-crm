@@ -29,7 +29,7 @@ async function audit(
     const { [fn]: auditFn } = await import("@/lib/firebase/activities");
     await (auditFn as (...a: unknown[]) => Promise<void>)(...args);
   } catch {
-    // Audit failures are non-critical — don't disrupt the user
+    // Audit failures are non-critical - don't disrupt the user
   }
 }
 

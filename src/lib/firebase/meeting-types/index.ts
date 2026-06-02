@@ -29,7 +29,7 @@ export interface MeetingType {
   dailyLimit?: number;
   videoTool: "google_meet" | "none";
   description: string;
-  /** Public booking token — auto-generated on create */
+  /** Public booking token - auto-generated on create */
   bookingToken: string;
   /** Human-readable URL slug (e.g. "30-min-discovery-call") */
   slug?: string;

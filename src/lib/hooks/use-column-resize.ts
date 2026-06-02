@@ -79,7 +79,7 @@ export function useColumnResize(tableId: string) {
     try {
       localStorage.setItem(STORAGE_PREFIX + tableId, JSON.stringify(columnWidths));
     } catch {
-      /* storage full — ignore */
+      /* storage full - ignore */
     }
   }, [columnWidths, tableId]);
 

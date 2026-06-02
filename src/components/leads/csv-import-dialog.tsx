@@ -99,7 +99,7 @@ export function CsvImportDialog({
               break;
             }
 
-            // Custom field labels are "Name (type)" — match just the name part
+            // Custom field labels are "Name (type)" - match just the name part
             // e.g. "Niche" should match "Niche (select)"
             if (field.isCustom && fieldLabel.includes("(")) {
               const baseName = fieldLabel.split("(")[0].trim();
@@ -378,9 +378,9 @@ export function CsvImportDialog({
                         {lead.firstName} {lead.lastName}
                       </td>
                       <td className="px-3 py-2">{lead.email}</td>
-                      <td className="px-3 py-2">{lead.company || "—"}</td>
+                      <td className="px-3 py-2">{lead.company || "-"}</td>
                       <td className="px-3 py-2">
-                        {lead.value ? `$${lead.value.toLocaleString()}` : "—"}
+                        {lead.value ? `$${lead.value.toLocaleString()}` : "-"}
                       </td>
                     </tr>
                   ))}

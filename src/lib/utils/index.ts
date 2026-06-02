@@ -30,7 +30,7 @@ export function formatDuration(seconds: number): string {
 
 /** Format date to readable string */
 export function formatDate(date: Date | null): string {
-  if (!date) return "—";
+  if (!date) return "-";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -40,7 +40,7 @@ export function formatDate(date: Date | null): string {
 
 /** Format relative time (e.g., "2 days ago") */
 export function formatRelativeTime(date: Date | null): string {
-  if (!date) return "—";
+  if (!date) return "-";
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const seconds = Math.floor(diff / 1000);

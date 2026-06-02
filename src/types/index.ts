@@ -79,7 +79,7 @@ export interface AnalyticsCardConfig {
   id: string;
   type: AnalyticsCardType;
   title: string;
-  /** Metric key — e.g. "total_leads", "leads_over_time", "pipeline_distribution" */
+  /** Metric key - e.g. "total_leads", "leads_over_time", "pipeline_distribution" */
   metric: string;
   /** For custom field charts (select/multiselect types) */
   customFieldId?: string;
@@ -354,11 +354,11 @@ export interface Conversation {
   id: string;
   workspaceId: string;
   type?: "lead" | "member";
-  /** Lead-specific — set when type is "lead" */
+  /** Lead-specific - set when type is "lead" */
   leadId?: string;
   leadName?: string;
   leadEmail?: string;
-  /** Member-specific — set when type is "member" */
+  /** Member-specific - set when type is "member" */
   participantIds: string[];
   participantNames: string[];
   groupName?: string;
@@ -579,9 +579,9 @@ export interface Invoice {
 // ─── Client Portal Settings ──────────────────────────────────────────────────
 
 export interface ClientPortalSettings {
-  /** Master toggle — when disabled, clients see a maintenance page */
+  /** Master toggle - when disabled, clients see a maintenance page */
   enabled: boolean;
-  /** Module visibility toggles — which modules clients can see */
+  /** Module visibility toggles - which modules clients can see */
   modules: {
     projects: boolean;
     messages: boolean;

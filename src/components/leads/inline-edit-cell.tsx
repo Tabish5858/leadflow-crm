@@ -35,7 +35,7 @@ export function InlineEditCell({
   lastName,
   checked,
   onSave,
-  placeholder = "—",
+  placeholder = "-",
   displayValue,
   className,
 }: InlineEditCellProps) {
@@ -78,7 +78,7 @@ export function InlineEditCell({
       }
       setEditing(false);
     } catch {
-      // Stay in edit mode on error — user can retry or Escape to cancel
+      // Stay in edit mode on error - user can retry or Escape to cancel
     } finally {
       setSaving(false);
     }
@@ -165,7 +165,7 @@ export function InlineEditCell({
       );
     }
 
-    // URL type — show truncated link + external + copy
+    // URL type - show truncated link + external + copy
     if (type === "url") {
       const href = displayText.startsWith("http") ? displayText : `https://${displayText}`;
       return (

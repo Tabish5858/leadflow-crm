@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       const invites = await Promise.all(
         invitesSnap.docs.map(async (d) => {
           const data = d.data();
-          let invitedByName = "—";
+          let invitedByName = "-";
           try {
             const inviterSnap = await db
               .collection("users")
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
               .get();
             if (inviterSnap.exists) {
               invitedByName =
-                inviterSnap.data()!.displayName || "—";
+                inviterSnap.data()!.displayName || "-";
             }
           } catch {}
           return {

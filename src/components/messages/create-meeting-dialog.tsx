@@ -192,7 +192,7 @@ export function CreateMeetingDialog({
                   to create Google Meet links for your conversations.
                 </p>
                 <p className="text-xs text-muted-foreground/60">
-                  After connecting, you&apos;ll be redirected back here — click the
+                  After connecting, you&apos;ll be redirected back here - click the
                   meeting button again to send your Meet link.
                 </p>
               </div>
@@ -220,7 +220,7 @@ export function CreateMeetingDialog({
             </div>
           )}
 
-          {/* Success is transient — dialog auto-closes */}
+          {/* Success is transient - dialog auto-closes */}
         </div>
       </DialogContent>
     </Dialog>

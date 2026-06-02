@@ -71,7 +71,7 @@ export function ProjectsWidget({ workspaceId, userId }: ProjectsWidgetProps) {
           }))
         );
       } catch {
-        // Projects collection might not exist yet — empty state is fine
+        // Projects collection might not exist yet - empty state is fine
         setProjects([]);
       } finally {
         setLoading(false);

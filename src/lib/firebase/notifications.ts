@@ -11,11 +11,16 @@ import {
   doc,
   writeBatch,
   serverTimestamp,
-  Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { Notification } from "@/types";
+import { demoStore } from "@/lib/demo/demo-data";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 
 const NOTIFICATIONS_COLLECTION = "notifications";
 
@@ -24,6 +29,8 @@ const NOTIFICATIONS_COLLECTION = "notifications";
 export async function createNotification(
   data: Omit<Notification, "id" | "createdAt">
 ): Promise<string> {
+  // Demo mode: no-op for notification creation
+  if (isDemoMode()) return `demo-notif-${Date.now()}`;
   const docRef = await addDoc(collection(db, NOTIFICATIONS_COLLECTION), {
     ...data,
     read: false,
@@ -39,6 +46,7 @@ export function subscribeToNotifications(
   callback: (notifications: Notification[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
+  if (isDemoMode()) return demoStore.subscribeToNotifications(callback) as unknown as Unsubscribe;
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
     where("userId", "==", userId),
@@ -62,6 +70,7 @@ export function subscribeToNotifications(
 export async function getNotifications(
   userId: string
 ): Promise<Notification[]> {
+  if (isDemoMode()) return demoStore.getNotifications();
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
     where("userId", "==", userId),
@@ -76,11 +85,19 @@ export async function getNotifications(
 // ── Update ─────────────────────────────────────────────────────────
 
 export async function markAsRead(notificationId: string): Promise<void> {
+  if (isDemoMode()) {
+    demoStore.markNotifRead(notificationId);
+    return;
+  }
   const ref = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
   await updateDoc(ref, { read: true });
 }
 
 export async function markAllAsRead(userId: string): Promise<void> {
+  if (isDemoMode()) {
+    demoStore.markAllNotifsRead();
+    return;
+  }
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
     where("userId", "==", userId),
@@ -99,11 +116,13 @@ export async function markAllAsRead(userId: string): Promise<void> {
 export async function deleteNotification(
   notificationId: string
 ): Promise<void> {
+  if (isDemoMode()) return;
   const ref = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
   await deleteDoc(ref);
 }
 
 export async function clearAllNotifications(userId: string): Promise<void> {
+  if (isDemoMode()) return;
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
     where("userId", "==", userId)

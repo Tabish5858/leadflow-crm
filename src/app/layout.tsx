@@ -22,7 +22,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "LeadFlow — Open-Source CRM & Time Tracker",
+  title: "LeadFlow - Open-Source CRM & Time Tracker",
   description:
     "A modern, lightweight CRM for freelancers, small teams, and agencies. Manage leads, track outreach, and analyze performance.",
   keywords: ["CRM", "time tracker", "lead management", "open source", "sales pipeline"],
@@ -48,7 +48,7 @@ export default function RootLayout({
           Skip to main content
         </a>
 
-        {/* Ambient background glow — subtle primary accent */}
+        {/* Ambient background glow - subtle primary accent */}
         <div className="fixed inset-0 z-[-1] pointer-events-none" aria-hidden="true">
           <div className="absolute top-[-20%] left-[15%] w-[65%] h-[600px] bg-primary-600/10 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow" />
           <div className="absolute bottom-[-10%] right-[10%] w-[45%] h-[400px] bg-primary-400/5 blur-[120px] rounded-full mix-blend-screen animate-float" />
@@ -71,7 +71,7 @@ export default function RootLayout({
           </TooltipProvider>
         </ThemeProvider>
 
-        {/* Microsoft Clarity — user behavior analytics */}
+        {/* Microsoft Clarity - user behavior analytics */}
         <Script
           id="microsoft-clarity"
           strategy="afterInteractive"

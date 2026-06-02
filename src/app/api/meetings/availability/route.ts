@@ -31,7 +31,7 @@ function overlaps(
 /**
  * GET /api/meetings/availability?token=<bookingToken>&date=2026-05-25
  *
- * Public endpoint — no auth required.
+ * Public endpoint - no auth required.
  * Returns available time slots for a meeting type on a given date,
  * filtered against both existing Firestore meetings AND Google Calendar
  * events from the workspace's selected calendars.

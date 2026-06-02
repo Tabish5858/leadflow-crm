@@ -13,7 +13,7 @@ const USERS_COLLECTION = "users";
  * Sets the user's workspace role to "client" and adds them to the workspace.
  *
  * Body: { token: string }
- * Auth: Bearer token (required — user must be logged in)
+ * Auth: Bearer token (required - user must be logged in)
  */
 export async function POST(req: NextRequest) {
   try {

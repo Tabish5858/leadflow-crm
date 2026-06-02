@@ -20,7 +20,7 @@ const CHECKLIST_PROGRESS_COLLECTION = "client_checklist_progress";
 /**
  * Get portal settings for a workspace.
  * If none exist in Firestore, returns default settings from memory.
- * (Agency creates the doc via settings page in Phase 4 — clients
+ * (Agency creates the doc via settings page in Phase 4 - clients
  *  don't have write permission, so we can't auto-create here.)
  */
 export async function getClientPortalSettings(
@@ -33,7 +33,7 @@ export async function getClientPortalSettings(
     return snap.data() as ClientPortalSettings;
   }
 
-  // Return defaults from memory — doc will be created by agency settings page
+  // Return defaults from memory - doc will be created by agency settings page
   return {
     enabled: true,
     modules: DEFAULT_CLIENT_PORTAL_SETTINGS.modules ?? {

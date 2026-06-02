@@ -89,7 +89,7 @@ export async function PATCH(req: NextRequest) {
       const body = await req.json();
       const { selectedCalendarIds, targetCalendarId } = body;
 
-      // Validate — must have at least one recognized field
+      // Validate - must have at least one recognized field
       if (selectedCalendarIds !== undefined && !Array.isArray(selectedCalendarIds)) {
         return NextResponse.json(
           { error: "selectedCalendarIds must be an array of strings" },

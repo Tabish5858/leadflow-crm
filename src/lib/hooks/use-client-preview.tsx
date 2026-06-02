@@ -48,7 +48,7 @@ export function ClientPreviewProvider({ children }: { children: ReactNode }) {
           setPreviewClientName(clientName);
           setIsPreviewing(true);
         } catch {
-          // Invalid stored data — skip
+          // Invalid stored data - skip
         }
       }
     }

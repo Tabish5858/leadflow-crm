@@ -3,11 +3,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 /**
- * Accent Theme Context — dynamically switches the primary color palette
+ * Accent Theme Context - dynamically switches the primary color palette
  * by updating --primary-50 through --primary-900 RGB channel CSS custom properties.
  *
  * Adapted from MyUni's ThemeContext for LeadFlow CRM.
- * Works alongside next-themes (dark/light mode toggle) — this handles
+ * Works alongside next-themes (dark/light mode toggle) - this handles
  * only the accent color, not the dark/light semantic tokens.
  */
 
@@ -205,12 +205,12 @@ function applyAccentColors(accent: AccentColor): void {
 
   const root = document.documentElement;
 
-  /* 1. Tonal scale (hex) — for bg-primary-50 through bg-primary-900 */
+  /* 1. Tonal scale (hex) - for bg-primary-50 through bg-primary-900 */
   Object.entries(scale).forEach(([shade, hex]) => {
     root.style.setProperty(`--color-primary-${shade}`, hex);
   });
 
-  /* 2. Semantic HSL tokens — for shadcn components (bg-primary, text-primary-foreground, ring) */
+  /* 2. Semantic HSL tokens - for shadcn components (bg-primary, text-primary-foreground, ring) */
   root.style.setProperty("--primary", `${hsl.h} ${hsl.s} ${hsl.l}`);
   root.style.setProperty("--ring", `${hsl.h} ${hsl.s} ${hsl.l}`);
 

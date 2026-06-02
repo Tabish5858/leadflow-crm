@@ -45,7 +45,7 @@ export async function GET(
         workspaceId?: string;
       };
 
-      // Fire-and-forget — don't block the pixel response
+      // Fire-and-forget - don't block the pixel response
       db.collection(EMAIL_EVENTS_COLLECTION)
         .add({
           emailId,

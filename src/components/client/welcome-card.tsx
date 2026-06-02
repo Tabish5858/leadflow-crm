@@ -32,7 +32,7 @@ export function WelcomeCard({
       await dismissWelcomeCard(workspaceId, userId);
       onDismiss();
     } catch {
-      // Silently fail — not critical
+      // Silently fail - not critical
       onDismiss();
     }
   };

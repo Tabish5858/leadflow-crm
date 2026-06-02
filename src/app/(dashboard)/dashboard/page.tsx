@@ -106,7 +106,7 @@ export default function DashboardPage() {
   return (
     <RequireModuleAccess moduleId="dashboard">
       <div className="space-y-6">
-        {/* KPI Cards — filtered by module access */}
+        {/* KPI Cards - filtered by module access */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {canAccess("leads") && (
             <StatCard
@@ -226,7 +226,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Empty State / Getting Started — only if leads access */}
+        {/* Empty State / Getting Started - only if leads access */}
         {stats?.total === 0 && canAccess("leads") && (
           <EmptyState
             icon={<Users className="h-6 w-6" />}

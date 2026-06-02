@@ -87,7 +87,7 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Dynamically loaded components — only loaded when user opens the dialog
+// Dynamically loaded components - only loaded when user opens the dialog
 const LeadForm = dynamic(() => import("@/components/leads/lead-form").then((mod) => mod.LeadForm), {
   loading: () => <div className="p-8 flex items-center justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>,
 });
@@ -777,7 +777,7 @@ export default function LeadsPage() {
                       if (colId === "sr") {
                         return (
                           <td key="sr" className="px-4 py-3 text-sm text-muted-foreground tabular-nums w-12">
-                            {lead.sr ?? "—"}
+                            {lead.sr ?? "-"}
                           </td>
                         );
                       }
@@ -787,7 +787,7 @@ export default function LeadsPage() {
                             <InlineEditCell
                               type="text"
                               value={lead.company}
-                              placeholder="—"
+                              placeholder="-"
                               onSave={async (val) => {
                                 const v = val as string | null;
                                 editLead(lead.id, { company: v || undefined }, user?.id, user?.displayName);
@@ -802,7 +802,7 @@ export default function LeadsPage() {
                             <InlineEditCell
                               type="url"
                               value={lead.website}
-                              placeholder="—"
+                              placeholder="-"
                               onSave={async (val) => {
                                 const v = val as string | null;
                                 editLead(lead.id, { website: v || undefined }, user?.id, user?.displayName);
@@ -819,7 +819,7 @@ export default function LeadsPage() {
                               onChange={async (v) => {
                                 editLead(lead.id, { country: v || undefined }, user?.id, user?.displayName);
                               }}
-                              placeholder="—"
+                              placeholder="-"
                               inline
                             />
                           </td>
@@ -867,7 +867,7 @@ export default function LeadsPage() {
                               type="number"
                               value={lead.value}
                               displayValue={lead.value ? formatCurrency(lead.value, lead.currency) : undefined}
-                              placeholder="—"
+                              placeholder="-"
                               onSave={async (val) => {
                                 const v = val as number | null;
                                 editLead(lead.id, { value: v ?? undefined }, user?.id, user?.displayName);
@@ -901,7 +901,7 @@ export default function LeadsPage() {
                           <td key="expectedClose" className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
                             {lead.expectedCloseAt
                               ? formatDate(lead.expectedCloseAt.toDate())
-                              : "—"}
+                              : "-"}
                           </td>
                         );
                       }
@@ -968,14 +968,14 @@ export default function LeadsPage() {
                                 type="date"
                                 value={rawValue ? String(rawValue) : null}
                                 displayValue={rawValue ? String(rawValue) : undefined}
-                                placeholder="—"
+                                placeholder="-"
                                 onSave={saveCustomField}
                               />
                             ) : (
                               <InlineEditCell
                                 type={inlineType as "text" | "number" | "email" | "url"}
                                 value={rawValue != null ? String(rawValue) : null}
-                                placeholder="—"
+                                placeholder="-"
                                 onSave={saveCustomField}
                               />
                             )}

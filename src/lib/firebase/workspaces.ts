@@ -219,7 +219,7 @@ export async function updateMemberRole(
 ): Promise<void> {
   const userRef = doc(db, USERS_COLLECTION, userId);
 
-  // Update only the per-workspace role — do NOT touch the top-level role field
+  // Update only the per-workspace role - do NOT touch the top-level role field
   // (otherwise changing a user's role in one workspace corrupts their role in others)
   await updateDoc(userRef, {
     [`workspaceRoles.${workspaceId}`]: role,

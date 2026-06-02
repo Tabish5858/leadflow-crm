@@ -96,7 +96,7 @@ export function CalendarConnection({ onConnect }: CalendarConnectionProps) {
       const errorMessages: Record<string, string> = {
         access_denied: "Calendar access was denied",
         invalid_request: "Invalid OAuth request",
-        invalid_state: "OAuth state mismatch — please try again",
+        invalid_state: "OAuth state mismatch - please try again",
         token_exchange_failed: "Failed to exchange authorization code",
         email_mismatch:
           "Connected Google account email doesn't match your workspace owner email",
@@ -187,7 +187,7 @@ export function CalendarConnection({ onConnect }: CalendarConnectionProps) {
 
       toast.success("Calendar preferences saved");
     } catch {
-      // Revert on failure — restore pre-optimistic value
+      // Revert on failure - restore pre-optimistic value
       setSelectedCalendarIds(selectedCalendarIds);
       toast.error("Failed to save calendar preferences");
     } finally {

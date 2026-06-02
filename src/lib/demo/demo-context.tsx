@@ -83,7 +83,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth);
     } catch {
-      // Firebase sign out may fail if not authenticated — that's fine
+      // Firebase sign out may fail if not authenticated - that's fine
     }
     router.push("/login");
   }, [router]);

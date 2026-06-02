@@ -7,7 +7,7 @@ const INVITES_COLLECTION = "workspace_invites";
  * GET /api/workspaces/invite/check?inviteId=XXX
  *
  * Loads invite details for the accept-invite page.
- * No auth required — the inviteId acts as a token.
+ * No auth required - the inviteId acts as a token.
  * Uses Admin SDK to bypass Firestore security rules.
  */
 export async function GET(req: NextRequest) {
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
           "Unknown Workspace";
       }
     } catch {
-      // Non-critical — workspace name is just for display
+      // Non-critical - workspace name is just for display
     }
 
     return NextResponse.json({

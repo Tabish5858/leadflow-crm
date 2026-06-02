@@ -17,7 +17,7 @@ export function ClientPreviewBanner() {
         <EyeOff className="h-4 w-4" />
         <span className="font-medium">Previewing as Client</span>
         <span className="text-amber-700 dark:text-amber-400">
-          — {previewClientName || "Client"}
+          - {previewClientName || "Client"}
         </span>
       </div>
       <div className="flex items-center gap-2">

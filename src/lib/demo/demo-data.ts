@@ -234,7 +234,7 @@ export const DEMO_MESSAGES: Message[] = [
     workspaceId: DEMO_WORKSPACE_ID,
     senderId: "demo-member-002",
     senderName: "Marcus Johnson",
-    body: "Hey Sarah, I just finished the initial research on TechSphere. Their budget seems solid — around $50k.",
+    body: "Hey Sarah, I just finished the initial research on TechSphere. Their budget seems solid - around $50k.",
     deleted: false,
     edited: false,
     readBy: [DEMO_USER_ID],
@@ -354,7 +354,7 @@ export const DEMO_TIME_ENTRIES: TimeEntry[] = [
     leadId: "demo-lead-005",
     taskId: null,
     userId: DEMO_USER_ID,
-    description: "Proposal review — NexGen Solutions",
+    description: "Proposal review - NexGen Solutions",
     startTime: daysAgo(2),
     endTime: daysAgo(2),
     duration: 5400,
@@ -369,7 +369,7 @@ export const DEMO_TIME_ENTRIES: TimeEntry[] = [
     leadId: "demo-lead-003",
     taskId: null,
     userId: "demo-member-002",
-    description: "Market research — CloudPeak",
+    description: "Market research - CloudPeak",
     startTime: daysAgo(1),
     endTime: daysAgo(1),
     duration: 7200,
@@ -473,7 +473,7 @@ export const DEMO_NOTIFICATIONS: Notification[] = [
     userId: DEMO_USER_ID,
     type: "follow_up_due",
     title: "Follow-up Reminder",
-    message: "Robert Williams (DataForge) — next step: send case study",
+    message: "Robert Williams (DataForge) - next step: send case study",
     leadId: "demo-lead-005",
     taskId: null,
     read: true,
@@ -625,6 +625,9 @@ export class DemoStore {
 
   private _convMessageIndex: Map<string, Message[]> = new Map();
   private _notifListeners: Set<(notifications: Notification[]) => void> = new Set();
+  private _convListeners: Set<(conversations: Conversation[]) => void> = new Set();
+  private _lastConvId = 100;
+  private _lastMsgId = 100;
 
   constructor() {
     this._buildIndex();
@@ -691,6 +694,21 @@ export class DemoStore {
     );
   }
 
+  subscribeToConversations(callback: (conversations: Conversation[]) => void): () => void {
+    this._convListeners.add(callback);
+    callback(this.getConversations());
+    return () => {
+      this._convListeners.delete(callback);
+    };
+  }
+
+  private _notifyConvListeners() {
+    const convs = this.getConversations();
+    for (const cb of this._convListeners) {
+      cb(convs);
+    }
+  }
+
   getMessages(conversationId: string): Message[] {
     return [...(this._convMessageIndex.get(conversationId) || [])].sort(
       (a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0)
@@ -710,6 +728,137 @@ export class DemoStore {
       conv.lastMessageAt = msg.createdAt || Timestamp.now();
       conv.unreadCount += 1;
     }
+    this._notifyConvListeners();
+  }
+
+  createConversation(data: {
+    workspaceId: string;
+    type: "lead" | "member";
+    leadId?: string;
+    leadName?: string;
+    leadEmail?: string;
+    participantIds?: string[];
+    participantNames?: string[];
+  }): string {
+    this._lastConvId++;
+    const id = `demo-conv-${this._lastConvId}`;
+    const conv: Conversation = {
+      id,
+      workspaceId: data.workspaceId,
+      type: data.type,
+      leadId: data.leadId || "",
+      leadName: data.leadName || "",
+      leadEmail: data.leadEmail || "",
+      participantIds: data.participantIds || [],
+      participantNames: data.participantNames || [],
+      lastMessage: "",
+      lastMessageAt: Timestamp.now(),
+      unreadCount: 0,
+      createdAt: Timestamp.now(),
+    };
+    this.conversations.unshift(conv);
+    this._notifyConvListeners();
+    return id;
+  }
+
+  // ── Meeting Operations ──
+
+  getMeetings(): Meeting[] {
+    return [...this.meetings].sort(
+      (a, b) => a.startTime.toMillis() - b.startTime.toMillis()
+    );
+  }
+
+  addMeeting(meeting: Meeting): void {
+    this.meetings.push(meeting);
+  }
+
+  updateMeeting(id: string, data: Partial<Meeting>): void {
+    const idx = this.meetings.findIndex((m) => m.id === id);
+    if (idx !== -1) {
+      this.meetings[idx] = { ...this.meetings[idx], ...data, updatedAt: Timestamp.now() };
+    }
+  }
+
+  cancelMeeting(id: string): void {
+    this.updateMeeting(id, { status: "cancelled" });
+  }
+
+  // ── Member/Client Operations ──
+
+  getWorkspaceMembers() {
+    return [
+      {
+        userId: DEMO_USER_ID,
+        email: DEMO_USER.email,
+        displayName: DEMO_USER.displayName,
+        photoURL: null,
+        role: "owner" as const,
+        joinedAt: daysAgo(90),
+      },
+      {
+        userId: "demo-member-002",
+        email: "marcus@acme.dev",
+        displayName: "Marcus Johnson",
+        photoURL: null,
+        role: "member" as const,
+        joinedAt: daysAgo(85),
+      },
+      {
+        userId: "demo-member-003",
+        email: "emily@acme.dev",
+        displayName: "Emily Rodriguez",
+        photoURL: null,
+        role: "member" as const,
+        joinedAt: daysAgo(80),
+      },
+    ];
+  }
+
+  getClients() {
+    return [
+      {
+        userId: "demo-client-001",
+        email: "james.thompson@example.com",
+        displayName: "James Thompson",
+        photoURL: null,
+        joinedAt: "Apr 15, 2026",
+        projectCount: 2,
+      },
+      {
+        userId: "demo-client-002",
+        email: "emma.brown@example.com",
+        displayName: "Emma Brown",
+        photoURL: null,
+        joinedAt: "May 1, 2026",
+        projectCount: 1,
+      },
+      {
+        userId: "demo-client-003",
+        email: "robert.williams@example.com",
+        displayName: "Robert Williams",
+        photoURL: null,
+        joinedAt: "May 20, 2026",
+        projectCount: 0,
+      },
+    ];
+  }
+
+  getProjects() {
+    return [
+      {
+        id: "demo-project-001",
+        name: "TechSphere Onboarding",
+        clients: ["demo-client-001"],
+        status: "active" as const,
+      },
+      {
+        id: "demo-project-002",
+        name: "GreenLeaf Analytics Suite",
+        clients: ["demo-client-001", "demo-client-002"],
+        status: "active" as const,
+      },
+    ];
   }
 
   // ── Time Entry Operations ──
@@ -758,5 +907,5 @@ export class DemoStore {
   }
 }
 
-// Singleton — shared across all demo sessions
+// Singleton - shared across all demo sessions
 export const demoStore = new DemoStore();

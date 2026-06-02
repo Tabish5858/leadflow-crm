@@ -132,7 +132,7 @@ function AcceptClientInviteContent() {
       const cred = await createUserWithEmailAndPassword(auth, invite.email, signupData.password);
       await updateProfile(cred.user, { displayName: signupData.name });
 
-      // Create minimal user document (no workspace — will be added via accept)
+      // Create minimal user document (no workspace - will be added via accept)
       await setDoc(doc(db, "users", cred.user.uid), {
         id: cred.user.uid,
         email: invite.email,
@@ -323,7 +323,7 @@ function AcceptClientInviteContent() {
     );
   }
 
-  // ── Invite info state (not logged in — show signup form) ──────
+  // ── Invite info state (not logged in - show signup form) ──────
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">

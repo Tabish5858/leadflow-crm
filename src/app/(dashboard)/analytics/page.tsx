@@ -412,7 +412,7 @@ export default function AnalyticsPage() {
     async (cards: AnalyticsCardConfig[]) => {
       if (!activeWorkspace) return;
       try {
-        // Firestore rejects undefined values — strip them
+        // Firestore rejects undefined values - strip them
         const sanitized = cards.map((card) =>
           Object.fromEntries(
             Object.entries(card).filter(([, v]) => v !== undefined)
@@ -460,7 +460,7 @@ export default function AnalyticsPage() {
     (metric: string, customFieldId?: string) => {
       const cards = getAnalyticsCards(activeWorkspace?.analyticsCards);
 
-      // Custom field chart metrics not in AVAILABLE_METRICS — handle directly
+      // Custom field chart metrics not in AVAILABLE_METRICS - handle directly
       if (metric === "__custom_field_bar__" || metric === "__custom_field_pie__") {
         const cfName = customFieldId
           ? activeWorkspace?.customFields?.find((f) => f.id === customFieldId)?.name

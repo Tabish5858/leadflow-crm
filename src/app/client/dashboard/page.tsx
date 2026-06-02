@@ -154,17 +154,17 @@ export default function ClientDashboardPage() {
           />
         )}
 
-        {/* Helpful Links — only if configured */}
+        {/* Helpful Links - only if configured */}
         {settings && settings.helpfulLinks.length > 0 && (
           <HelpfulLinksCard settings={settings} />
         )}
 
-        {/* Helpful Files — only if configured */}
+        {/* Helpful Files - only if configured */}
         {settings && settings.helpfulFiles.length > 0 && (
           <HelpfulFilesCard settings={settings} />
         )}
 
-        {/* Action Items — always shown */}
+        {/* Action Items - always shown */}
         <ActionItemsCard />
       </div>
     </div>

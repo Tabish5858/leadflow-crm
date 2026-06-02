@@ -7,7 +7,7 @@ const CLIENT_INVITES_COLLECTION = "client_invites";
  * GET /api/workspaces/clients/check-invite?token=INVITE_ID
  *
  * Public endpoint that returns basic invite details for the accept page.
- * No auth required — only returns non-sensitive metadata.
+ * No auth required - only returns non-sensitive metadata.
  */
 export async function GET(req: NextRequest) {
   try {

@@ -94,7 +94,7 @@ function SelectCell({ customField, value, leadId, userId, userName }: SelectFiel
             {selectedText}
           </span>
         ) : (
-          <span className="text-muted-foreground/40 text-[10px]">—</span>
+          <span className="text-muted-foreground/40 text-[10px]">-</span>
         )}
       </SelectTrigger>
       <SelectContent>
@@ -160,7 +160,7 @@ function MultiSelectCell({ customField, value, leadId, userId, userName }: Selec
               </span>
             ))
           ) : (
-            <span className="text-muted-foreground/50 text-sm">—</span>
+            <span className="text-muted-foreground/50 text-sm">-</span>
           )}
         </button>
       </PopoverTrigger>

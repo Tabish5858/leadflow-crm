@@ -59,12 +59,12 @@ export function getEffectivePermissions(
     return perms;
   }
 
-  // Client role — no module access (uses dedicated /client/* portal)
+  // Client role - no module access (uses dedicated /client/* portal)
   if (role === "client") {
     return noPermissionsMap();
   }
 
-  // Unknown role — no access
+  // Unknown role - no access
   return noPermissionsMap();
 }
 

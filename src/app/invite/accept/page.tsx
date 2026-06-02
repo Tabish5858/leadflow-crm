@@ -113,7 +113,7 @@ function AcceptInviteContent() {
         const snap = await getDocs(q);
         existingUser = !snap.empty;
       } catch {
-        // Firestore rules may block collection-level queries — fall through
+        // Firestore rules may block collection-level queries - fall through
       }
 
       setDisplayName(currentUser?.displayName || "");
@@ -196,7 +196,7 @@ function AcceptInviteContent() {
     } catch (error: unknown) {
       const code = (error as { code?: string }).code;
       if (code === "auth/email-already-in-use") {
-        // Account exists — switch to sign-in flow
+        // Account exists - switch to sign-in flow
         setPhase("signin_existing");
         setSigninPassword("");
         setErrorMessage("");
@@ -249,7 +249,7 @@ function AcceptInviteContent() {
     } catch (error: unknown) {
       const code = (error as { code?: string }).code;
       if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-        // user closed popup — no error needed
+        // user closed popup - no error needed
       } else {
         setPhase("error");
         setErrorMessage(
@@ -397,13 +397,13 @@ function AcceptInviteContent() {
     );
   }
 
-  // ─── Already logged in — one-click accept ──────────────────────────────
+  // ─── Already logged in - one-click accept ──────────────────────────────
 
   if (phase === "already_logged_in" && invite) {
     const roleLabels: Record<string, string> = {
-      admin: "Admin — can manage members and settings",
-      member: "Member — can create and edit leads",
-      viewer: "Viewer — read-only access",
+      admin: "Admin - can manage members and settings",
+      member: "Member - can create and edit leads",
+      viewer: "Viewer - read-only access",
     };
 
     return (
@@ -590,9 +590,9 @@ function AcceptInviteContent() {
   // ─── Signup form (new user) ────────────────────────────────────────────
 
   const roleLabels: Record<string, string> = {
-    admin: "Admin — can manage members and settings",
-    member: "Member — can create and edit leads",
-    viewer: "Viewer — read-only access",
+    admin: "Admin - can manage members and settings",
+    member: "Member - can create and edit leads",
+    viewer: "Viewer - read-only access",
   };
 
   return (
@@ -634,7 +634,7 @@ function AcceptInviteContent() {
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
-            {/* Email — locked */}
+            {/* Email - locked */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -771,7 +771,7 @@ function LeftPanel({ invite }: { invite: InviteDetails | null }) {
         </p>
         <p className="text-lg text-muted-foreground">
           LeadFlow CRM helps teams manage leads, track pipelines, and
-          close deals faster — all in one place.
+          close deals faster - all in one place.
         </p>
         <div className="space-y-3 pt-4">
           {[

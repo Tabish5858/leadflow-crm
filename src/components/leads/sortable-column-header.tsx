@@ -45,7 +45,7 @@ export function SortableColumnHeader({
       }}
     >
       {children}
-      {/* Resize handle — right edge, visible on hover */}
+      {/* Resize handle - right edge, visible on hover */}
       <div
         className="absolute right-0 top-1 bottom-1 w-1.5 cursor-col-resize hover:bg-primary/40 active:bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
         onMouseDown={(e) => onResizeStart(colId, thRef.current!, e)}

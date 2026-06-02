@@ -185,7 +185,7 @@ export function ManageGroupDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {conversation.groupName || "Group"} — Manage Members
+            {conversation.groupName || "Group"} - Manage Members
           </DialogTitle>
           <DialogDescription>
             Add or remove members from this group conversation.

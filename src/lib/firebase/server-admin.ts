@@ -97,7 +97,7 @@ export interface ServerMeetingType {
   bufferTime: number;
   bufferBefore?: number;
   bufferAfter?: number;
-  minimumNotice?: number; // minutes — min advance notice required
+  minimumNotice?: number; // minutes - min advance notice required
   dailyLimit?: number; // max meetings per day
   videoTool: "google_meet" | "none";
   description: string;
@@ -223,7 +223,7 @@ export async function createMeetingType(data: {
   return { id: docRef.id, slug };
 }
 
-/** Generate a preview slug from a name (no random suffix — for display only) */
+/** Generate a preview slug from a name (no random suffix - for display only) */
 export function generateSlugFromName(name: string): string {
   return name
     .toLowerCase()

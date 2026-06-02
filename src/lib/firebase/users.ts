@@ -41,7 +41,7 @@ export async function updateUserProfile(
         displayName: data.displayName,
       });
     } catch {
-      // Non-critical — Firestore is the source of truth
+      // Non-critical - Firestore is the source of truth
     }
   }
 }

@@ -64,7 +64,7 @@ export function KanbanCard({ lead, stageProbability, isDragging, onClick }: Kanb
         "rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md hover:border-primary/20 cursor-grab active:cursor-grabbing",
       )}
     >
-      {/* Content — click opens detail */}
+      {/* Content - click opens detail */}
       <div
         className="space-y-2"
         onClick={(e) => { e.stopPropagation(); onClick?.(); }}

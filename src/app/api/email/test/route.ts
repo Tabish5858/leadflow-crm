@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       const result = await resend.emails.send({
         from: `LeadFlow <${FROM_EMAIL}>`,
         to: [to],
-        subject: "LeadFlow — Resend Connection Test",
+        subject: "LeadFlow - Resend Connection Test",
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
             <h2 style="color: #2563eb;">Resend Connection Test</h2>

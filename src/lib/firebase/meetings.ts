@@ -9,16 +9,52 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { Meeting } from "@/types";
+import { demoStore } from "@/lib/demo/demo-data";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 
 const MEETINGS_COLLECTION = "meetings";
 
 /* ── Create Meeting ────────────────────────────────────────────── */
 
 export async function createMeeting(data: Omit<Meeting, "id" | "createdAt" | "updatedAt">): Promise<string> {
-  /* Strip undefined values — Firestore rejects them */
+  if (isDemoMode()) {
+    const id = `demo-meeting-${Date.now()}`;
+    const now = Timestamp.now();
+    const meeting: Meeting = {
+      id,
+      workspaceId: data.workspaceId,
+      title: data.title,
+      description: data.description,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      timezone: data.timezone,
+      attendees: data.attendees,
+      conferencingTool: data.conferencingTool,
+      googleMeetLink: data.googleMeetLink,
+      calendarEventId: data.calendarEventId,
+      calendarEventUrl: data.calendarEventUrl,
+      status: data.status,
+      meetingType: data.meetingType,
+      leadId: data.leadId,
+      clientId: data.clientId,
+      conversationId: data.conversationId,
+      createdBy: data.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    demoStore.addMeeting(meeting);
+    return id;
+  }
+
+  /* Strip undefined values - Firestore rejects them */
   const docData: Record<string, unknown> = {
     workspaceId: data.workspaceId,
     title: data.title,
@@ -49,6 +85,7 @@ export async function createMeeting(data: Omit<Meeting, "id" | "createdAt" | "up
 /* ── Get Single Meeting ─────────────────────────────────────────── */
 
 export async function getMeeting(meetingId: string): Promise<Meeting | null> {
+  if (isDemoMode()) return demoStore.getMeetings().find((m) => m.id === meetingId) || null;
   const snap = await getDoc(doc(db, MEETINGS_COLLECTION, meetingId));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as Meeting;
@@ -57,6 +94,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
 /* ── List Meetings for Workspace ────────────────────────────────── */
 
 export async function getMeetings(workspaceId: string): Promise<Meeting[]> {
+  if (isDemoMode()) return demoStore.getMeetings();
   const q = query(
     collection(db, MEETINGS_COLLECTION),
     where("workspaceId", "==", workspaceId),
@@ -72,6 +110,10 @@ export async function updateMeetingStatus(
   meetingId: string,
   status: Meeting["status"]
 ): Promise<void> {
+  if (isDemoMode()) {
+    demoStore.updateMeeting(meetingId, { status });
+    return;
+  }
   await updateDoc(doc(db, MEETINGS_COLLECTION, meetingId), {
     status,
     updatedAt: serverTimestamp(),
@@ -81,6 +123,10 @@ export async function updateMeetingStatus(
 /* ── Cancel Meeting ─────────────────────────────────────────────── */
 
 export async function cancelMeeting(meetingId: string): Promise<void> {
+  if (isDemoMode()) {
+    demoStore.cancelMeeting(meetingId);
+    return;
+  }
   await updateDoc(doc(db, MEETINGS_COLLECTION, meetingId), {
     status: "cancelled",
     updatedAt: serverTimestamp(),
@@ -93,6 +139,7 @@ export async function getMeetingsForLead(
   workspaceId: string,
   leadId: string
 ): Promise<Meeting[]> {
+  if (isDemoMode()) return demoStore.getMeetings().filter((m) => m.leadId === leadId);
   const q = query(
     collection(db, MEETINGS_COLLECTION),
     where("workspaceId", "==", workspaceId),

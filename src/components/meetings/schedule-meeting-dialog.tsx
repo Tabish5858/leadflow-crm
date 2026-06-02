@@ -402,7 +402,7 @@ export function ScheduleMeetingDialog({
         ? prev.filter((id) => id !== memberId)
         : [...prev, memberId],
     );
-    // Don't close the dropdown — multi-select should stay open
+    // Don't close the dropdown - multi-select should stay open
   };
 
   const removeMember = (memberId: string) => {
@@ -469,7 +469,7 @@ export function ScheduleMeetingDialog({
           ...(await getApiAuthHeaders(workspaceId)),
         },
         body: JSON.stringify({
-          title: `${selectedType.name}${allAttendees.length > 0 ? ` — ${allAttendees[0].name || allAttendees[0].email}` : ""}`,
+          title: `${selectedType.name}${allAttendees.length > 0 ? ` - ${allAttendees[0].name || allAttendees[0].email}` : ""}`,
           description: description.trim() || undefined,
           startTime: startDateTime.toISOString(),
           durationMinutes: selectedType.duration,
@@ -493,7 +493,7 @@ export function ScheduleMeetingDialog({
       onMeetingScheduled?.({
         meetingId: data.meetingId,
         meetLink: data.meetLink,
-        title: `${selectedType.name} — ${allAttendees[0]?.name || allAttendees[0]?.email || ""}`,
+        title: `${selectedType.name} - ${allAttendees[0]?.name || allAttendees[0]?.email || ""}`,
         startTime: startDateTime.toISOString(),
       });
     } catch {
@@ -779,7 +779,7 @@ export function ScheduleMeetingDialog({
             </DialogHeader>
 
             <div className="space-y-4 py-2">
-              {/* Attendees — custom multi-select member dropdown */}
+              {/* Attendees - custom multi-select member dropdown */}
               <div className="space-y-1.5">
                 <Label>
                   Attendees <span className="text-destructive">*</span>
@@ -921,7 +921,7 @@ export function ScheduleMeetingDialog({
                 )}
               </div>
 
-              {/* Client selector — custom dropdown */}
+              {/* Client selector - custom dropdown */}
               <div className="space-y-1.5">
                 <Label>Client (optional)</Label>
 

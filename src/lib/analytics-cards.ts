@@ -1,7 +1,7 @@
 import type { AnalyticsCardConfig } from "@/types";
 
 /**
- * Default analytics cards — matches the hardcoded 12-card layout.
+ * Default analytics cards - matches the hardcoded 12-card layout.
  * Used when a workspace has no `analyticsCards` configured yet.
  */
 export const DEFAULT_ANALYTICS_CARDS: AnalyticsCardConfig[] = [

@@ -12,7 +12,7 @@ const RESET_TOKENS_COLLECTION = "password_reset_tokens";
  * with a 1-hour expiry, and sends a branded email via Resend containing
  * a link to our own /reset-password page.
  *
- * No Firebase email action handler involved — the email comes from our
+ * No Firebase email action handler involved - the email comes from our
  * own domain via Resend, so it won't land in spam.
  */
 export async function POST(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!checkRateLimit(`forgotpw:email:${normalizedEmail}`, 3, 3600_000)) {
-      // Don't reveal rate limiting by email — return success to avoid email enumeration
+      // Don't reveal rate limiting by email - return success to avoid email enumeration
       return NextResponse.json({ success: true, sentBy: "resend" });
     }
 
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
 
     if (result.error) {
       console.error("Resend error:", result.error);
-      // Don't expose Resend API error details — return generic success
+      // Don't expose Resend API error details - return generic success
       // to avoid revealing whether the account exists (enumeration prevention)
       return NextResponse.json({
         success: true,
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Always return success even if user doesn't exist (security — don't reveal account existence)
+    // Always return success even if user doesn't exist (security - don't reveal account existence)
     return NextResponse.json({
       success: true,
       sentBy: "resend",

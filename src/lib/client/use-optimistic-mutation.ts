@@ -49,7 +49,7 @@ export function useOptimisticMutation<TData, TVariables>({
         optimisticUpdate(variables);
         didOptimistic = true;
       } catch (e) {
-        // Optimistic update failed — don't proceed with mutation
+        // Optimistic update failed - don't proceed with mutation
         setIsLoading(false);
         setError(e as Error);
         return;
@@ -65,7 +65,7 @@ export function useOptimisticMutation<TData, TVariables>({
           try {
             rollback();
           } catch {
-            // Rollback failed — state may be inconsistent
+            // Rollback failed - state may be inconsistent
           }
         }
         const err = e as Error;

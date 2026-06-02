@@ -660,7 +660,7 @@ function ClientMessagesContent() {
   return (
     <div className="h-[calc(100vh-8rem)] -m-4 sm:-m-6">
       <div className="flex h-full">
-        {/* Conversation sidebar — hidden on mobile when a conversation is selected */}
+        {/* Conversation sidebar - hidden on mobile when a conversation is selected */}
         <div
           className={cn(
             "w-full lg:w-80 lg:border-r flex flex-col",
@@ -762,7 +762,7 @@ function ClientMessagesContent() {
   );
 }
 
-// ─── Main Page Export — wrapped in Suspense for useSearchParams ─────────────
+// ─── Main Page Export - wrapped in Suspense for useSearchParams ─────────────
 
 function ClientMessagesPage() {
   return (

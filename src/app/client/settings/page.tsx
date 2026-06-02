@@ -68,7 +68,7 @@ export default function ClientSettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      // Silently fail — user can retry
+      // Silently fail - user can retry
     } finally {
       setSaving(false);
     }

@@ -23,7 +23,7 @@ import { canCreateWorkspace } from "@/lib/workspace-permissions";
 import { useDemoMode } from "@/lib/demo/demo-context";
 import { DEMO_USER, DEMO_WORKSPACE } from "@/lib/demo/demo-data";
 
-// Synchronous check — doesn't depend on React state propagation
+// Synchronous check - doesn't depend on React state propagation
 function isDemoModeSync(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem("leadflow_demo_mode") === "true";
@@ -62,7 +62,7 @@ export function useWorkspace() {
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  // Synchronous demo mode check — runs during render, before any effects
+  // Synchronous demo mode check - runs during render, before any effects
   const [user, setUser] = useState<User | null>(
     () => isDemoModeSync() ? DEMO_USER : null
   );

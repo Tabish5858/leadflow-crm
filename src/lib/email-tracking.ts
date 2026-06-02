@@ -81,7 +81,7 @@ export function rewriteLinks(html: string, emailId: string, baseUrl: string): st
     (match, prefix, url) => {
       // Skip already-tracked links
       if (url.includes("/api/email/track/")) return match;
-      // Only rewrite http/https links — skip dangerous schemes
+      // Only rewrite http/https links - skip dangerous schemes
       if (!url.match(/^https?:\/\//i)) return match;
       const encodedUrl = encodeURIComponent(url);
       return `${prefix}${trackerUrl}?url=${encodedUrl}"`;

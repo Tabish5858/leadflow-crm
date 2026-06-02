@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 /**
- * Action Items Card — shows items needing client attention.
+ * Action Items Card - shows items needing client attention.
  * Currently displays static guidance since invoice/contract
  * features are built in Phase 3. When data sources exist,
  * this card computes pending items dynamically.

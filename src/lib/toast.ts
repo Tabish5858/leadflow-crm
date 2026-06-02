@@ -10,7 +10,7 @@
  *   toast.error("Failed to save", "The server returned an error");
  *   toast.meetingLink("https://meet.google.com/abc-defg-hij");
  *
- * Under the hood it wraps sonner's toast — so sonner's Toaster must be
+ * Under the hood it wraps sonner's toast - so sonner's Toaster must be
  * mounted in the root layout (it already is, via @/components/ui/sonner).
  */
 
