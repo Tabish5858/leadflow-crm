@@ -13,6 +13,7 @@ import { DEFAULT_MEMBER_PERMISSIONS, DEFAULT_VIEWER_PERMISSIONS } from "@/types"
 const ALL_MODULES: ModuleId[] = [
   "dashboard", "leads", "pipeline", "analytics",
   "time_tracker", "messages", "automations", "meetings",
+  "projects", "invoices", "documents",
   "settings", "clients",
 ];
 
