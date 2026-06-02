@@ -9,6 +9,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -19,10 +20,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/lib/toast";
 import { canCreateWorkspace } from "@/lib/workspace-permissions";
+import { useDemoMode } from "@/lib/demo/demo-context";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const { enterDemo } = useDemoMode();
 
   const getPostLoginRedirect = async (uid: string): Promise<string> => {
     try {
@@ -63,6 +67,12 @@ export default function LoginPage() {
     }
   };
 
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    // Navigate to dashboard with demo mode active
+    enterDemo();
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -280,6 +290,27 @@ export default function LoginPage() {
                 />
               </svg>
               Continue with Google
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-2 text-muted-foreground">
+                  OR
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="default"
+              className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              onClick={handleDemoLogin}
+              disabled={demoLoading}
+            >
+              <Sparkles className="h-4 w-4" />
+              {demoLoading ? "Entering Demo..." : "Try Demo — No Signup Required"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">

@@ -11,7 +11,14 @@ import {
   getAllLeadsByWorkspace,
   getLeadStats,
 } from "@/lib/firebase/firestore";
+import { demoStore } from "@/lib/demo/demo-data";
 import type { LeadFormData } from "@/lib/schemas/lead";
+
+// Check if demo mode is active (Zustand stores are singletons outside React context)
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 
 // Audit logging helpers (imported dynamically to keep bundle small)
 async function audit(
@@ -78,6 +85,18 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true, error: null, leads: [], filteredLeads: [], cursor: null, hasMore: true });
 
     try {
+      if (isDemoMode()) {
+        const leads = demoStore.getAllLeads();
+        set({
+          leads,
+          filteredLeads: leads,
+          cursor: null,
+          hasMore: false,
+          totalCount: leads.length,
+          loading: false,
+        });
+        return;
+      }
       const { leads, lastVisible, total } = await getLeadsByWorkspace(workspaceId, PAGE_SIZE);
       set({
         leads,
@@ -96,6 +115,18 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true, error: null, leads: [], filteredLeads: [], cursor: null, hasMore: false });
 
     try {
+      if (isDemoMode()) {
+        const leads = demoStore.getAllLeads();
+        set({
+          leads,
+          filteredLeads: leads,
+          cursor: null,
+          hasMore: false,
+          totalCount: leads.length,
+          loading: false,
+        });
+        return;
+      }
       const { leads, total } = await getAllLeadsByWorkspace(workspaceId);
       set({
         leads,
@@ -139,7 +170,7 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const now = Timestamp.now();
-      const newId = await createLead({
+      const leadData = {
         workspaceId,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -167,38 +198,27 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         nextFollowUpAt: null,
         expectedCloseAt: data.expectedCloseAt ? Timestamp.fromDate(new Date(data.expectedCloseAt)) : null,
         createdBy: userId,
-      });
+      };
+
+      let newId: string;
+      if (isDemoMode()) {
+        newId = `demo-lead-${Date.now()}`;
+        const newLead: Lead = {
+          id: newId,
+          ...leadData,
+          createdAt: now,
+          updatedAt: now,
+        };
+        demoStore.addLead(newLead);
+      } else {
+        newId = await createLead(leadData);
+      }
+
       // Append new lead to local state (no reload needed)
       const leadName = `${data.firstName} ${data.lastName}`.trim();
       const newLead: Lead = {
         id: newId,
-        workspaceId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone || null,
-        company: data.company || null,
-        jobTitle: data.jobTitle || null,
-        status: data.status,
-        source: data.source || null,
-        niche: data.niche || null,
-        country: data.country || null,
-        city: data.city || null,
-        website: data.website || null,
-        linkedin: data.linkedin || null,
-        value: data.value || null,
-        currency: data.currency || "USD",
-        assignedTo: null,
-        tags: data.tags || [],
-        notes: data.notes || null,
-        customFields: customFields || {},
-        socialProfiles: {},
-        avatarUrl: null,
-        attachments: [],
-        lastContactedAt: null,
-        nextFollowUpAt: null,
-        expectedCloseAt: data.expectedCloseAt ? Timestamp.fromDate(new Date(data.expectedCloseAt)) : null,
-        createdBy: userId,
+        ...leadData,
         createdAt: now,
         updatedAt: now,
       };
@@ -247,7 +267,11 @@ export const useLeadStore = create<LeadState>((set, get) => ({
           ? Timestamp.fromDate(new Date(data.expectedCloseAt))
           : null;
 
-      await updateLead(id, updateData);
+      if (isDemoMode()) {
+        demoStore.updateLead(id, updateData);
+      } else {
+        await updateLead(id, updateData);
+      }
 
       // Optimistic update
       set((state) => ({
@@ -278,7 +302,11 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   removeLead: async (id: string, userId?: string, userName?: string) => {
     try {
       const currentLead = get().leads.find((l) => l.id === id);
-      await deleteLead(id);
+      if (isDemoMode()) {
+        demoStore.deleteLead(id);
+      } else {
+        await deleteLead(id);
+      }
       set((state) => ({
         leads: state.leads.filter((l) => l.id !== id),
         filteredLeads: state.filteredLeads.filter((l) => l.id !== id),
@@ -298,7 +326,11 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const deletedLeads = get().leads.filter((l) => ids.includes(l.id));
-      await deleteLeads(ids);
+      if (isDemoMode()) {
+        demoStore.deleteLeads(ids);
+      } else {
+        await deleteLeads(ids);
+      }
       set((state) => ({
         leads: state.leads.filter((l) => !ids.includes(l.id)),
         filteredLeads: state.filteredLeads.filter((l) => !ids.includes(l.id)),
@@ -331,7 +363,11 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     }));
 
     try {
-      await updateLead(id, { status });
+      if (isDemoMode()) {
+        demoStore.updateLead(id, { status });
+      } else {
+        await updateLead(id, { status });
+      }
       // Audit log (fire-and-forget)
       if (currentLead && userId && userName) {
         const leadName = `${currentLead.firstName} ${currentLead.lastName}`.trim();
@@ -388,6 +424,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
 
   refreshStats: async (workspaceId: string) => {
     try {
+      if (isDemoMode()) {
+        set({ stats: demoStore.getLeadStats() });
+        return;
+      }
       const stats = await getLeadStats(workspaceId);
       set({ stats });
     } catch {

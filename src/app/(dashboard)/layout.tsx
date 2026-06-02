@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DemoBanner } from "@/components/demo/demo-banner";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import { UnreadBadge } from "@/components/messages/unread-badge";
 import { HeaderActionsProvider } from "@/contexts/header-actions-context";
 import { ClientPreviewProvider } from "@/lib/hooks/use-client-preview";
 import { WorkspaceProvider, useWorkspace } from "@/contexts/workspace-context";
+import { useDemoMode } from "@/lib/demo/demo-context";
 import { auth, db } from "@/lib/firebase/client";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { cn } from "@/lib/utils";
@@ -89,12 +91,19 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const { user, activeWorkspace, loading: wsLoading } = useWorkspace();
   const { canAccess } = usePermissions();
+  const { isDemoMode } = useDemoMode();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
 
   useEffect(() => {
+    // Demo mode bypasses Firebase auth entirely
+    if (isDemoMode) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         router.push("/login");
@@ -114,7 +123,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }
     });
     return () => unsubscribe();
-  }, [router]);
+  }, [router, isDemoMode]);
 
   useEffect(() => {
     const saved = localStorage.getItem("leadflow_sidebar_collapsed");
@@ -392,6 +401,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         {/* Main Content */}
         <main className="flex flex-1 flex-col overflow-hidden">
+          {/* Demo Banner */}
+          <DemoBanner />
+
           {/* Header */}
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
             <div className="flex items-center gap-2">

@@ -12,6 +12,13 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { TimeEntry } from "@/types";
+import { demoStore } from "@/lib/demo/demo-data";
+
+// Check if demo mode is active (Zustand stores are singletons outside React context)
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 
 interface TimerState {
   isRunning: boolean;
@@ -91,21 +98,42 @@ export const useTimeTrackingStore = create<TimeTrackingState>((set, get) => ({
     const duration = Math.floor((Date.now() - timer.startTime) / 1000);
 
     try {
-      const entriesRef = collection(db, "timeEntries");
-      const docRef = await addDoc(entriesRef, {
-        workspaceId,
-        leadId: timer.leadId,
-        taskId: null,
-        userId,
-        description: timer.description || "Untitled",
-        startTime,
-        endTime,
-        duration,
-        billable: timer.billable,
-        hourlyRate: null,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
+      let entryId: string;
+      if (isDemoMode()) {
+        entryId = `demo-time-${Date.now()}`;
+        demoStore.addTimeEntry({
+          id: entryId,
+          workspaceId,
+          leadId: timer.leadId,
+          taskId: null,
+          userId,
+          description: timer.description || "Untitled",
+          startTime,
+          endTime,
+          duration,
+          billable: timer.billable,
+          hourlyRate: null,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+      } else {
+        const entriesRef = collection(db, "timeEntries");
+        const docRef = await addDoc(entriesRef, {
+          workspaceId,
+          leadId: timer.leadId,
+          taskId: null,
+          userId,
+          description: timer.description || "Untitled",
+          startTime,
+          endTime,
+          duration,
+          billable: timer.billable,
+          hourlyRate: null,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+        entryId = docRef.id;
+      }
 
       set({
         timer: {
@@ -118,7 +146,7 @@ export const useTimeTrackingStore = create<TimeTrackingState>((set, get) => ({
         },
       });
 
-      return docRef.id;
+      return entryId;
     } catch {
       return null;
     }
@@ -152,6 +180,14 @@ export const useTimeTrackingStore = create<TimeTrackingState>((set, get) => ({
   initialize: (workspaceId) => {
     set({ loading: true });
 
+    if (isDemoMode()) {
+      const entries = demoStore.getTimeEntries();
+      const totalSeconds = entries.reduce((sum, e) => sum + e.duration, 0);
+      set({ entries, totalSeconds, loading: false });
+      // Return a no-op unsubscribe function
+      return () => {};
+    }
+
     const entriesRef = collection(db, "timeEntries");
     const q = query(
       entriesRef,
@@ -172,6 +208,24 @@ export const useTimeTrackingStore = create<TimeTrackingState>((set, get) => ({
   },
 
   addManualEntry: async (workspaceId, userId, entry) => {
+    if (isDemoMode()) {
+      demoStore.addTimeEntry({
+        id: `demo-time-${Date.now()}`,
+        workspaceId,
+        leadId: entry.leadId,
+        taskId: null,
+        userId,
+        description: entry.description,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        duration: entry.duration,
+        billable: entry.billable,
+        hourlyRate: entry.hourlyRate,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return;
+    }
     const entriesRef = collection(db, "timeEntries");
     await addDoc(entriesRef, {
       ...entry,
@@ -182,6 +236,10 @@ export const useTimeTrackingStore = create<TimeTrackingState>((set, get) => ({
   },
 
   deleteEntry: async (id) => {
+    if (isDemoMode()) {
+      demoStore.deleteTimeEntry(id);
+      return;
+    }
     const docRef = doc(db, "timeEntries", id);
     await deleteDoc(docRef);
   },

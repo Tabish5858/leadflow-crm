@@ -20,6 +20,7 @@ import {
   getUserWorkspaces,
 } from "@/lib/firebase/workspaces";
 import { canCreateWorkspace } from "@/lib/workspace-permissions";
+import { useDemoMode } from "@/lib/demo/demo-context";
 
 const LOCAL_STORAGE_KEY = "leadflow_active_workspace";
 
@@ -59,9 +60,19 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const unsubscribeWsRef = useRef<(() => void) | null>(null);
+  const demoMode = useDemoMode();
 
   // Load user and workspaces on auth change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    // If demo mode is active, skip Firebase entirely and use mock data
+    if (demoMode.isDemoMode) {
+      setUser(demoMode.demoUser);
+      setWorkspaces([demoMode.demoWorkspace]);
+      setActiveWorkspaceState(demoMode.demoWorkspace);
+      setLoading(false);
+      return;
+    }
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null);
