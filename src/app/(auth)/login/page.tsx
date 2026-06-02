@@ -309,7 +309,6 @@ export default function LoginPage() {
               onClick={handleDemoLogin}
               disabled={demoLoading}
             >
-              <Sparkles className="h-4 w-4" />
               {demoLoading ? "Entering Demo..." : "Try Demo - No Signup Required"}
             </Button>
 
