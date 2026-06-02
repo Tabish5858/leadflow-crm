@@ -2,7 +2,7 @@
 
 import { useWorkspace } from "@/contexts/workspace-context";
 import { getDocuments, deleteDocument, uploadDocument } from "@/lib/firebase/documents";
-import { formatFileSize, getFileIcon, canPreview } from "@/lib/documents";
+import { formatFileSize, canPreview } from "@/lib/documents";
 import type { Document } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,17 +23,18 @@ import {
   Download,
   ExternalLink,
   File,
+  FileArchive,
+  FileCode,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileType,
   Loader2,
   Search,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type FileValidationError = "size" | "type" | null;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -345,6 +346,23 @@ function UploadDialogContent({
   );
 }
 
+// ─── Document Icon ─────────────────────────────────────────────────────────────
+
+/** Must be a separate component to satisfy React Compiler rules */
+function DocumentIcon({ fileType, className }: { fileType: string; className?: string }) {
+  const icons: Record<string, typeof File> = {
+    image: FileImage,
+    pdf: FileText,
+    spreadsheet: FileSpreadsheet,
+    document: FileText,
+    text: FileType,
+    code: FileCode,
+    archive: FileArchive,
+  };
+  const Icon = icons[fileType] || File;
+  return <Icon className={className} />;
+}
+
 // ─── Document Card ─────────────────────────────────────────────────────────────
 
 function DocumentCard({
@@ -354,7 +372,6 @@ function DocumentCard({
   doc: Document;
   onDelete: (id: string) => void;
 }) {
-  const Icon = getFileIcon(doc.fileType);
 
   return (
     <Card className="group transition-all hover:border-primary/50 hover:shadow-sm">
@@ -362,7 +379,7 @@ function DocumentCard({
         {/* Icon + Delete */}
         <div className="flex items-start justify-between mb-3">
           <div className="text-muted-foreground">
-            <Icon className="h-10 w-10" />
+            <DocumentIcon fileType={doc.fileType} className="h-10 w-10" />
           </div>
           <Button
             variant="ghost"
