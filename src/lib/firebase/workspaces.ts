@@ -19,6 +19,12 @@ import type { Workspace, WorkspaceMember, WorkspaceInvite } from "@/types";
 
 const WORKSPACES_COLLECTION = "workspaces";
 const USERS_COLLECTION = "users";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 const INVITES_COLLECTION = "workspace_invites";
 
 // ─── Default Pipeline ────────────────────────────────────────────────────────
@@ -63,6 +69,11 @@ export async function createWorkspace(
 // ─── Read Workspace ──────────────────────────────────────────────────────────
 
 export async function getWorkspace(workspaceId: string): Promise<Workspace | null> {
+  if (isDemoMode()) {
+    const { DEMO_WORKSPACE } = await import("@/lib/demo/demo-data");
+    return DEMO_WORKSPACE;
+  }
+
   const docRef = doc(db, WORKSPACES_COLLECTION, workspaceId);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
@@ -142,6 +153,28 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
 export async function getWorkspaceMembers(
   workspaceId: string
 ): Promise<WorkspaceMember[]> {
+  if (isDemoMode()) {
+    const { DEMO_TEAM_MEMBERS } = await import("@/lib/demo/demo-data");
+    return [
+      {
+        userId: "demo-user-001",
+        email: "demo@leadflow.dev",
+        displayName: "Sarah Chen",
+        photoURL: null,
+        role: "owner",
+        joinedAt: Timestamp.now(),
+      },
+      ...DEMO_TEAM_MEMBERS.map((m) => ({
+        userId: m.id,
+        email: m.email,
+        displayName: m.displayName,
+        photoURL: null,
+        role: "member" as const,
+        joinedAt: Timestamp.now(),
+      })),
+    ];
+  }
+
   const workspace = await getWorkspace(workspaceId);
   if (!workspace) return [];
 

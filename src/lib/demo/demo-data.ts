@@ -618,7 +618,7 @@ export const DEMO_STATS = {
 const DEMO_INVOICES: Invoice[] = [
   {
     id: "demo-inv-001",
-    workspaceId: "demo-workspace",
+    workspaceId: DEMO_WORKSPACE_ID,
     clientId: "demo-client-001",
     projectId: "demo-project-001",
     invoiceNumber: "INV-2026-001",
@@ -644,7 +644,7 @@ const DEMO_INVOICES: Invoice[] = [
   },
   {
     id: "demo-inv-002",
-    workspaceId: "demo-workspace",
+    workspaceId: DEMO_WORKSPACE_ID,
     clientId: "demo-client-001",
     projectId: "demo-project-001",
     invoiceNumber: "INV-2026-002",
@@ -669,7 +669,7 @@ const DEMO_INVOICES: Invoice[] = [
   },
   {
     id: "demo-inv-003",
-    workspaceId: "demo-workspace",
+    workspaceId: DEMO_WORKSPACE_ID,
     clientId: "demo-client-002",
     projectId: "demo-project-002",
     invoiceNumber: "INV-2026-003",
@@ -980,7 +980,7 @@ export class DemoStore {
   private _projects: Project[] = [
     {
       id: "demo-project-001",
-      workspaceId: "demo-workspace",
+      workspaceId: DEMO_WORKSPACE_ID,
       name: "TechSphere Onboarding",
       description: "Full onboarding campaign for TechSphere including email sequences and landing pages.",
       status: "active",
@@ -999,7 +999,7 @@ export class DemoStore {
     },
     {
       id: "demo-project-002",
-      workspaceId: "demo-workspace",
+      workspaceId: DEMO_WORKSPACE_ID,
       name: "GreenLeaf Analytics Suite",
       description: "Building a custom analytics dashboard for GreenLeaf with real-time reporting.",
       status: "active",
