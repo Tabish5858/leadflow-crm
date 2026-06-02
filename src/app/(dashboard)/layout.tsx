@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Clock,
   KanbanSquare,
+  FileText,
   FolderKanban,
   LayoutDashboard,
   LogOut,
@@ -53,6 +54,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
   { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
   { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
+  { href: "/invoices", label: "Invoices", icon: FileText, moduleId: "invoices" },
   { href: "/clients", label: "Clients", icon: UserCheck, moduleId: "clients" },
   { href: "/settings", label: "Settings", icon: Settings, moduleId: "settings" },
 ];

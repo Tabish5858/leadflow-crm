@@ -10,6 +10,8 @@ import type {
   Activity,
   Meeting,
   Project,
+  Invoice,
+  InvoiceLineItem,
   PipelineStage,
 } from "@/types";
 
@@ -610,6 +612,86 @@ export const DEMO_STATS = {
   forecastedRevenue: 215000,
 };
 
+// ─── Invoice Demo Data ─────────────────────────────────────────────────────────
+
+const DEMO_INVOICES: Invoice[] = [
+  {
+    id: "demo-inv-001",
+    workspaceId: "demo-workspace",
+    clientId: "demo-client-001",
+    projectId: "demo-project-001",
+    invoiceNumber: "INV-2026-001",
+    status: "paid",
+    lineItems: [
+      { description: "Website Design - Homepage", quantity: 1, unitPrice: 5000, total: 5000 },
+      { description: "Website Design - Inner Pages (x5)", quantity: 5, unitPrice: 800, total: 4000 },
+      { description: "Development & Integration", quantity: 1, unitPrice: 6000, total: 6000 },
+    ],
+    subtotal: 15000,
+    taxRate: 10,
+    taxAmount: 1500,
+    total: 16500,
+    currency: "USD",
+    issueDate: daysAgo(45),
+    dueDate: daysAgo(15),
+    paidDate: daysAgo(10),
+    notes: "Full payment received",
+    pdfUrl: null,
+    createdBy: DEMO_USER_ID,
+    createdAt: daysAgo(45),
+    updatedAt: daysAgo(10),
+  },
+  {
+    id: "demo-inv-002",
+    workspaceId: "demo-workspace",
+    clientId: "demo-client-001",
+    projectId: "demo-project-001",
+    invoiceNumber: "INV-2026-002",
+    status: "sent",
+    lineItems: [
+      { description: "Monthly Maintenance - June", quantity: 1, unitPrice: 2000, total: 2000 },
+      { description: "Hosting Services - Q2", quantity: 3, unitPrice: 150, total: 450 },
+    ],
+    subtotal: 2450,
+    taxRate: 0,
+    taxAmount: 0,
+    total: 2450,
+    currency: "USD",
+    issueDate: daysAgo(5),
+    dueDate: daysAgo(25),
+    paidDate: null,
+    notes: "Due within 30 days",
+    pdfUrl: null,
+    createdBy: DEMO_USER_ID,
+    createdAt: daysAgo(5),
+    updatedAt: daysAgo(5),
+  },
+  {
+    id: "demo-inv-003",
+    workspaceId: "demo-workspace",
+    clientId: "demo-client-002",
+    projectId: "demo-project-002",
+    invoiceNumber: "INV-2026-003",
+    status: "draft",
+    lineItems: [
+      { description: "Analytics Dashboard - Phase 1", quantity: 1, unitPrice: 12000, total: 12000 },
+    ],
+    subtotal: 12000,
+    taxRate: 10,
+    taxAmount: 1200,
+    total: 13200,
+    currency: "USD",
+    issueDate: daysAgo(1),
+    dueDate: daysAgo(-29),
+    paidDate: null,
+    notes: "Draft - not yet sent",
+    pdfUrl: null,
+    createdBy: DEMO_USER_ID,
+    createdAt: daysAgo(1),
+    updatedAt: daysAgo(1),
+  },
+];
+
 // ─── Mutable Store (for writes in demo mode) ──────────────────────────────────
 
 /**
@@ -623,6 +705,7 @@ export class DemoStore {
   timeEntries: TimeEntry[] = [...DEMO_TIME_ENTRIES];
   notifications: Notification[] = [...DEMO_NOTIFICATIONS];
   meetings: Meeting[] = [...DEMO_MEETINGS];
+  private _invoices: Invoice[] = [...DEMO_INVOICES];
 
   private _convMessageIndex: Map<string, Message[]> = new Map();
   private _notifListeners: Set<(notifications: Notification[]) => void> = new Set();
@@ -927,6 +1010,77 @@ export class DemoStore {
 
   deleteProject(id: string): void {
     this._projects = this._projects.filter((p) => p.id !== id);
+  }
+
+  // ── Invoice Operations ──
+
+  getInvoices(): Invoice[] {
+    return [...this._invoices];
+  }
+
+  getInvoice(id: string): Invoice | null {
+    return this._invoices.find((inv) => inv.id === id) ?? null;
+  }
+
+  createInvoice(workspaceId: string, userId: string, data: Record<string, unknown>): string {
+    const id = `demo-inv-${Date.now()}`;
+    const lineItems = (data.lineItems as InvoiceLineItem[]) || [];
+    const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+    const taxRate = (data.taxRate as number) ?? 0;
+    const taxAmount = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmount;
+
+    const invoice: Invoice = {
+      id,
+      workspaceId,
+      clientId: data.clientId as string,
+      projectId: (data.projectId as string) || null,
+      invoiceNumber: (data.invoiceNumber as string) || `INV-${new Date().getFullYear()}-${String(this._invoices.length + 1).padStart(3, "0")}`,
+      status: "draft",
+      lineItems,
+      subtotal,
+      taxRate,
+      taxAmount,
+      total,
+      currency: (data.currency as string) || "USD",
+      issueDate: Timestamp.now(),
+      dueDate: Timestamp.fromMillis(Timestamp.now().toMillis() + 30 * 86400000),
+      paidDate: null,
+      notes: (data.notes as string) || null,
+      pdfUrl: null,
+      createdBy: userId,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    };
+    this._invoices.unshift(invoice);
+    return id;
+  }
+
+  updateInvoice(id: string, data: Record<string, unknown>): void {
+    const idx = this._invoices.findIndex((inv) => inv.id === id);
+    if (idx === -1) return;
+
+    const updated = { ...this._invoices[idx], ...data, updatedAt: Timestamp.now() } as Invoice;
+
+    // Recompute totals if line items changed
+    if (data.lineItems) {
+      const lineItems = data.lineItems as InvoiceLineItem[];
+      const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+      const taxRate = (updated.taxRate ?? 0);
+      updated.subtotal = subtotal;
+      updated.taxAmount = subtotal * (taxRate / 100);
+      updated.total = subtotal + updated.taxAmount;
+    }
+
+    if (data.status === "paid" && !updated.paidDate) {
+      updated.paidDate = Timestamp.now();
+    }
+
+    this._invoices[idx] = updated;
+  }
+
+  deleteInvoice(id: string): void {
+    this._invoices = this._invoices.filter((inv) => inv.id !== id);
   }
 
   // ── Time Entry Operations ──

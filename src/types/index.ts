@@ -95,6 +95,7 @@ export type ModuleId =
   | "messages"
   | "automations"
   | "meetings"
+  | "invoices"
   | "settings"
   | "clients"
   | "projects";
@@ -116,6 +117,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   messages: "Messages",
   automations: "Automations",
   meetings: "Meetings",
+  invoices: "Invoices",
   settings: "Settings",
   clients: "Clients",
   projects: "Projects",
@@ -130,6 +132,7 @@ export const DEFAULT_MEMBER_PERMISSIONS: ModulePermissionsMap = {
   messages: true,
   automations: false,
   meetings: true,
+  invoices: true,
   settings: true,
   clients: false,
   projects: true,
@@ -144,6 +147,7 @@ export const DEFAULT_VIEWER_PERMISSIONS: ModulePermissionsMap = {
   messages: false,
   automations: false,
   meetings: false,
+  invoices: true,
   settings: true,
   clients: true,
   projects: true,
@@ -158,6 +162,7 @@ export const DEFAULT_CLIENT_PERMISSIONS: ModulePermissionsMap = {
   messages: false,
   automations: false,
   meetings: false,
+  invoices: false,
   settings: false,
   clients: false,
   projects: false,
