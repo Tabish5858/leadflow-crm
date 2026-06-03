@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type { ProjectTask } from "@/types";
@@ -21,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip } from "recharts";
 
 const STATUS_OPTIONS = [
   { parent: "To Do" as const, name: "Not Started", color: "#DDDDDD" },
@@ -177,6 +179,27 @@ export function TaskCard({
                     )}
                   </button>
 
+
+
+                  {/* Title */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <TitleEdit title={task.taskName} isEditing={isEditingTitle}
+                        onStartEdit={() => setIsEditingTitle(true)}
+                        onSubmit={(t) => { setIsEditingTitle(false); if (t !== task.taskName) onTitleChange?.(task, t); }}
+                        onCancel={() => setIsEditingTitle(false)}
+                      />
+                      {hasSubtasks && (
+                        <button onClick={() => onToggleSubtasks?.(task)} className="shrink-0 p-0.5 hover:bg-accent rounded">
+                          {showSubtasks ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="flex items-center gap-2 shrink-0">
                   {/* Assignee + Due date inline */}
                   {!isRealSubtask && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
@@ -243,26 +266,6 @@ export function TaskCard({
                       </div>
                     </div>
                   )}
-
-                  {/* Title */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <TitleEdit title={task.taskName} isEditing={isEditingTitle}
-                        onStartEdit={() => setIsEditingTitle(true)}
-                        onSubmit={(t) => { setIsEditingTitle(false); if (t !== task.taskName) onTitleChange?.(task, t); }}
-                        onCancel={() => setIsEditingTitle(false)}
-                      />
-                      {hasSubtasks && (
-                        <button onClick={() => onToggleSubtasks?.(task)} className="shrink-0 p-0.5 hover:bg-accent rounded">
-                          {showSubtasks ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT SIDE */}
-                <div className="flex items-center gap-2 shrink-0">
                   {task.createdAt && !isSubtask && (
                     <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
                       {task.createdAt.toDate ? new Date(task.createdAt.toDate()).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
