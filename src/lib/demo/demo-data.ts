@@ -10,6 +10,9 @@ import type {
   Activity,
   Meeting,
   Project,
+  ProjectTask,
+  ProjectMilestone,
+  ProjectNote,
   Invoice,
   InvoiceLineItem,
   Document,
@@ -985,14 +988,31 @@ export class DemoStore {
       description: "Full onboarding campaign for TechSphere including email sequences and landing pages.",
       status: "active",
       clients: ["demo-client-001"],
+      projectClients: [
+        { clientId: "demo-client-001", isMainContact: true, addedAt: daysAgo(30), addedBy: DEMO_USER_ID, clientNotes: "" },
+      ],
+      memberIds: [DEMO_USER_ID, "demo-member-002"],
+      serviceIds: [],
       leadId: null,
       startDate: daysAgo(30),
       dueDate: daysAgo(-14),
       completedDate: null,
       progress: 65,
+      manualProgress: null,
+      isManualProgress: false,
       priority: "high",
       budget: 15000,
       currency: "USD",
+      customFields: {},
+      linksAndEmbeds: [],
+      deliveryFlowSettings: {
+        enableFeedback: true, enableReferrals: true, enableReviews: true, enableUpsell: true,
+        referralMessage: "", reviewPlatforms: [], reviewMessage: "", onlyAsk5Star: true,
+        upsellMessage: "", upsellServices: [],
+      },
+      hasFinalPackage: false, finalPackageDelivered: false, finalPackageDeliveredAt: null,
+      showFinalPackageBanner: false,
+      visibility: "Public", isArchive: false, archivedAt: null, archivedReason: null,
       createdBy: DEMO_USER_ID,
       createdAt: daysAgo(30),
       updatedAt: daysAgo(1),
@@ -1004,17 +1024,240 @@ export class DemoStore {
       description: "Building a custom analytics dashboard for GreenLeaf with real-time reporting.",
       status: "active",
       clients: ["demo-client-001", "demo-client-002"],
+      projectClients: [
+        { clientId: "demo-client-001", isMainContact: true, addedAt: daysAgo(14), addedBy: DEMO_USER_ID, clientNotes: "" },
+        { clientId: "demo-client-002", isMainContact: false, addedAt: daysAgo(14), addedBy: DEMO_USER_ID, clientNotes: "" },
+      ],
+      memberIds: [DEMO_USER_ID, "demo-member-003"],
+      serviceIds: [],
       leadId: null,
       startDate: daysAgo(14),
       dueDate: daysAgo(-45),
       completedDate: null,
       progress: 30,
+      manualProgress: null,
+      isManualProgress: false,
       priority: "medium",
       budget: 25000,
       currency: "USD",
+      customFields: {},
+      linksAndEmbeds: [],
+      deliveryFlowSettings: {
+        enableFeedback: true, enableReferrals: true, enableReviews: true, enableUpsell: true,
+        referralMessage: "", reviewPlatforms: [], reviewMessage: "", onlyAsk5Star: true,
+        upsellMessage: "", upsellServices: [],
+      },
+      hasFinalPackage: false, finalPackageDelivered: false, finalPackageDeliveredAt: null,
+      showFinalPackageBanner: false,
+      visibility: "Public", isArchive: false, archivedAt: null, archivedReason: null,
       createdBy: DEMO_USER_ID,
       createdAt: daysAgo(14),
       updatedAt: daysAgo(0),
+    },
+  ];
+
+  // ── Demo Tasks ─────────────────────────────────────────────────────────────
+
+  private _tasks: ProjectTask[] = [
+    {
+      id: "demo-task-001",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskName: "Design landing page mockups",
+      description: "Create 3 mockup variants for the TechSphere landing page.",
+      assigneeId: "demo-member-002",
+      parentTaskId: null,
+      milestoneId: null,
+      isSubtask: false,
+      hasSubtasks: true,
+      status: { parent: "In Progress", name: "In Progress", color: "#E3F2FD" },
+      priority: "high",
+      startDate: daysAgo(25),
+      dueDate: daysAgo(-5),
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: "Public",
+      order: 1000,
+      isMilestone: false,
+      completedAt: null,
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(25),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+    {
+      id: "demo-task-002",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskName: "Homepage hero section",
+      description: "Design the main hero for the landing page.",
+      assigneeId: DEMO_USER_ID,
+      parentTaskId: "demo-task-001",
+      milestoneId: null,
+      isSubtask: true,
+      hasSubtasks: false,
+      status: { parent: "Complete", name: "Complete", color: "#E8F5E9" },
+      priority: "high",
+      startDate: daysAgo(24),
+      dueDate: daysAgo(-10),
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: "Public",
+      order: 1000,
+      isMilestone: false,
+      completedAt: daysAgo(10),
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(24),
+      updatedAt: daysAgo(10),
+      isDeleted: false,
+    },
+    {
+      id: "demo-task-003",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskName: "Features section with icons",
+      description: "Design the features grid with custom icons.",
+      assigneeId: "demo-member-002",
+      parentTaskId: "demo-task-001",
+      milestoneId: null,
+      isSubtask: true,
+      hasSubtasks: false,
+      status: { parent: "To Do", name: "Not Started", color: "#F5EFCF" },
+      priority: "medium",
+      startDate: daysAgo(24),
+      dueDate: daysAgo(-3),
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: "Public",
+      order: 2000,
+      isMilestone: false,
+      completedAt: null,
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(24),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+    {
+      id: "demo-task-004",
+      projectId: "demo-project-002",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskName: "Set up data pipeline",
+      description: "Configure Firestore triggers for real-time analytics sync.",
+      assigneeId: "demo-member-003",
+      parentTaskId: null,
+      milestoneId: null,
+      isSubtask: false,
+      hasSubtasks: false,
+      status: { parent: "To Do", name: "Not Started", color: "#F5EFCF" },
+      priority: "high",
+      startDate: daysAgo(14),
+      dueDate: daysAgo(-30),
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: "Public",
+      order: 1000,
+      isMilestone: false,
+      completedAt: null,
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(14),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+    {
+      id: "demo-task-005",
+      projectId: "demo-project-002",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskName: "Build dashboard charts",
+      description: "Implement Recharts components for the analytics dashboard.",
+      assigneeId: null,
+      parentTaskId: null,
+      milestoneId: null,
+      isSubtask: false,
+      hasSubtasks: false,
+      status: { parent: "To Do", name: "Not Started", color: "#F5EFCF" },
+      priority: "medium",
+      startDate: null,
+      dueDate: null,
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: "Public",
+      order: 2000,
+      isMilestone: false,
+      completedAt: null,
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(14),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+  ];
+
+  // ── Demo Milestones ────────────────────────────────────────────────────────
+
+  private _milestones: ProjectMilestone[] = [
+    {
+      id: "demo-milestone-001",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      milestoneName: "Design Phase Complete",
+      description: "All design mockups approved by client.",
+      dueDate: daysAgo(-8),
+      status: "Pending",
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(28),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+    {
+      id: "demo-milestone-002",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      milestoneName: "Client Launch",
+      description: "Final deliverable handoff to TechSphere.",
+      dueDate: daysAgo(-14),
+      status: "Pending",
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(28),
+      updatedAt: daysAgo(1),
+      isDeleted: false,
+    },
+  ];
+
+  // ── Demo Notes ─────────────────────────────────────────────────────────────
+
+  private _notes: ProjectNote[] = [
+    {
+      id: "demo-note-001",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskId: null,
+      title: "Client meeting notes",
+      content: "James requested a darker color scheme. Will prepare updated mockups for review on Thursday.",
+      createdBy: DEMO_USER_ID,
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(5),
+      isDeleted: false,
+    },
+    {
+      id: "demo-note-002",
+      projectId: "demo-project-001",
+      workspaceId: DEMO_WORKSPACE_ID,
+      taskId: "demo-task-001",
+      title: "Design feedback",
+      content: "Emily suggested adding hover animations to feature cards. Let's prototype this before finalizing.",
+      createdBy: "demo-member-002",
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(3),
+      isDeleted: false,
     },
   ];
 
@@ -1028,21 +1271,55 @@ export class DemoStore {
 
   createProject(workspaceId: string, userId: string, data: Record<string, unknown>): string {
     const id = `demo-project-${Date.now()}`;
+    const newClients = (data.clients as string[]) || [];
+    const newProjectClients = (data.projectClients as Array<{ clientId: string; isMainContact?: boolean; clientNotes?: string }>) || [];
+    // Convert simple client IDs to projectClients format if not already provided
+    const projectClients = newProjectClients.length > 0
+      ? newProjectClients.map((pc) => ({
+          clientId: pc.clientId,
+          isMainContact: pc.isMainContact || false,
+          addedAt: Timestamp.now(),
+          addedBy: userId,
+          clientNotes: pc.clientNotes || "",
+        }))
+      : newClients.map((cid) => ({
+          clientId: cid,
+          isMainContact: false,
+          addedAt: Timestamp.now(),
+          addedBy: userId,
+          clientNotes: "",
+        }));
+
     const project: Project = {
       id,
       workspaceId,
       name: data.name as string,
       description: (data.description as string) || null,
       status: (data.status as Project["status"]) || "active",
-      clients: (data.clients as string[]) || [],
+      clients: newClients,
+      projectClients,
+      memberIds: (data.memberIds as string[]) || [],
+      serviceIds: (data.serviceIds as string[]) || [],
       leadId: null,
       startDate: (data.startDate as Timestamp) || null,
       dueDate: (data.dueDate as Timestamp) || null,
       completedDate: null,
       progress: 0,
+      manualProgress: null,
+      isManualProgress: false,
       priority: (data.priority as Project["priority"]) || "medium",
       budget: (data.budget as number) || null,
       currency: (data.currency as string) || "USD",
+      customFields: {},
+      linksAndEmbeds: [],
+      deliveryFlowSettings: {
+        enableFeedback: true, enableReferrals: true, enableReviews: true, enableUpsell: true,
+        referralMessage: "", reviewPlatforms: [], reviewMessage: "", onlyAsk5Star: true,
+        upsellMessage: "", upsellServices: [],
+      },
+      hasFinalPackage: false, finalPackageDelivered: false, finalPackageDeliveredAt: null,
+      showFinalPackageBanner: false,
+      visibility: "Public", isArchive: false, archivedAt: null, archivedReason: null,
       createdBy: userId,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -1059,6 +1336,128 @@ export class DemoStore {
 
   deleteProject(id: string): void {
     this._projects = this._projects.filter((p) => p.id !== id);
+  }
+
+  // ── Project Task Operations ──
+
+  getProjectTasks(projectId: string): ProjectTask[] {
+    return this._tasks.filter((t) => t.projectId === projectId && !t.isDeleted);
+  }
+
+  getProjectTask(id: string): ProjectTask | null {
+    return this._tasks.find((t) => t.id === id && !t.isDeleted) ?? null;
+  }
+
+  createProjectTask(projectId: string, workspaceId: string, data: Record<string, unknown>): string {
+    const id = `demo-task-${Date.now()}`;
+    const parentTaskId = (data.parentTaskId as string) || null;
+    const task: ProjectTask = {
+      id,
+      projectId,
+      workspaceId,
+      taskName: data.taskName as string,
+      description: (data.description as string) || null,
+      assigneeId: (data.assigneeId as string) || null,
+      parentTaskId,
+      milestoneId: (data.milestoneId as string) || null,
+      isSubtask: !!parentTaskId,
+      hasSubtasks: false,
+      status: { parent: "To Do", name: "Not Started", color: "#F5EFCF" },
+      priority: (data.priority as ProjectTask["priority"]) || null,
+      startDate: data.startDate instanceof Date ? Timestamp.fromDate(data.startDate) : (data.startDate as Timestamp) || null,
+      dueDate: data.dueDate instanceof Date ? Timestamp.fromDate(data.dueDate) : (data.dueDate as Timestamp) || null,
+      startDateDays: null, dueDateDays: null,
+      startDateReference: null, dueDateReference: null,
+      recurring: false, recurringDetails: null, weekDays: [],
+      visibility: (data.visibility as ProjectTask["visibility"]) || "Public",
+      order: 0,
+      isMilestone: (data.isMilestone as boolean) || false,
+      completedAt: null,
+      customFields: {},
+      createdBy: DEMO_USER_ID,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      isDeleted: false,
+    };
+    this._tasks.unshift(task);
+    return id;
+  }
+
+  updateProjectTask(id: string, data: Record<string, unknown>): void {
+    const idx = this._tasks.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    const updated = { ...this._tasks[idx], ...data, updatedAt: Timestamp.now() } as ProjectTask;
+    if (data.status && typeof data.status === "object" && (data.status as any).parent === "Complete") {
+      updated.completedAt = Timestamp.now();
+    }
+    this._tasks[idx] = updated;
+  }
+
+  deleteProjectTask(id: string): void {
+    const idx = this._tasks.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    this._tasks[idx] = { ...this._tasks[idx], isDeleted: true, updatedAt: Timestamp.now() };
+  }
+
+  // ── Project Milestone Operations ──
+
+  getProjectMilestones(projectId: string): ProjectMilestone[] {
+    return this._milestones.filter((m) => m.projectId === projectId && !m.isDeleted);
+  }
+
+  createProjectMilestone(projectId: string, workspaceId: string, data: Record<string, unknown>): string {
+    const id = `demo-milestone-${Date.now()}`;
+    const milestone: ProjectMilestone = {
+      id,
+      projectId,
+      workspaceId,
+      milestoneName: data.milestoneName as string,
+      description: (data.description as string) || null,
+      dueDate: data.dueDate instanceof Date ? Timestamp.fromDate(data.dueDate) : (data.dueDate as Timestamp) || null,
+      status: "Pending",
+      createdBy: DEMO_USER_ID,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      isDeleted: false,
+    };
+    this._milestones.unshift(milestone);
+    return id;
+  }
+
+  // ── Project Note Operations ──
+
+  getProjectNotes(projectId: string): ProjectNote[] {
+    return this._notes.filter((n) => n.projectId === projectId && !n.isDeleted);
+  }
+
+  createProjectNote(projectId: string, workspaceId: string, data: Record<string, unknown>): string {
+    const id = `demo-note-${Date.now()}`;
+    const note: ProjectNote = {
+      id,
+      projectId,
+      workspaceId,
+      taskId: (data.taskId as string) || null,
+      title: data.title as string,
+      content: data.content as string,
+      createdBy: DEMO_USER_ID,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      isDeleted: false,
+    };
+    this._notes.unshift(note);
+    return id;
+  }
+
+  updateProjectNote(id: string, data: Record<string, unknown>): void {
+    const idx = this._notes.findIndex((n) => n.id === id);
+    if (idx === -1) return;
+    this._notes[idx] = { ...this._notes[idx], ...data, updatedAt: Timestamp.now() } as ProjectNote;
+  }
+
+  deleteProjectNote(id: string): void {
+    const idx = this._notes.findIndex((n) => n.id === id);
+    if (idx === -1) return;
+    this._notes[idx] = { ...this._notes[idx], isDeleted: true, updatedAt: Timestamp.now() };
   }
 
   // ── Invoice Operations ──

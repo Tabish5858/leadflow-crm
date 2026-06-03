@@ -280,6 +280,54 @@ service cloud.firestore {
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
 
+    // Project Tasks — authorize reads via project membership
+    match /project_tasks/{taskId} {
+      allow read: if isAuthenticated() &&
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId != null &&
+        isWorkspaceMember(
+          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId
+        );
+      allow create: if isAuthenticated() && canWrite(request.resource.data.workspaceId);
+      allow update: if isAuthenticated() && canWrite(resource.data.workspaceId);
+      allow delete: if isAuthenticated() && canWrite(resource.data.workspaceId);
+    }
+
+    // Project Milestones
+    match /project_milestones/{milestoneId} {
+      allow read: if isAuthenticated() &&
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId != null &&
+        isWorkspaceMember(
+          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId
+        );
+      allow create: if isAuthenticated() && canWrite(request.resource.data.workspaceId);
+      allow update: if isAuthenticated() && canWrite(resource.data.workspaceId);
+      allow delete: if isAuthenticated() && canWrite(resource.data.workspaceId);
+    }
+
+    // Project Notes
+    match /project_notes/{noteId} {
+      allow read: if isAuthenticated() &&
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId != null &&
+        isWorkspaceMember(
+          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId
+        );
+      allow create: if isAuthenticated() && canWrite(request.resource.data.workspaceId);
+      allow update: if isAuthenticated() && canWrite(resource.data.workspaceId);
+      allow delete: if isAuthenticated() && canWrite(resource.data.workspaceId);
+    }
+
+    // Project Time Entries
+    match /project_time_entries/{entryId} {
+      allow read: if isAuthenticated() &&
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId != null &&
+        isWorkspaceMember(
+          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.workspaceId
+        );
+      allow create: if isAuthenticated() && (canWrite(request.resource.data.workspaceId) || isClient(request.resource.data.workspaceId));
+      allow update: if isAuthenticated() && canWrite(resource.data.workspaceId);
+      allow delete: if isAuthenticated() && canWrite(resource.data.workspaceId);
+    }
+
     // Calendar Tokens (subcollection under users)
     match /users/{userId}/calendar_tokens/{tokenId} {
       allow read, write: if isOwner(userId);

@@ -33,6 +33,9 @@ export type CreateProjectData = Pick<
 > & {
   startDate?: Date | null;
   dueDate?: Date | null;
+  memberIds?: string[];
+  serviceIds?: string[];
+  projectClients?: Array<{ clientId: string; isMainContact?: boolean; clientNotes?: string }>;
 };
 
 export async function createProject(
@@ -51,14 +54,41 @@ export async function createProject(
     description: data.description || null,
     status: data.status || "active",
     clients: data.clients || [],
+    projectClients: data.projectClients || [],
+    memberIds: data.memberIds || [],
+    serviceIds: data.serviceIds || [],
     leadId: null,
     startDate: data.startDate ? Timestamp.fromDate(data.startDate) : null,
     dueDate: data.dueDate ? Timestamp.fromDate(data.dueDate) : null,
     completedDate: null,
     progress: 0,
+    manualProgress: null,
+    isManualProgress: false,
     priority: data.priority || "medium",
     budget: data.budget || null,
     currency: data.currency || "USD",
+    customFields: {},
+    linksAndEmbeds: [],
+    deliveryFlowSettings: {
+      enableFeedback: true,
+      enableReferrals: true,
+      enableReviews: true,
+      enableUpsell: true,
+      referralMessage: "Love working with us? Refer a friend and earn rewards!",
+      reviewPlatforms: [],
+      reviewMessage: "We would love to hear your feedback!",
+      onlyAsk5Star: true,
+      upsellMessage: "Ready for your next project?",
+      upsellServices: [],
+    },
+    hasFinalPackage: false,
+    finalPackageDelivered: false,
+    finalPackageDeliveredAt: null,
+    showFinalPackageBanner: false,
+    visibility: "Public",
+    isArchive: false,
+    archivedAt: null,
+    archivedReason: null,
     createdBy: userId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -109,7 +139,7 @@ export async function getProjects(
 // ── Update ───────────────────────────────────────────────────────────────────
 
 export type UpdateProjectData = Partial<
-  Pick<Project, "name" | "description" | "status" | "clients" | "priority" | "budget" | "currency" | "progress">
+  Pick<Project, "name" | "description" | "status" | "clients" | "priority" | "budget" | "currency" | "progress" | "manualProgress" | "isManualProgress" | "projectClients" | "memberIds" | "serviceIds" | "customFields" | "linksAndEmbeds" | "visibility" | "isArchive" | "archivedReason" | "hasFinalPackage" | "finalPackageDelivered" | "showFinalPackageBanner" | "deliveryFlowSettings">
 > & {
   startDate?: Date | null;
   dueDate?: Date | null;
@@ -138,6 +168,11 @@ export async function updateProject(id: string, data: UpdateProjectData): Promis
   // If status changed to completed, set completedDate
   if (data.status === "completed") {
     updatePayload.completedDate = Timestamp.now();
+  }
+
+  // If archiving, set archivedAt
+  if (data.isArchive === true) {
+    updatePayload.archivedAt = Timestamp.now();
   }
 
   await updateDoc(doc(db, COLLECTION, id), updatePayload);

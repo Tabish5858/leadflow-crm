@@ -529,28 +529,196 @@ export interface AuditFilters {
 
 export type ProjectStatus = "active" | "completed" | "on_hold" | "cancelled";
 
+export interface ProjectClient {
+  clientId: string;
+  isMainContact: boolean;
+  addedAt: Timestamp;
+  addedBy: string;
+  clientNotes: string;
+}
+
+export interface LinkEmbed {
+  id: string;
+  type: "link" | "embed";
+  title: string;
+  url?: string;
+  embedCode?: string;
+  addedBy: string;
+  addedAt: Timestamp;
+}
+
+export interface ProjectDeliveryFlow {
+  enableFeedback: boolean;
+  enableReferrals: boolean;
+  enableReviews: boolean;
+  enableUpsell: boolean;
+  referralMessage: string;
+  reviewPlatforms: Array<{
+    name: string;
+    url: string;
+    enabled: boolean;
+  }>;
+  reviewMessage: string;
+  onlyAsk5Star: boolean;
+  upsellMessage: string;
+  upsellServices: string[];
+}
+
 export interface Project {
   id: string;
   workspaceId: string;
   name: string;
   description: string | null;
   status: ProjectStatus;
-  /** User IDs of assigned clients */
+  /** User IDs of assigned clients (legacy) */
   clients: string[];
+  /** Enhanced multi-client support */
+  projectClients: ProjectClient[];
+  /** Workspace member IDs assigned to this project */
+  memberIds: string[];
+  /** Service IDs associated with this project */
+  serviceIds: string[];
   /** Lead ID this project is associated with (optional) */
   leadId: string | null;
   startDate: Timestamp | null;
   dueDate: Timestamp | null;
   completedDate: Timestamp | null;
-  /** Progress percentage 0–100 */
+  /** Progress percentage 0-100 */
   progress: number;
+  /** Manual progress override */
+  manualProgress: number | null;
+  /** Whether progress is manually set vs auto-calculated */
+  isManualProgress: boolean;
   priority: "low" | "medium" | "high" | "urgent";
   /** Budget / contract value */
   budget: number | null;
   currency: string;
+  /** Custom field values */
+  customFields: Record<string, unknown>;
+  /** Links and embeds attached to this project */
+  linksAndEmbeds: LinkEmbed[];
+  /** Delivery flow settings */
+  deliveryFlowSettings: ProjectDeliveryFlow;
+  /** Final package delivery tracking */
+  hasFinalPackage: boolean;
+  finalPackageDelivered: boolean;
+  finalPackageDeliveredAt: Timestamp | null;
+  showFinalPackageBanner: boolean;
+  /** Project visibility */
+  visibility: "Public" | "Private";
+  /** Archival state */
+  isArchive: boolean;
+  archivedAt: Timestamp | null;
+  archivedReason: string | null;
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// ─── Project Task ────────────────────────────────────────────────────────────
+
+export interface ProjectTaskStatus {
+  parent: "To Do" | "In Progress" | "Complete" | "On Hold";
+  name: string;
+  color: string;
+}
+
+export interface ProjectRecurringDetails {
+  type: "Custom" | "Periodically" | "Daily" | "Weekly" | "Monthly" | "Yearly";
+  every: number;
+  everyValue: "Days" | "Weeks" | "Months" | "Years";
+  dayAfterCompletion: number;
+  everySelect: string;
+  everyValues: string;
+  isOnThe: boolean;
+  isOnDay: boolean;
+}
+
+export interface ProjectTask {
+  id: string;
+  projectId: string;
+  workspaceId: string;
+  taskName: string;
+  description: string | null;
+  assigneeId: string | null;
+  parentTaskId: string | null;
+  milestoneId: string | null;
+  isSubtask: boolean;
+  hasSubtasks: boolean;
+  status: ProjectTaskStatus;
+  priority: "low" | "medium" | "high" | "urgent" | null;
+  startDate: Timestamp | null;
+  dueDate: Timestamp | null;
+  startDateDays: number | null;
+  dueDateDays: number | null;
+  startDateReference: string | null;
+  dueDateReference: string | null;
+  recurring: boolean;
+  recurringDetails: ProjectRecurringDetails | null;
+  weekDays: string[];
+  visibility: "Public" | "Private";
+  order: number;
+  isMilestone: boolean;
+  completedAt: Timestamp | null;
+  customFields: Record<string, unknown>;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  isDeleted: boolean;
+}
+
+// ─── Project Milestone ────────────────────────────────────────────────────────
+
+export interface ProjectMilestone {
+  id: string;
+  projectId: string;
+  workspaceId: string;
+  milestoneName: string;
+  description: string | null;
+  dueDate: Timestamp | null;
+  status: "Pending" | "Completed" | "Failed";
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  isDeleted: boolean;
+}
+
+// ─── Project Note ─────────────────────────────────────────────────────────────
+
+export interface ProjectNote {
+  id: string;
+  projectId: string;
+  workspaceId: string;
+  taskId: string | null;
+  title: string;
+  content: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  isDeleted: boolean;
+}
+
+// ─── Project Time Entry ──────────────────────────────────────────────────────
+
+export interface ProjectTimeEntry {
+  id: string;
+  projectId: string;
+  workspaceId: string;
+  taskId: string;
+  memberId: string;
+  date: Timestamp;
+  startTime: Timestamp | null;
+  endTime: Timestamp | null;
+  totalTime: number;
+  isPaused: boolean;
+  billable: boolean;
+  billed: boolean;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  description: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  isDeleted: boolean;
 }
 
 // ─── Invoice ─────────────────────────────────────────────────────────────────
