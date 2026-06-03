@@ -147,6 +147,8 @@ function BoardView({
   onDeleteTask: (task: ProjectTask) => void;
   onTitleChange?: (task: ProjectTask, newTitle: string) => void;
 }) {
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
   const columns = [
     { key: "To Do", label: "Not Started", color: "#DDDDDD" },
     { key: "In Progress", label: "In Progress", color: "#CFE6F5" },
@@ -154,13 +156,42 @@ function BoardView({
     { key: "On Hold", label: "On Hold", color: "#FFE0B2" },
   ];
 
+  const handleDragStart = (e: React.DragEvent, task: ProjectTask) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify({ id: task.id, fromStatus: task.status.parent }));
+  };
+
+  const handleColumnDrop = (e: React.DragEvent, targetCol: string) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      if (data.fromStatus === targetCol) return;
+      const newStatus =
+        targetCol === "To Do" ? { parent: "To Do" as const, name: "Not Started", color: "#DDDDDD" } :
+        targetCol === "In Progress" ? { parent: "In Progress" as const, name: "In Progress", color: "#CFE6F5" } :
+        targetCol === "Complete" ? { parent: "Complete" as const, name: "Complete", color: "#D1F5CF" } :
+        { parent: "On Hold" as const, name: "On Hold", color: "#FFE0B2" };
+      const task = tasks.find((t) => t.id === data.id);
+      if (task) onTaskStatusChange(task, newStatus);
+    } catch {}
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {columns.map((col) => {
         const colTasks = tasks.filter((t) => t.status.parent === col.key);
         const isCompleteCol = col.key === "Complete";
+        const isOver = dragOverCol === col.key;
         return (
-          <div key={col.key} className="rounded-lg border border-border bg-muted/30 min-h-[200px]">
+          <div key={col.key}
+            onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
+            onDragLeave={(e) => { e.preventDefault(); setDragOverCol(null); }}
+            onDrop={(e) => handleColumnDrop(e, col.key)}
+            className={cn("rounded-lg border min-h-[200px] transition-colors",
+              isOver ? "border-foreground/40 bg-accent/30" : "border-border bg-muted/30"
+            )}
+          >
             <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color }} />
@@ -175,7 +206,9 @@ function BoardView({
                 </div>
               ) : (
                 colTasks.map((task) => (
-                  <div key={task.id} className="bg-card rounded-md border border-border p-2.5 shadow-sm">
+                  <div key={task.id} draggable onDragStart={(e) => handleDragStart(e, task)}
+                    className="bg-card rounded-md border border-border p-2.5 shadow-sm cursor-grab active:cursor-grabbing"
+                  >
                     <div className="flex items-start gap-2">
                       <button onClick={() => onToggleTaskComplete(task)} className="mt-0.5 shrink-0">
                         {isCompleteCol ? (
@@ -189,7 +222,7 @@ function BoardView({
                           </svg>
                         )}
                       </button>
-                      <span className="text-xs font-medium text-foreground cursor-pointer line-clamp-2">
+                      <span className="text-xs font-medium text-foreground line-clamp-2">
                         {task.taskName}
                       </span>
                     </div>
@@ -467,8 +500,9 @@ export default function WorkflowSection({
                           onTitleChange={onTitleChange}
                           showSubtasks={isExpanded}
                           onToggleSubtasks={onToggleSubtaskExpand}
-                          onDragStart={onTaskDragStart}
-                          onDrop={onTaskDrop}
+              onDragStart={onTaskDragStart}
+              onDrop={onTaskDrop}
+              onDragOver={(e) => { e.preventDefault(); }}
                         />
                         {isExpanded && subtasks.length > 0 && (
                           <div className="mt-1.5 space-y-1.5 pl-5 ml-8 border-l-2 border-border">

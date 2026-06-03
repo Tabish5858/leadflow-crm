@@ -438,8 +438,8 @@ export default function DeliverablesTab({ projectId, workspaceId, userId, onProj
       formData.append("deliverableDescription", data.description);
       formData.append("projectId", projectId);
 
-      // Create an empty marker blob to register the deliverable
-      const blob = new Blob([JSON.stringify({ created: new Date().toISOString() })], { type: "application/json" });
+      // Create a placeholder document to register the deliverable
+      const blob = new Blob([JSON.stringify({ created: new Date().toISOString() })], { type: "text/plain" });
       formData.append("file", blob, `_deliverable_${data.title.replace(/[^a-zA-Z0-9]/g, "_")}.meta`);
 
       const headers = await getApiAuthHeaders(workspaceId);

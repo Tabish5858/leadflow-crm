@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
       const file = formData.get("file") as File;
       const leadId = formData.get("leadId") as string;
       const projectId = formData.get("projectId") as string;
+      const deliverableName = formData.get("deliverableName") as string;
 
       if (!file) {
         return NextResponse.json(
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
       };
       if (leadId) docData.leadId = leadId;
       if (projectId) docData.projectId = projectId;
+      if (deliverableName) docData.deliverableName = deliverableName;
       const docRef = await getAdminDb().collection(DOCUMENTS_COLLECTION).add(docData);
 
       return NextResponse.json({

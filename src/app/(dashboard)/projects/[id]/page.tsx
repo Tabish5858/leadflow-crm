@@ -66,6 +66,7 @@ import ProgressTimeline from "@/components/projects/project-detail/progress-time
 import WorkflowSection from "@/components/projects/project-detail/workflow-section";
 import ProjectInfoCard from "@/components/projects/project-detail/sidebar-cards/project-info-card";
 import TeamCard from "@/components/projects/project-detail/sidebar-cards/team-card";
+import ClientsCard from "@/components/projects/project-detail/sidebar-cards/clients-card";
 import NotesCard from "@/components/projects/project-detail/sidebar-cards/notes-card";
 import ContractsCard from "@/components/projects/project-detail/sidebar-cards/contracts-card";
 import InvoicesCard from "@/components/projects/project-detail/sidebar-cards/invoices-card";
@@ -580,7 +581,7 @@ export default function ProjectDetailPage() {
 
   // ─── Derived Data ────────────────────────────────────────────────────────────
 
-  const topLevelTasks = useMemo(() => tasks.filter((t) => !t.parentTaskId && !t.isSubtask), [tasks]);
+  const topLevelTasks = useMemo(() => tasks.filter((t) => !t.parentTaskId && !t.isSubtask && !t.milestoneId), [tasks]);
   const getSubtasks = useCallback((parentId: string) => tasks.filter((t) => t.parentTaskId === parentId && t.isSubtask), [tasks]);
   const clientMembers = useMemo(() => members.filter((m) => project?.clients?.includes(m.userId)), [members, project?.clients]);
   const tasksCompleted = useMemo(() => tasks.filter((t) => t.status.parent === "Complete").length, [tasks]);
@@ -699,6 +700,7 @@ export default function ProjectDetailPage() {
               <div className="w-full lg:w-[35%] space-y-4 lg:sticky lg:top-4 lg:self-start max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
                 <ProjectInfoCard project={project} memberMap={memberMap} onProjectUpdated={loadProject} />
                 <TeamCard projectId={projectId} members={members} memberIds={project.memberIds} onProjectUpdated={loadProject} />
+                <ClientsCard projectId={projectId} members={members} clientIds={project.clients || []} onProjectUpdated={loadProject} />
                 <LinksCard project={project} onProjectUpdated={loadProject} />
                 <DeliveryFlowCard project={project} onProjectUpdated={loadProject} />
                 <NotesCard notes={notes} onCreateNote={handleCreateNote} onDeleteNote={handleDeleteNote} />
@@ -747,7 +749,7 @@ export default function ProjectDetailPage() {
                     const isExpanded = expandedTasks.has(task.id);
                     return (
                       <div key={task.id}>
-                        <TaskCard task={task} memberMap={memberMap} onToggleComplete={handleToggleTaskComplete} onStatusChange={handleTaskStatusChange} onDelete={handleDeleteTask} showSubtasks={isExpanded} onToggleSubtasks={toggleSubtaskExpand} onDragStart={handleTaskDragStart} onDrop={handleTaskDrop} />
+                        <TaskCard task={task} memberMap={memberMap} onToggleComplete={handleToggleTaskComplete} onStatusChange={handleTaskStatusChange} onDelete={handleDeleteTask} showSubtasks={isExpanded} onToggleSubtasks={toggleSubtaskExpand} onDragStart={handleTaskDragStart} onDrop={handleTaskDrop} onDragOver={(e) => { e.preventDefault(); }} />
                         {isExpanded && subtasks.length > 0 && (
                           <div className="mt-1 space-y-1 pl-4 border-l-2 border-muted ml-6">
                             {subtasks.map((sub) => (<TaskCard key={sub.id} task={sub} memberMap={memberMap} onToggleComplete={handleToggleTaskComplete} onStatusChange={handleTaskStatusChange} onDelete={handleDeleteTask} isSubtask />))}
