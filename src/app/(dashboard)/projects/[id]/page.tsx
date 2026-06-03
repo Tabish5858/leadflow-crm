@@ -72,6 +72,8 @@ import InvoicesCard from "@/components/projects/project-detail/sidebar-cards/inv
 import ProfitabilityCard from "@/components/projects/project-detail/sidebar-cards/profitability-card";
 import LinksCard from "@/components/projects/project-detail/sidebar-cards/links-card";
 import DeliveryFlowCard from "@/components/projects/project-detail/sidebar-cards/delivery-flow-card";
+import CustomFieldsCard from "@/components/projects/project-detail/sidebar-cards/custom-fields-card";
+import ActivityLogCard from "@/components/projects/project-detail/sidebar-cards/activity-log-card";
 import ProjectFiles from "@/components/projects/project-detail/project-files";
 import ProjectTimeTracking from "@/components/projects/project-detail/project-time-tracking";
 import {
@@ -470,6 +472,8 @@ export default function ProjectDetailPage() {
                 <ContractsCard projectId={projectId} />
                 <InvoicesCard projectId={projectId} />
                 <ProfitabilityCard budget={project.budget} />
+                <CustomFieldsCard project={project} />
+                <ActivityLogCard project={project} />
               </div>
             </div>
 
