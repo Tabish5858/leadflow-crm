@@ -165,6 +165,20 @@ export default function ProjectDetailPage() {
   const [taskSaving, setTaskSaving] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
+  // ── Inline task creation state ──────────────────────────────────────────────
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [isCreatingNestedTask, setIsCreatingNestedTask] = useState(false);
+  const [nestedMilestoneId, setNestedMilestoneId] = useState<string | null>(null);
+  const [newNestedTaskTitle, setNewNestedTaskTitle] = useState("");
+
+  // ── Milestone modal state ───────────────────────────────────────────────────
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [newMilestoneName, setNewMilestoneName] = useState("");
+
+  // ── Milestone expansion ─────────────────────────────────────────────────────
+  const [expandedMilestones, setExpandedMilestones] = useState<Set<string>>(new Set());
+
   // Milestone data
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
@@ -333,6 +347,15 @@ export default function ProjectDetailPage() {
     } catch { toast.error("Failed to update task status"); }
   };
 
+  const handleTitleChange = async (task: ProjectTask, newTitle: string) => {
+    if (newTitle === task.taskName) return;
+    try {
+      await updateTask(task.id, { taskName: newTitle } as any);
+      setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, taskName: newTitle } as ProjectTask : t));
+      toast.success("Task renamed");
+    } catch { toast.error("Failed to rename task"); }
+  };
+
   const handleDeleteTask = async (task: ProjectTask) => {
     try {
       await deleteTask(task.id);
@@ -397,6 +420,144 @@ export default function ProjectDetailPage() {
     } catch { toast.error("Failed to delete milestone"); }
   };
 
+  // ─── Inline Task Creation Handlers ───────────────────────────────────────────
+
+  const handleStartInlineTask = () => {
+    setNewTaskTitle("");
+    setIsCreatingTask(true);
+  };
+
+  const handleCreateInlineTask = async () => {
+    if (!projectId || !project || !newTaskTitle.trim()) return;
+    const title = newTaskTitle.trim();
+    setIsCreatingTask(false);
+    setNewTaskTitle("");
+    try {
+      await createTask(projectId, project.workspaceId, firebaseUser?.uid || "demo", {
+        taskName: title,
+      });
+      toast.success("Task created");
+      const updated = await getProjectTasks(projectId);
+      setTasks(updated);
+    } catch { toast.error("Failed to create task"); }
+  };
+
+  const handleCancelCreateTask = () => {
+    setIsCreatingTask(false);
+    setNewTaskTitle("");
+  };
+
+  // ─── Nested Task Handlers ────────────────────────────────────────────────────
+
+  const handleStartNestedTask = (milestoneId: string) => {
+    setNestedMilestoneId(milestoneId);
+    setNewNestedTaskTitle("");
+    setIsCreatingNestedTask(true);
+    // Auto-expand the milestone so the input is visible
+    setExpandedMilestones((prev) => { const next = new Set(prev); next.add(milestoneId); return next; });
+  };
+
+  const handleCreateNestedTask = async () => {
+    if (!projectId || !project || !newNestedTaskTitle.trim() || !nestedMilestoneId) return;
+    const title = newNestedTaskTitle.trim();
+    const msId = nestedMilestoneId;
+    setIsCreatingNestedTask(false);
+    setNewNestedTaskTitle("");
+    setNestedMilestoneId(null);
+    try {
+      await createTask(projectId, project.workspaceId, firebaseUser?.uid || "demo", {
+        taskName: title,
+        milestoneId: msId,
+      });
+      toast.success("Task added to milestone");
+      const updated = await getProjectTasks(projectId);
+      setTasks(updated);
+    } catch { toast.error("Failed to create task"); }
+  };
+
+  const handleCancelCreateNestedTask = () => {
+    setIsCreatingNestedTask(false);
+    setNewNestedTaskTitle("");
+    setNestedMilestoneId(null);
+  };
+
+  // ─── Milestone Modal Handler ────────────────────────────────────────────────
+
+  const handleOpenMilestoneModal = () => {
+    setNewMilestoneName("");
+    setShowMilestoneModal(true);
+  };
+
+  const handleCreateMilestoneFromModal = async () => {
+    if (!projectId || !project || !newMilestoneName.trim()) return;
+    setMilestoneSaving(true);
+    try {
+      await createMilestone(projectId, project.workspaceId, firebaseUser?.uid || "demo", {
+        milestoneName: newMilestoneName.trim(),
+        description: null,
+        dueDate: null,
+      } as any);
+      setShowMilestoneModal(false);
+      toast.success("Milestone created");
+      const updated = await getProjectMilestones(projectId);
+      setMilestones(updated);
+    } catch { toast.error("Failed to create milestone"); }
+    finally { setMilestoneSaving(false); }
+  };
+
+  // ─── Milestone Expand Toggle ────────────────────────────────────────────────
+
+  const toggleMilestoneExpand = (milestoneId: string) => {
+    setExpandedMilestones((prev) => {
+      const next = new Set(prev);
+      if (next.has(milestoneId)) next.delete(milestoneId);
+      else next.add(milestoneId);
+      return next;
+    });
+  };
+
+  // ─── Milestone Drag Handlers ────────────────────────────────────────────────
+
+  const handleMilestoneDragStart = (e: React.DragEvent, milestone: ProjectMilestone) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", `milestone:${milestone.id}`);
+  };
+
+  const handleMilestoneDrop = async (e: React.DragEvent, targetMilestone: ProjectMilestone) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData("text/plain");
+    if (!data) return;
+    // If a task is dropped on a milestone, assign it to the milestone
+    if (!data.startsWith("milestone:")) {
+      const taskId = data;
+      try {
+        await updateTask(taskId, { milestoneId: targetMilestone.id } as any);
+        toast.success("Task moved to milestone");
+        const [updatedTasks, updatedMilestones] = await Promise.all([
+          getProjectTasks(projectId),
+          getProjectMilestones(projectId),
+        ]);
+        setTasks(updatedTasks);
+        setMilestones(updatedMilestones);
+        setExpandedMilestones((prev) => { const next = new Set(prev); next.add(targetMilestone.id); return next; });
+      } catch { toast.error("Failed to move task"); }
+      return;
+    }
+    // Reorder milestones
+    const milestoneId = data.replace("milestone:", "");
+    if (milestoneId === targetMilestone.id) return;
+    const allMilestones = [...milestones];
+    const fromIdx = allMilestones.findIndex((m) => m.id === milestoneId);
+    const toIdx = allMilestones.findIndex((m) => m.id === targetMilestone.id);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const [moved] = allMilestones.splice(fromIdx, 1);
+    allMilestones.splice(toIdx, 0, moved);
+    setMilestones(allMilestones);
+    try {
+      await Promise.all(allMilestones.map((m, i) => updateTask(m.id, { order: i } as any)));
+    } catch { toast.error("Failed to save milestone order"); }
+  };
+
   // ─── Note Handlers ───────────────────────────────────────────────────────────
 
   const handleCreateNote = async (data: { title: string; content: string }) => {
@@ -423,6 +584,15 @@ export default function ProjectDetailPage() {
   const getSubtasks = useCallback((parentId: string) => tasks.filter((t) => t.parentTaskId === parentId && t.isSubtask), [tasks]);
   const clientMembers = useMemo(() => members.filter((m) => project?.clients?.includes(m.userId)), [members, project?.clients]);
   const tasksCompleted = useMemo(() => tasks.filter((t) => t.status.parent === "Complete").length, [tasks]);
+
+  // ── Milestone Task Map (tasks nested under milestones) ──────────────────────
+  const milestoneTaskMap = useMemo(() => {
+    const map = new Map<string, ProjectTask[]>();
+    for (const ms of milestones) {
+      map.set(ms.id, tasks.filter((t) => t.milestoneId === ms.id));
+    }
+    return map;
+  }, [milestones, tasks]);
 
   // ═══ RENDER ──────────────────────────────────────────────────────────────────
 
@@ -493,16 +663,35 @@ export default function ProjectDetailPage() {
                   onToggleTaskComplete={handleToggleTaskComplete}
                   onTaskStatusChange={handleTaskStatusChange}
                   onDeleteTask={handleDeleteTask}
-                  onAddTask={() => setShowCreateTask(true)}
-                  onAddMilestone={() => {
-                    const ms = milestones.length > 0 ? milestones[0] : null;
-                    // Show milestone creation dialog using inline form
-                    const name = prompt("Milestone name:");
-                    if (name?.trim()) handleCreateMilestone({ milestoneName: name.trim(), description: "", dueDate: null });
-                  }}
+                  onTitleChange={handleTitleChange}
+                  onAddTask={handleStartInlineTask}
+                  onAddMilestone={handleOpenMilestoneModal}
                   getSubtasks={getSubtasks}
                   expandedTasks={expandedTasks}
                   onToggleSubtaskExpand={toggleSubtaskExpand}
+                  onTaskDragStart={handleTaskDragStart}
+                  onTaskDrop={handleTaskDrop}
+                  // Inline task creation
+                  isCreatingTask={isCreatingTask}
+                  newTaskTitle={newTaskTitle}
+                  onNewTaskTitleChange={setNewTaskTitle}
+                  onCreateTask={handleCreateInlineTask}
+                  onCancelCreateTask={handleCancelCreateTask}
+                  // Nested task creation
+                  isCreatingNestedTask={isCreatingNestedTask}
+                  nestedMilestoneId={nestedMilestoneId}
+                  newNestedTaskTitle={newNestedTaskTitle}
+                  onNewNestedTaskTitleChange={setNewNestedTaskTitle}
+                  onCreateNestedTask={handleCreateNestedTask}
+                  onCancelCreateNestedTask={handleCancelCreateNestedTask}
+                  onAddNestedTask={handleStartNestedTask}
+                  // Milestone drag reorder
+                  onMilestoneDragStart={handleMilestoneDragStart}
+                  onMilestoneDrop={handleMilestoneDrop}
+                  // Milestone tasks expansion
+                  milestoneTaskMap={milestoneTaskMap}
+                  expandedMilestones={expandedMilestones}
+                  onToggleMilestoneExpand={toggleMilestoneExpand}
                 />
               </div>
 
@@ -521,8 +710,6 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            {/* Create Task Dialog */}
-            <TaskCreateDialog open={showCreateTask} onOpenChange={setShowCreateTask} onSubmit={handleCreateTask} members={members} saving={taskSaving} />
           </div>
         )}
 
@@ -672,6 +859,37 @@ export default function ProjectDetailPage() {
               <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
               <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
                 {deleting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>) : "Delete Project"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Milestone Create Modal ── */}
+        <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Milestone</DialogTitle>
+              <DialogDescription>Milestones mark key dates or deliverables in your project timeline.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ms-name">
+                  Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="ms-name"
+                  placeholder="e.g., Design Phase Complete"
+                  value={newMilestoneName}
+                  onChange={(e) => setNewMilestoneName(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateMilestoneFromModal(); }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMilestoneModal(false)}>Cancel</Button>
+              <Button onClick={handleCreateMilestoneFromModal} disabled={milestoneSaving || !newMilestoneName.trim()}>
+                {milestoneSaving ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...</>) : "Add Milestone"}
               </Button>
             </DialogFooter>
           </DialogContent>
