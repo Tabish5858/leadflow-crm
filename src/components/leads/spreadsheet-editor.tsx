@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/lib/toast";
+import { Label } from "@/components/ui/label";
 import {
   updateSpreadsheetSnapshot,
   updateSpreadsheetName,
 } from "@/lib/firebase/spreadsheets";
-import { Loader2, Save, Download } from "lucide-react";
+import { Upload, Loader2, Save } from "lucide-react";
 import type { IWorkbookData } from "@univerjs/core";
 
 interface SpreadsheetEditorProps {
@@ -26,10 +27,16 @@ export function SpreadsheetEditor({
   initialSnapshot,
 }: SpreadsheetEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initialName);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const univerRef = useRef<{ getSnapshot: () => IWorkbookData; dispose: () => void } | null>(null);
+  const univerRef = useRef<{
+    univerAPI: any;
+    getSnapshot: () => IWorkbookData;
+    dispose: () => void;
+  } | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSnapshotRef = useRef<IWorkbookData | null>(null);
 
@@ -116,6 +123,7 @@ export function SpreadsheetEditor({
       });
 
       univerRef.current = {
+        univerAPI,
         getSnapshot: () => workbook.getSnapshot() as unknown as IWorkbookData,
         dispose: () => {
           disposable.dispose();
@@ -144,6 +152,66 @@ export function SpreadsheetEditor({
       await updateSpreadsheetName(workspaceId, spreadsheetId, newName);
     } catch {
       toast.error("Failed to rename spreadsheet");
+    }
+  };
+
+  // ─── CSV Import ──────────────────────────────────────────────────────────
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const next = line[i + 1];
+      if (inQuotes) {
+        if (char === '"' && next === '"') { current += '"'; i++; }
+        else if (char === '"') { inQuotes = false; }
+        else { current += char; }
+      } else {
+        if (char === '"') { inQuotes = true; }
+        else if (char === ",") { result.push(current.trim()); current = ""; }
+        else { current += char; }
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!univerRef.current) { toast.error("Editor not ready"); return; }
+
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length < 2) { toast.error("CSV is empty"); return; }
+
+      const headers = parseCSVLine(lines[0]);
+      const data: string[][] = [headers];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        while (values.length > headers.length && values[values.length - 1] === "") {
+          values.pop();
+        }
+        data.push(values.slice(0, headers.length));
+      }
+
+      // Insert into the active sheet
+      const { univerAPI } = univerRef.current;
+      const sheet = univerAPI.getActiveWorkbook().getActiveSheet();
+      const range = sheet.getRange(0, 0, data.length, data[0].length);
+      range.setValues(data);
+
+      toast.success(`Imported ${data.length - 1} rows`);
+    } catch {
+      toast.error("Failed to import CSV");
+    } finally {
+      setImporting(false);
+      // Reset file input so the same file can be re-imported
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -178,6 +246,26 @@ export function SpreadsheetEditor({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={handleImportCSV}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={importing}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {importing ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-1.5 h-4 w-4" />
+            )}
+            Import CSV
+          </Button>
           <Button variant="outline" size="sm" onClick={handleManualSave}>
             <Save className="mr-1.5 h-4 w-4" />
             Save
