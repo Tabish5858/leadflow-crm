@@ -2,6 +2,7 @@ import type { Lead, CustomField } from "@/types";
 import { COUNTRIES } from "@/lib/countries";
 
 const CSV_HEADERS = [
+  "SR.",
   "First Name",
   "Last Name",
   "Email",
@@ -23,6 +24,8 @@ const CSV_HEADERS = [
 ];
 
 const CSV_HEADER_MAP: Record<string, keyof Lead> = {
+  "sr.": "sr",
+  "sr": "sr",
   "first name": "firstName",
   "last name": "lastName",
   email: "email",
@@ -179,6 +182,7 @@ export interface MappedLead {
   city: string | null;
   tags: string[];
   notes: string | null;
+  sr: number | null;
   /** Custom field values keyed by custom field ID. */
   customFields: Record<string, string>;
 }
@@ -209,6 +213,7 @@ export function mapCsvRowToLead(
     : null;
 
   const valueStr = getValue("value");
+  const srStr = getValue("sr");
   const tagsStr = getValue("tags");
 
   // Map custom field values from the CSV
@@ -237,6 +242,7 @@ export function mapCsvRowToLead(
     niche: getValue("niche") || null,
     value: valueStr ? parseFloat(valueStr) || null : null,
     currency: getValue("currency") || "USD",
+    sr: srStr ? parseInt(srStr, 10) || null : null,
     website: getValue("website") || null,
     linkedin: getValue("linkedin") || null,
     country: countryCode,
@@ -250,6 +256,7 @@ export function mapCsvRowToLead(
 export const REQUIRED_FIELDS = ["firstName", "lastName", "email"] as const;
 
 export const LEAD_FIELDS = [
+  { key: "sr", label: "SR." },
   { key: "firstName", label: "First Name" },
   { key: "lastName", label: "Last Name" },
   { key: "email", label: "Email" },

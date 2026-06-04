@@ -65,6 +65,12 @@ export function CsvImportDialog({
   });
   const [dragOver, setDragOver] = useState(false);
 
+  /** Manual aliases for common typos in CSV headers — maps the typo to the correct field label. */
+  const CSV_HEADER_ALIASES: Record<string, string> = {
+    "preffered contact": "Preferred Contact",
+    "qualfication resoan": "Qualification Reason",
+  };
+
   const handleFileUpload = useCallback(
     (file: File) => {
       if (!file.name.endsWith(".csv")) {
@@ -89,6 +95,8 @@ export function CsvImportDialog({
         const allFields = getLeadFieldsWithCustom(customFields);
         result.headers.forEach((header) => {
           const lower = header.toLowerCase().trim();
+
+          // First pass: exact match or base-name match
           for (const field of allFields) {
             const fieldKey = field.key.toLowerCase();
             const fieldLabel = field.label.toLowerCase();
@@ -100,12 +108,31 @@ export function CsvImportDialog({
             }
 
             // Custom field labels are "Name (type)" - match just the name part
-            // e.g. "Niche" should match "Niche (select)"
             if (field.isCustom && fieldLabel.includes("(")) {
               const baseName = fieldLabel.split("(")[0].trim();
               if (lower === baseName) {
                 autoMapping[field.key] = header;
                 break;
+              }
+            }
+          }
+
+          // Second pass: check known aliases for typos (only if not already mapped)
+          if (!Object.values(autoMapping).includes(header)) {
+            const aliasedFieldName = CSV_HEADER_ALIASES[lower];
+            if (aliasedFieldName) {
+              const aliasedLower = aliasedFieldName.toLowerCase();
+              const matchedField = allFields.find((f) => {
+                const fl = f.label.toLowerCase();
+                // Match directly on label or on base name for custom fields
+                if (fl === aliasedLower) return true;
+                if (f.isCustom && fl.includes("(")) {
+                  return fl.split("(")[0].trim() === aliasedLower;
+                }
+                return false;
+              });
+              if (matchedField) {
+                autoMapping[matchedField.key] = header;
               }
             }
           }
@@ -115,7 +142,7 @@ export function CsvImportDialog({
       };
       reader.readAsText(file);
     },
-    []
+    [customFields]
   );
 
   const handleDrop = useCallback(
@@ -163,6 +190,7 @@ export function CsvImportDialog({
 
       toImport.push({
         workspaceId: "", // Will be set by caller
+        sr: lead.sr,
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
