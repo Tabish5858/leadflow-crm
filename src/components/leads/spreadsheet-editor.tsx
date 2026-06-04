@@ -12,6 +12,8 @@ import {
 } from "@/lib/firebase/spreadsheets";
 import { Upload, Loader2, Save } from "lucide-react";
 import type { IWorkbookData } from "@univerjs/core";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UniverAPI = any;
 
 const SAVE_DEBOUNCE_MS = 2000;
 const MAX_SAVE_INTERVAL_MS = 10000;
@@ -39,7 +41,7 @@ export function SpreadsheetEditor({
   const [importing, setImporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const univerRef = useRef<{
-    univerAPI: any;
+    univerAPI: UniverAPI;
     dispose: () => void;
   } | null>(null);
   const dirtyRef = useRef(false);
@@ -140,7 +142,8 @@ export function SpreadsheetEditor({
         locale: LocaleType.EN_US,
         locales: {
           [LocaleType.EN_US]: mergeLocales(
-            UniverPresetSheetsCoreEnUS as Record<string, any>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            UniverPresetSheetsCoreEnUS as any
           ),
         },
         presets: [
@@ -155,7 +158,7 @@ export function SpreadsheetEditor({
 
       // Create workbook with existing snapshot or empty
       const workbook = initialSnapshot
-        ? univerAPI.createWorkbook(initialSnapshot as any)
+        ? univerAPI.createWorkbook(initialSnapshot)
         : univerAPI.createWorkbook({});
 
       // Sync theme on init
