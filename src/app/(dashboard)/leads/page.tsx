@@ -463,56 +463,52 @@ export default function LeadsPage() {
   return (
     <RequireModuleAccess moduleId="leads">
       <div className="space-y-6">
-        {/* Search and Filters */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search leads by name, email, company, phone, notes..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <LeadFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              stages={stages}
-              sources={sources}
-              niches={niches}
-              statusLabels={Object.fromEntries(stages.map((s) => [s.id, s.name]))}
+        {/* Search + Filters + Count + Sort — all on one row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-[2] min-w-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search leads by name, email, company, phone, notes..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9"
             />
           </div>
+          <LeadFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            stages={stages}
+            sources={sources}
+            niches={niches}
+            statusLabels={Object.fromEntries(stages.map((s) => [s.id, s.name]))}
+          />
+          {!loading && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ArrowUpDown className="h-4 w-4" />
+                    Sort: {sortBy === "sr" ? "SR" : sortBy === "score" ? "Score" : "Created"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSortBy("sr")}>
+                    Sort by #
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("created")}>
+                    Sort by Created
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("score")}>
+                    Sort by Score
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+               <p className="text-sm text-muted-foreground whitespace-nowrap">
+                {finalFilteredLeads.length} of {totalCount} leads
+              </p>
+            </>
+          )}
         </div>
-
-        {/* Results count and sort */}
-        {!loading && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {finalFilteredLeads.length} of {totalCount} leads
-            </p>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <ArrowUpDown className="h-4 w-4" />
-                  Sort: {sortBy === "sr" ? "SR" : sortBy === "score" ? "Score" : "Created"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortBy("sr")}>
-                  Sort by #
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("created")}>
-                  Sort by Created
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("score")}>
-                  Sort by Score
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
 
         {/* Selection toolbar */}
         {selectedIds.size > 0 && (
@@ -569,7 +565,7 @@ export default function LeadsPage() {
 
         {/* Table + Load More */}
         {sortedLeads.length > 0 && (
-          <div className="overflow-x-auto overflow-y-auto min-w-[900px] max-h-[calc(100vh-320px)]">
+          <div className="overflow-x-auto overflow-y-auto min-w-[900px] max-h-[calc(100vh-190px)]">
               <table className="min-w-full w-max table-fixed">
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="border-b">
