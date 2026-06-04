@@ -57,10 +57,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RequireModuleAccess } from "@/components/shared/require-module-access";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/toast";
-import { TaskCard } from "@/components/projects/shared/task-card";
-import { TaskCreateDialog } from "@/components/projects/shared/task-create-dialog";
 import type { TaskFormData } from "@/components/projects/shared/task-create-dialog";
-import { MilestoneList } from "@/components/projects/shared/milestone-list";
 import { ProjectNotes } from "@/components/projects/shared/project-notes";
 import ProjectHeader from "@/components/projects/project-detail/project-header";
 import ProgressTimeline from "@/components/projects/project-detail/progress-timeline";
@@ -85,9 +82,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   FileText,
-  Flag,
   FolderKanban,
-  ListTodo,
   Loader2,
   MessageSquare,
   Plus,
@@ -821,67 +816,55 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
-        {/* ─── TASKS (includes milestones) ─── */}
+        {/* ─── TASKS (same WorkflowSection as overview, full-width) ─── */}
         {activeTab === "tasks" && (
-          <div className="space-y-6">
-            {/* Tasks section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <ListTodo className="h-4 w-4" />
-                  <span>{tasks.length} task{tasks.length !== 1 ? "s" : ""}</span>
-                  <span className="text-muted-foreground/40">|</span>
-                  <span>{tasksCompleted} complete</span>
-                </div>
-                <Button variant="default" size="sm" className="gap-1.5" onClick={() => setShowCreateTask(true)}>
-                  <Plus className="h-4 w-4" /> Add Task
-                </Button>
-              </div>
-
-              {tasksLoading ? (
-                <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => (<Skeleton key={i} className="h-16 w-full rounded-lg" />))}</div>
-              ) : topLevelTasks.length === 0 ? (
-                <div className="text-center py-8 border rounded-lg border-dashed">
-                  <ListTodo className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground mb-1">No tasks yet</p>
-                  <Button variant="outline" size="sm" onClick={() => setShowCreateTask(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> Create your first task
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {topLevelTasks.map((task) => {
-                    const subtasks = getSubtasks(task.id);
-                    const isExpanded = expandedTasks.has(task.id);
-                    return (
-                      <div key={task.id}>
-                        <TaskCard task={task} memberMap={memberMap} onToggleComplete={handleToggleTaskComplete} onStatusChange={handleTaskStatusChange} onDelete={handleDeleteTask} onTitleChange={handleTitleChange} onAssigneeChange={handleTaskAssigneeChange} onDueDateChange={handleTaskDueDateChange} members={members} showSubtasks={isExpanded} onToggleSubtasks={toggleSubtaskExpand} onDragStart={handleTaskDragStart} onDrop={handleTaskDrop} onDragOver={(e) => { e.preventDefault(); }} />
-                        {isExpanded && subtasks.length > 0 && (
-                          <div className="mt-1 space-y-1 pl-4 border-l-2 border-muted ml-6">
-                            {subtasks.map((sub) => (<TaskCard key={sub.id} task={sub} memberMap={memberMap} onToggleComplete={handleToggleTaskComplete} onStatusChange={handleTaskStatusChange} onDelete={handleDeleteTask} isSubtask />))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Milestones section */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Flag className="h-4 w-4 text-muted-foreground" />
-                Milestones ({milestones.length})
-              </h3>
-              {milestonesLoading ? (
-                <div className="space-y-2">{Array.from({ length: 2 }).map((_, i) => (<Skeleton key={i} className="h-20 w-full rounded-lg" />))}</div>
-              ) : (
-                <MilestoneList milestones={milestones} onCreate={handleCreateMilestone} onDelete={handleDeleteMilestone} saving={milestoneSaving} />
-              )}
-            </div>
-
-            <TaskCreateDialog open={showCreateTask} onOpenChange={setShowCreateTask} onSubmit={handleCreateTask} members={members} saving={taskSaving} />
+          <div className="w-full max-w-4xl">
+            <WorkflowSection
+              tasks={tasks}
+              milestones={milestones}
+              memberMap={memberMap}
+              onToggleTaskComplete={handleToggleTaskComplete}
+              onTaskStatusChange={handleTaskStatusChange}
+              onDeleteTask={handleDeleteTask}
+              onTitleChange={handleTitleChange}
+              onAssigneeChange={handleTaskAssigneeChange}
+              onDueDateChange={handleTaskDueDateChange}
+              taskMembers={members}
+              onAddTask={handleStartInlineTask}
+              onAddMilestone={handleOpenMilestoneModal}
+              getSubtasks={getSubtasks}
+              expandedTasks={expandedTasks}
+              onToggleSubtaskExpand={toggleSubtaskExpand}
+              onTaskDragStart={handleTaskDragStart}
+              onTaskDrop={handleTaskDrop}
+              // Inline task creation
+              isCreatingTask={isCreatingTask}
+              newTaskTitle={newTaskTitle}
+              onNewTaskTitleChange={setNewTaskTitle}
+              onCreateTask={handleCreateInlineTask}
+              onCancelCreateTask={handleCancelCreateTask}
+              // Nested task creation
+              isCreatingNestedTask={isCreatingNestedTask}
+              nestedMilestoneId={nestedMilestoneId}
+              newNestedTaskTitle={newNestedTaskTitle}
+              onNewNestedTaskTitleChange={setNewNestedTaskTitle}
+              onCreateNestedTask={handleCreateNestedTask}
+              onCancelCreateNestedTask={handleCancelCreateNestedTask}
+              onAddNestedTask={handleStartNestedTask}
+              // Milestone drag reorder
+              onMilestoneDragStart={handleMilestoneDragStart}
+              onMilestoneDrop={handleMilestoneDrop}
+              // Milestone tasks expansion
+              milestoneTaskMap={milestoneTaskMap}
+              expandedMilestones={expandedMilestones}
+              onToggleMilestoneExpand={toggleMilestoneExpand}
+              // Milestone actions
+              onToggleMilestoneComplete={handleToggleMilestoneComplete}
+              onMilestoneStatusChange={handleMilestoneStatusChange}
+              onMilestoneNameChange={handleMilestoneNameChange}
+              onDeleteMilestone={handleDeleteMilestone}
+              onMilestoneDueDateChange={handleMilestoneDueDateChange}
+            />
           </div>
         )}
 
