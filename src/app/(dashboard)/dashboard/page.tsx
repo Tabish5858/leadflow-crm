@@ -215,7 +215,7 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push("/analytics")}
+                      onClick={() => router.push("/leads/analytics")}
                     >
                       View Analytics
                     </Button>

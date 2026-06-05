@@ -20,7 +20,6 @@ import type { ModuleId } from "@/types";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {
-  BarChart3,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -51,7 +50,6 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/leads", label: "Leads", icon: Users, moduleId: "leads" },
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare, moduleId: "pipeline" },
   { href: "/projects", label: "Projects", icon: FolderKanban, moduleId: "projects" },
-  { href: "/analytics", label: "Analytics", icon: BarChart3, moduleId: "analytics" },
   { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
   { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
   { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },

@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 const subNavItems = [
-  { href: "/leads/spreadsheet", label: "Spreadsheet" },
-  { href: "/leads", label: "Leads" },
+  { href: "/leads/spreadsheet", label: "Spreadsheets" },
+  { href: "/leads/analytics", label: "Analytics" },
 ];
 
 export default function LeadsLayout({ children }: { children: ReactNode }) {
@@ -18,10 +18,7 @@ export default function LeadsLayout({ children }: { children: ReactNode }) {
       {/* Sub-navigation tabs */}
       <div className="flex items-center gap-1 border-b">
         {subNavItems.map((item) => {
-          const isActive =
-            item.href === "/leads"
-              ? pathname === "/leads"
-              : pathname.startsWith(item.href);
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
