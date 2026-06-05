@@ -10,9 +10,10 @@ import {
   updateSpreadsheetSnapshot,
   updateSpreadsheetName,
 } from "@/lib/firebase/spreadsheets";
-import { Upload, Loader2, Save } from "lucide-react";
+import { Upload, Loader2, Save, BarChart3 } from "lucide-react";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IWorkbookData } from "@univerjs/core";
+import { SpreadsheetAnalyticsPanel } from "./spreadsheet-analytics-panel";
 type UniverAPI = any;
 
 const SAVE_DEBOUNCE_MS = 2000;
@@ -82,6 +83,8 @@ export function SpreadsheetEditor({
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [univerAPI, setUniverAPI] = useState<UniverAPI | null>(null);
   const univerRef = useRef<{
     univerAPI: UniverAPI;
     dispose: () => void;
@@ -300,6 +303,7 @@ export function SpreadsheetEditor({
         disposable.dispose();
         univerAPI.disposeUnit(workbook.getId());
       }};
+      setUniverAPI(univerAPI);
 
       setInitialized(true);
     }
@@ -496,6 +500,15 @@ export function SpreadsheetEditor({
             )}
             Import CSV
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAnalyticsOpen((p) => !p)}
+            data-analytics-toggle
+          >
+            <BarChart3 className="mr-1.5 h-4 w-4" />
+            {analyticsOpen ? "Close" : "Analytics"}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleManualSave}>
             <Save className="mr-1.5 h-4 w-4" />
             Save
@@ -503,17 +516,24 @@ export function SpreadsheetEditor({
         </div>
       </div>
 
-      {/* Univer container */}
-      {!initialized && (
-        <div className="rounded-lg border">
-          <Skeleton className="h-[70vh] w-full rounded-lg" />
-        </div>
-      )}
-      <div
-        ref={containerRef}
-        className="rounded-lg border overflow-hidden"
-        style={{ height: "70vh", display: initialized ? "block" : "none" }}
-      />
+      {/* Univer container + analytics panel */}
+      <div className="flex gap-0 rounded-lg border overflow-hidden" style={{ height: "70vh" }}>
+        {!initialized && (
+          <Skeleton className="h-full w-full rounded-lg" />
+        )}
+        <div
+          ref={containerRef}
+          className="flex-1 min-w-0"
+          style={{ display: initialized ? "block" : "none" }}
+        />
+        {initialized && univerAPI && (
+          <SpreadsheetAnalyticsPanel
+            univerAPI={univerAPI}
+            open={analyticsOpen}
+            onClose={() => setAnalyticsOpen(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
