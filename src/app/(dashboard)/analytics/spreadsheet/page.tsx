@@ -4,6 +4,7 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { getSpreadsheets, type Spreadsheet } from "@/lib/firebase/spreadsheets";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -54,11 +55,9 @@ import {
   ChevronDown,
   X,
   Hash,
-  Type,
   Users,
   Target,
   ListOrdered,
-  AlertCircle,
 } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -246,112 +245,13 @@ const COLORS = [
   "#06b6d4", "#d946ef", "#10b981", "#eab308", "#a855f7",
 ];
 
-// ─── Column Profile sub-components (mirrors editor analytics panel) ──────
-
-function TypeBadge({ type }: { type: SheetColumnAnalysis["type"] }) {
-  const map: Record<string, { label: string; className: string }> = {
-    number: {
-      label: "Number",
-      className:
-        "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-    },
-    text: {
-      label: "Text",
-      className:
-        "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    },
-    boolean: {
-      label: "Boolean",
-      className:
-        "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
-    },
-    empty: { label: "Empty", className: "bg-muted text-muted-foreground" },
-  };
-  const m = map[type] || map.text;
-  return (
-    <span
-      className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${m.className}`}
-    >
-      {m.label}
-    </span>
-  );
-}
+// ─── StatBox for column stats grid ────────────────────────────────────────
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border bg-card px-2.5 py-1.5">
       <div className="text-[10px] text-muted-foreground">{label}</div>
       <div className="text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
-function BarChartChart({
-  data,
-}: {
-  data: { name: string; value: number }[];
-}) {
-  if (data.length === 0) return null;
-  const top = data.slice(0, 15);
-  return (
-    <div className="w-full h-40">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={top}
-          margin={{ top: 4, right: 4, bottom: 4, left: -12 }}
-        >
-          <XAxis
-            dataKey="name"
-            tick={{ fontSize: 10 }}
-            interval={0}
-            angle={-20}
-            textAnchor="end"
-            height={40}
-          />
-          <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-          <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 6 }}
-            formatter={(value: number) => [value.toLocaleString(), "Count"]}
-          />
-          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function PieChartChart({
-  data,
-}: {
-  data: { name: string; value: number }[];
-}) {
-  if (data.length === 0) return null;
-  return (
-    <div className="w-full h-36">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={30}
-            outerRadius={55}
-            dataKey="value"
-            label={({ name, percent }) =>
-              `${name} ${(percent * 100).toFixed(0)}%`
-            }
-            labelLine={false}
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 6 }}
-            formatter={(value: number) => [value.toLocaleString(), "Count"]}
-          />
-        </PieChart>
-      </ResponsiveContainer>
     </div>
   );
 }
@@ -811,17 +711,20 @@ export default function SpreadsheetAnalyticsPage() {
 
   useEffect(() => {
     if (!activeWorkspace) return;
+    let cancelled = false;
     setLoadingList(true);
     getSpreadsheets(activeWorkspace.id)
       .then((list) => {
+        if (cancelled) return;
         setSpreadsheets(list);
         if (!selectedSpreadsheetId && list.length > 0) {
           setSelectedSpreadsheetId(list[0].id);
         }
       })
-      .catch(() => toast.error("Failed to load spreadsheets"))
-      .finally(() => setLoadingList(false));
-  }, [activeWorkspace]);
+      .catch(() => { if (!cancelled) toast.error("Failed to load spreadsheets"); })
+      .finally(() => { if (!cancelled) setLoadingList(false); });
+    return () => { cancelled = true; };
+  }, [activeWorkspace, selectedSpreadsheetId]);
 
   // ─── Load snapshot ───────────────────────────────────────────────────
 
@@ -1008,9 +911,9 @@ export default function SpreadsheetAnalyticsPage() {
         ) : (
           <p className="text-sm text-muted-foreground">
             No spreadsheets yet.{" "}
-            <a href="/leads/spreadsheet" className="underline">
+            <Link href="/leads/spreadsheet" className="underline">
               Create one
-            </a>
+            </Link>
           </p>
         )}
 
