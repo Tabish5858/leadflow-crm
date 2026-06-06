@@ -55,7 +55,7 @@ import { getApiAuthHeaders } from "@/lib/api/client";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { useLeadStore } from "@/lib/stores/leadStore";
 import { toast } from "@/lib/toast";
-import type { CustomField, PipelineStage, WorkspaceInvite, WorkspaceMember } from "@/types";
+import type { WorkspaceInvite, WorkspaceMember } from "@/types";
 import {
   DEFAULT_MEMBER_PERMISSIONS,
   DEFAULT_VIEWER_PERMISSIONS,
@@ -69,8 +69,6 @@ import {
   Clock,
   Crown,
   FileText,
-  KanbanSquare,
-  ListFilter,
   Loader2,
   LogOut,
   Mail,
@@ -82,7 +80,6 @@ import {
   Trash2,
   UserCheck,
   UserCircle,
-  UserCog,
   Users,
   RefreshCw,
   XCircle,
@@ -93,19 +90,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // Dynamically loaded tab content - only loaded when user clicks the tab
-const PipelineEditor = dynamic(() => import("@/components/settings/pipeline-editor").then((mod) => mod.PipelineEditor), {
-  loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
-});
-
-const CustomFieldsEditor = dynamic(() => import("@/components/settings/custom-fields-editor").then((mod) => mod.CustomFieldsEditor), {
-  loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
-});
-
 const CalendarConnection = dynamic(() => import("@/components/settings/calendar-connection").then((mod) => mod.CalendarConnection), {
   loading: () => <div className="p-8 animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded" /></div>,
 });
 
-type Tab = "profile" | "workspace" | "members" | "pipeline" | "custom-fields" | "permissions" | "preferences" | "integrations" | "client-portal";
+type Tab = "profile" | "workspace" | "members" | "preferences" | "integrations" | "client-portal";
 
 export default function SettingsPage() {
   const { user, activeWorkspace, workspaces, switchWorkspace, refreshWorkspaces } = useWorkspace();
@@ -168,11 +157,8 @@ export default function SettingsPage() {
   };
 
   const isOwner = activeWorkspace?.ownerId === user?.id;
-  const { stats, refreshStats } = useLeadStore();
+  const { refreshStats } = useLeadStore();
   const { accent, setAccent } = useAccent();
-  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
-  const [savingPipeline, setSavingPipeline] = useState(false);
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [modulePermissions, setModulePermissions] = useState<ModulePermissionsByRole>({
     member: { ...DEFAULT_MEMBER_PERMISSIONS },
     viewer: { ...DEFAULT_VIEWER_PERMISSIONS },
@@ -210,8 +196,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeWorkspace) {
       setWorkspaceName(activeWorkspace.name);
-      setPipelineStages(activeWorkspace.pipeline?.stages || []);
-      setCustomFields(activeWorkspace.customFields || []);
       if (activeWorkspace.modulePermissions) {
         setModulePermissions(activeWorkspace.modulePermissions);
       }
@@ -232,8 +216,6 @@ export default function SettingsPage() {
         getWorkspaceMembers(activeWorkspace.id).then(setMembers).catch(() => toast.error("Failed to load members")),
         getPendingInvitesForWorkspace(activeWorkspace.id).then(setPendingInvites).catch(() => toast.error("Failed to load invites")),
       ]).finally(() => setLoadingMembers(false));
-    }
-    if (activeTab === "pipeline" && activeWorkspace) {
       refreshStats(activeWorkspace.id);
     }
   }, [activeTab, activeWorkspace, refreshStats]);
@@ -471,29 +453,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSavePipeline = async (stages: PipelineStage[]) => {
-    if (!activeWorkspace) return;
-    setSavingPipeline(true);
-    try {
-      await updateWorkspace(activeWorkspace.id, {
-        pipeline: { stages },
-      });
-      setPipelineStages(stages);
-      refreshWorkspaces();
-    } catch {
-      toast.error("Failed to save pipeline stages");
-    } finally {
-      setSavingPipeline(false);
-    }
-  };
-
-  const handleSaveCustomFields = async (fields: CustomField[]) => {
-    if (!activeWorkspace) return;
-    await updateWorkspace(activeWorkspace.id, { customFields: fields });
-    setCustomFields(fields);
-    refreshWorkspaces();
-  };
-
   if (!activeWorkspace) {
     return (
       <div className="space-y-6">
@@ -508,17 +467,12 @@ export default function SettingsPage() {
 
   // Dashboard and Settings access is controlled by frontend guards (nav filtering + route guards),
   // not by module permissions - so exclude them from the toggle grid
-  const controlledModuleIds = (Object.keys(MODULE_LABELS) as ModuleId[]).filter(
-    (mod) => mod !== "dashboard" && mod !== "settings"
-  );
+  const controlledModuleIds: ModuleId[] = ["leads", "projects", "time_tracker", "meetings", "messages", "invoices", "documents", "clients"];
 
   const allTabs: { id: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { id: "profile", label: "Profile", icon: <UserCircle className="h-4 w-4" /> },
     { id: "workspace", label: "Workspace", icon: <Building2 className="h-4 w-4" />, adminOnly: true },
-    { id: "members", label: "Members", icon: <Users className="h-4 w-4" />, adminOnly: true },
-    { id: "pipeline", label: "Pipeline", icon: <KanbanSquare className="h-4 w-4" /> },
-    { id: "custom-fields", label: "Custom Fields", icon: <ListFilter className="h-4 w-4" /> },
-    { id: "permissions", label: "Permissions", icon: <Shield className="h-4 w-4" />, adminOnly: true },
+    { id: "members", label: "Members & Permissions", icon: <Users className="h-4 w-4" />, adminOnly: true },
     { id: "client-portal", label: "Client Portal", icon: <UserCheck className="h-4 w-4" />, adminOnly: true },
     { id: "preferences", label: "Preferences", icon: <Settings className="h-4 w-4" /> },
     { id: "integrations", label: "Integrations", icon: <Plug className="h-4 w-4" /> },
@@ -940,81 +894,9 @@ export default function SettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <UserCog className="h-4 w-4" />
-                  Role Permissions
+                  <Shield className="h-4 w-4" />
+                  Permissions
                 </CardTitle>
-                <CardDescription>
-                  What each role can do in this workspace.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="pb-3 text-left font-medium text-muted-foreground">Permission</th>
-                        <th className="pb-3 text-center font-medium text-muted-foreground">Owner</th>
-                        <th className="pb-3 text-center font-medium text-muted-foreground">Admin</th>
-                        <th className="pb-3 text-center font-medium text-muted-foreground">Member</th>
-                        <th className="pb-3 text-center font-medium text-muted-foreground">Viewer</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {[
-                        ["View leads", true, true, true, true],
-                        ["Create leads", true, true, true, false],
-                        ["Edit leads", true, true, true, false],
-                        ["Delete leads", true, true, false, false],
-                        ["View analytics", true, true, true, true],
-                        ["Export data", true, true, true, false],
-                        ["Manage pipeline", true, true, false, false],
-                        ["Manage custom fields", true, true, false, false],
-                        ["Manage members", true, true, false, false],
-                        ["Delete workspace", true, false, false, false],
-                      ].map(([permission, owner, admin, member, viewer]) => (
-                        <tr key={permission as string} className="hover:bg-muted/20">
-                          <td className="py-2.5">{permission as string}</td>
-                          <td className="py-2.5 text-center">{(owner as boolean) ? "✓" : "-"}</td>
-                          <td className="py-2.5 text-center">{(admin as boolean) ? "✓" : "-"}</td>
-                          <td className="py-2.5 text-center">{(member as boolean) ? "✓" : "-"}</td>
-                          <td className="py-2.5 text-center">{(viewer as boolean) ? "✓" : "-"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Pipeline Tab */}
-        {activeTab === "pipeline" && (
-          <div className="space-y-6">
-            <PipelineEditor
-              stages={pipelineStages}
-              leadCounts={stats.byStatus}
-              onSave={handleSavePipeline}
-            />
-          </div>
-        )}
-
-        {/* Custom Fields Tab */}
-        {activeTab === "custom-fields" && (
-          <div className="space-y-6">
-            <CustomFieldsEditor
-              fields={customFields}
-              onSave={handleSaveCustomFields}
-            />
-          </div>
-        )}
-
-        {/* Permissions Tab */}
-        {activeTab === "permissions" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Module Permissions</CardTitle>
                 <CardDescription>
                   Control which modules each role can access. Owners and Admins always have full access.
                 </CardDescription>
@@ -1022,15 +904,14 @@ export default function SettingsPage() {
               <CardContent>
                 {!isOwner ? (
                   <div className="space-y-4">
-                    {/* Read-only view for non-owners */}
-                    {["member", "viewer"]?.map((role) => {
+                    {(["member", "viewer"] as const).map((role) => {
                       const perms = getEffectivePermissions(
                         activeWorkspace?.modulePermissions || null,
                         role
                       );
                       return (
                         <div key={role}>
-                          <h4 className="text-sm font-semibold capitalize mb-2">{role}</h4>
+                          <p className="text-sm font-medium capitalize mb-2 text-muted-foreground">{role}</p>
                           <div className="grid grid-cols-2 gap-2">
                             {controlledModuleIds.map((mod) => (
                               <div key={mod} className="flex items-center gap-2 text-sm py-1">
@@ -1049,12 +930,11 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Editable view for owners/admins */}
                     {(["member", "viewer"] as const).map((role) => (
                       <div key={role} className="space-y-3">
-                        <h4 className="text-sm font-semibold capitalize">
-                          {role === "member" ? "Member" : "Viewer"} Permissions
-                        </h4>
+                        <p className="text-sm font-medium capitalize text-muted-foreground">
+                          {role === "member" ? "Member" : "Viewer"}
+                        </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {controlledModuleIds.map((mod) => {
                             const isEnabled = modulePermissions[role]?.[mod] ?? false;
