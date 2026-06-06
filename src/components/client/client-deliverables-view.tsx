@@ -585,8 +585,6 @@ function FilePreviewDialog({ open, onOpenChange, files, links, title }: {
   links?: import("@/types").LinkData[]; title: string;
 }) {
   const [activeFile, setActiveFile] = useState<DeliverableFileAttachment | null>(files[0] || null);
-  const [showPDF, setShowPDF] = useState(false);
-  const [pdfFile, setPdfFile] = useState<DeliverableFileAttachment | null>(null);
   useEffect(() => { if (open && files.length > 0) setActiveFile(files[0]); }, [open, files]);
 
   const getUrl = (f: DeliverableFileAttachment) => f.cloudinaryUrl || f.filePath;
@@ -606,10 +604,7 @@ function FilePreviewDialog({ open, onOpenChange, files, links, title }: {
         </h4>
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
           {items.map((f) => (
-            <button key={f.id} onClick={() => {
-              if (f.mimeType.includes("pdf")) { setPdfFile(f); setShowPDF(true); }
-              else setActiveFile(f);
-            }}
+            <button key={f.id} onClick={() => setActiveFile(f)}
               className={`border rounded-lg overflow-hidden group hover:border-primary transition-colors ${
                 activeFile?.id === f.id ? "ring-2 ring-primary border-primary" : ""}`}
             >
@@ -642,112 +637,89 @@ function FilePreviewDialog({ open, onOpenChange, files, links, title }: {
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="truncate">{title}</DialogTitle></DialogHeader>
-          {files.length === 0 && (!links || links.length === 0) ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No files or links to preview</p>
-          ) : (
-            <div className="space-y-6">
-              {renderCat("Gallery", <ImageIcon className="h-3.5 w-3.5" />, images)}
-              {renderCat("Videos", <Film className="h-3.5 w-3.5" />, videos)}
-              {renderCat("Documents", <FileText className="h-3.5 w-3.5" />, documents)}
-              {renderCat("Audio", <Music className="h-3.5 w-3.5" />, audio)}
-              {renderCat("Downloads", <Download className="h-3.5 w-3.5" />, downloads)}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="truncate">{title}</DialogTitle></DialogHeader>
+        {files.length === 0 && (!links || links.length === 0) ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No files or links to preview</p>
+        ) : (
+          <div className="space-y-6">
+            {renderCat("Gallery", <ImageIcon className="h-3.5 w-3.5" />, images)}
+            {renderCat("Videos", <Film className="h-3.5 w-3.5" />, videos)}
+            {renderCat("Documents", <FileText className="h-3.5 w-3.5" />, documents)}
+            {renderCat("Audio", <Music className="h-3.5 w-3.5" />, audio)}
+            {renderCat("Downloads", <Download className="h-3.5 w-3.5" />, downloads)}
 
-              {/* Links */}
-              {links && links.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1 uppercase tracking-wide">
-                    <Link className="h-3.5 w-3.5" /> Links ({links.length})
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {links.map((l) => (
-                      <a key={l.id || l.url} href={l.url} target="_blank" rel="noopener noreferrer"
-                        className="border rounded-lg overflow-hidden group hover:border-primary transition-colors bg-card">
-                        <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900">
-                          <Globe className="h-10 w-10 text-blue-400/60" />
-                        </div>
-                        <div className="p-2">
-                          <p className="text-[10px] font-medium truncate group-hover:text-primary">{l.title}</p>
-                          <p className="text-[8px] text-muted-foreground truncate">{l.url}</p>
-                          {l.description && <p className="text-[8px] text-muted-foreground/70 mt-0.5 line-clamp-2">{l.description}</p>}
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+            {/* Links */}
+            {links && links.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1 uppercase tracking-wide">
+                  <Link className="h-3.5 w-3.5" /> Links ({links.length})
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {links.map((l) => (
+                    <a key={l.id || l.url} href={l.url} target="_blank" rel="noopener noreferrer"
+                      className="border rounded-lg overflow-hidden group hover:border-primary transition-colors bg-card">
+                      <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900">
+                        <Globe className="h-10 w-10 text-blue-400/60" />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-[10px] font-medium truncate group-hover:text-primary">{l.title}</p>
+                        <p className="text-[8px] text-muted-foreground truncate">{l.url}</p>
+                        {l.description && <p className="text-[8px] text-muted-foreground/70 mt-0.5 line-clamp-2">{l.description}</p>}
+                      </div>
+                    </a>
+                  ))}
                 </div>
-              )}
-
-              {/* Active file preview */}
-              {activeFile && (
-                <div className="border rounded-lg p-3 bg-muted/10">
-                  <p className="text-xs font-medium mb-2">{activeFile.originalName || activeFile.fileName}</p>
-                  <div className="flex items-center justify-center min-h-[200px] bg-muted/20 rounded">
-                    {(() => {
-                      const url = getUrl(activeFile);
-                      if (!url) return (
-                        <div className="text-center py-8">
-                          <File className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                          <p className="text-xs text-muted-foreground">File URL not available</p>
-                        </div>
-                      );
-                      if (activeFile.mimeType?.startsWith("image/"))
-                        return <img src={url} alt="" className="max-w-full max-h-[50vh] object-contain rounded" />;
-                      if (activeFile.mimeType?.startsWith("video/"))
-                        return <video controls className="w-full max-h-[50vh] rounded" src={url} />;
-                      if (activeFile.mimeType?.includes("pdf"))
-                        return <iframe src={`${url}#toolbar=1`} className="w-full h-[50vh] rounded" title={activeFile.fileName} />;
-                      return (
-                        <div className="text-center py-8">
-                          <File className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                          <p className="text-xs text-muted-foreground mb-2">Preview not available</p>
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={url} download target="_blank" rel="noopener noreferrer">
-                              <Download className="h-3.5 w-3.5 mr-1" /> Download
-                            </a>
-                          </Button>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <div className="flex justify-end mt-2">
-                    {getUrl(activeFile) && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={getUrl(activeFile)} download target="_blank" rel="noopener noreferrer">
-                          <Download className="h-3.5 w-3.5 mr-1" /> Download
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* PDF Viewer Modal */}
-      {showPDF && pdfFile && (
-        <Dialog open={showPDF} onOpenChange={() => setShowPDF(false)}>
-          <DialogContent className="sm:max-w-5xl max-h-[95vh] p-0 gap-0">
-            <DialogHeader className="px-4 py-2 border-b">
-              <DialogTitle className="text-sm truncate">{pdfFile.originalName || pdfFile.fileName}</DialogTitle>
-            </DialogHeader>
-            {getUrl(pdfFile) && (
-              <iframe src={`${getUrl(pdfFile)}#toolbar=1`} className="w-full h-[85vh] border-0" title={pdfFile.fileName} />
+              </div>
             )}
-            <div className="flex justify-end p-2 border-t">
-              <Button variant="outline" size="sm" asChild>
-                <a href={getUrl(pdfFile) || "#"} download target="_blank" rel="noopener noreferrer">
-                  <Download className="h-3.5 w-3.5 mr-1" /> Download PDF
-                </a>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+
+            {/* Active file preview */}
+            {activeFile && (
+              <div className="border rounded-lg p-3 bg-muted/10">
+                <p className="text-xs font-medium mb-2">{activeFile.originalName || activeFile.fileName}</p>
+                <div className="flex items-center justify-center min-h-[200px] bg-muted/20 rounded">
+                  {(() => {
+                    const url = getUrl(activeFile);
+                    if (!url) return (
+                      <div className="text-center py-8">
+                        <File className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                        <p className="text-xs text-muted-foreground">File URL not available</p>
+                      </div>
+                    );
+                    if (activeFile.mimeType?.startsWith("image/"))
+                      return <img src={url} alt="" className="max-w-full max-h-[50vh] object-contain rounded" />;
+                    if (activeFile.mimeType?.startsWith("video/"))
+                      return <video controls className="w-full max-h-[50vh] rounded" src={url} />;
+                    if (activeFile.mimeType?.includes("pdf"))
+                      return <iframe src={`${url}#toolbar=1`} className="w-full h-[50vh] rounded" title={activeFile.fileName} />;
+                    return (
+                      <div className="text-center py-8">
+                        <File className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                        <p className="text-xs text-muted-foreground mb-2">Preview not available</p>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={url} download target="_blank" rel="noopener noreferrer">
+                            <Download className="h-3.5 w-3.5 mr-1" /> Download
+                          </a>
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="flex justify-end mt-2">
+                  {getUrl(activeFile) && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={getUrl(activeFile)} download target="_blank" rel="noopener noreferrer">
+                        <Download className="h-3.5 w-3.5 mr-1" /> Download
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
