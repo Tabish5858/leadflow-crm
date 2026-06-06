@@ -1053,7 +1053,7 @@ export default function DeliverablesTab({ projectId, workspaceId, userId, onProj
 
   const totalFiles = deliverables.reduce((acc, d) => acc + d.versions.reduce((vAcc, v) => vAcc + v.files.length, 0), 0);
   const approvedCount = deliverables.filter((d) => d.status === "approved" || d.status === "delivered").length;
-  const allFinalPackageDelivered = deliverables.every((d) => d.finalPackageDelivered);
+  const allFinalPackageDelivered = deliverables.length > 0 && deliverables.every((d) => d.finalPackageDelivered);
 
   return (
     <div className="space-y-6">
