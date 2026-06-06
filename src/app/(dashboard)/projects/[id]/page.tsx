@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequireModuleAccess } from "@/components/shared/require-module-access";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { toast } from "@/lib/toast";
 import type { TaskFormData } from "@/components/projects/shared/task-create-dialog";
 import { ProjectNotes } from "@/components/projects/shared/project-notes";
@@ -154,15 +154,11 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Tab — persisted via URL search param
+  // Tab — persisted via URL search param (read from URL on client only)
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [tabReady, setTabReady] = useState(false);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("tab");
-    if (p && TABS.some(t => t.id === p)) {
-      setActiveTab(p as TabId);
-    }
-    setTabReady(true);
+    if (p && TABS.some(t => t.id === p)) setActiveTab(p as TabId);
   }, []);
 
   // Task data
@@ -725,21 +721,21 @@ export default function ProjectDetailPage() {
         <ProjectHeader project={project} onEdit={startEditing} onDelete={() => setShowDeleteDialog(true)} />
 
         {/* ─── Tabs ─── */}
-        {tabReady && (
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as TabId); router.replace(`/projects/${projectId}?tab=${v}`, { scroll: false }); }}
-            className="rounded-lg border border-border bg-card p-1"
-          >
-            <TabsList className="w-full justify-start bg-transparent gap-0 h-auto">
-              {TABS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}
-                  className="data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
+        {/* Custom tab bar (not Radix — gives us full control over active state) */}
+        <div className="flex gap-1 rounded-lg border border-border bg-card p-1 w-fit" role="tablist">
+          {TABS.map((tab) => (
+            <button key={tab.id} role="tab" aria-selected={activeTab === tab.id}
+              onClick={() => { setActiveTab(tab.id as TabId); router.replace(`/projects/${projectId}?tab=${tab.id}`, { scroll: false }); }}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
         {/* ═══ TAB CONTENT ═════════════════════════════════════════════════ */}
 
