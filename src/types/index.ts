@@ -729,6 +729,40 @@ export type DeliverableStatus = "not_submitted" | "submitted" | "under_review" |
 
 export type MarkupType = "annotation" | "highlight" | "arrow" | "voice_memo" | "shape" | "pen";
 
+export type DeliverableItemType = "document" | "design" | "code" | "media" | "other";
+
+/** File category for organizing files in the version preview */
+export type FileCategory = "image" | "video" | "document" | "audio" | "download";
+
+export const FILE_CATEGORY_MAP: Record<string, FileCategory> = {
+  "image/jpeg": "image", "image/png": "image", "image/gif": "image",
+  "image/webp": "image", "image/svg+xml": "image", "image/bmp": "image",
+  "image/tiff": "image", "image/avif": "image",
+  "video/mp4": "video", "video/webm": "video", "video/ogg": "video",
+  "video/quicktime": "video", "video/x-msvideo": "video",
+  "video/x-matroska": "video", "video/mpeg": "video",
+  "video/3gpp": "video", "video/x-ms-wmv": "video",
+  "application/pdf": "document", "text/plain": "document",
+  "text/html": "document", "text/csv": "document",
+  "text/markdown": "document", "application/rtf": "document",
+  "application/msword": "document",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "document",
+  "application/vnd.ms-excel": "document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "document",
+  "application/vnd.ms-powerpoint": "document",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "document",
+  "audio/mpeg": "audio", "audio/wav": "audio", "audio/ogg": "audio",
+  "audio/aac": "audio", "audio/flac": "audio", "audio/webm": "audio",
+  "audio/mp4": "audio", "audio/x-m4a": "audio",
+};
+
+export function getFileCategory(mimeType: string): FileCategory {
+  const normalized = mimeType.toLowerCase().trim();
+  // Fix SVG mime type
+  const fixed = normalized === "image/svg" ? "image/svg+xml" : normalized;
+  return FILE_CATEGORY_MAP[fixed] || "download";
+}
+
 export interface VideoMoment {
   id: string;
   timestamp: number;
@@ -763,6 +797,7 @@ export interface ImageMarkup {
   };
   createdBy: string;
   createdAt: Timestamp;
+  conversation: ThreadedComment[];
 }
 
 export interface DeliverableFileAttachment {
@@ -790,20 +825,42 @@ export interface ThreadedComment {
   attachments: DeliverableFileAttachment[];
   versionId?: string;
   fileId?: string;
+  linkId?: string;
+  associationType?: "file" | "link" | "general";
+  associatedItemId?: string;
+  associatedItemType?: string;
+  associatedItemName?: string;
   mentions: string[];
   replies: ThreadedComment[];
+  reactions?: { userId: string; type: string; createdAt: Timestamp }[];
+  isDeleted?: boolean;
+}
+
+export interface LinkData {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  createdAt: Timestamp;
+  metadata?: {
+    favicon?: string;
+    siteName?: string;
+    image?: string;
+  };
 }
 
 export interface DeliverableVersion {
   id: string;
   versionNumber: number;
   files: DeliverableFileAttachment[];
-  links: { title: string; url: string; description?: string; createdAt: Timestamp }[];
+  links: LinkData[];
   notes?: string;
   uploadedAt: Timestamp;
   uploadedBy: string;
   status: "draft" | "submitted" | "approved" | "revision_requested";
   isLatest: boolean;
+  is_read: boolean;
+  commentCount: number;
   approvedAt?: Timestamp;
   approvedBy?: string;
   approvalComments?: string;
@@ -821,6 +878,66 @@ export interface PaymentProof {
   reviewNotes?: string;
 }
 
+export interface ApprovalWorkflowEntry {
+  approverType: "client" | "team_member" | "agency";
+  approverId: string;
+  approvedAt: Timestamp;
+  comments: string;
+  status: "pending" | "approved" | "rejected";
+}
+
+export interface RevisionSettings {
+  limitFreeRevisions: boolean;
+  maxFreeRevisions: number;
+  currentRevisionCount: number;
+  addExtraRevisionUpsell: boolean;
+  extraRevisionPrice: number;
+  limitRevisionPeriod: boolean;
+  revisionTimeLimit: number;
+  revisionTimeLimitUnit: "days" | "weeks" | "months";
+}
+
+export interface ClientFeedback {
+  rating?: number;
+  recommendation?: number;
+  feedback?: string;
+  testimonialPermission?: boolean;
+  submittedBy?: string;
+  submittedAt?: Timestamp;
+}
+
+export interface ReferralTracking {
+  type: "click" | "contact";
+  platform?: string;
+  clickedBy?: string;
+  clickedAt?: Timestamp;
+  name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  status: "pending" | "contacted" | "converted";
+}
+
+export interface ReviewTracking {
+  platform: string;
+  reviewLink: string;
+  submittedBy?: string;
+  submittedAt?: Timestamp;
+}
+
+export interface DeliveryProgress {
+  completedSteps: string[];
+  currentStep: string;
+  lastUpdated?: Timestamp;
+}
+
+export interface InvoiceSettings {
+  requirePaymentToView: boolean;
+  requirePaymentToDownload: boolean;
+  viewInvoiceId?: string;
+  downloadInvoiceId?: string;
+}
+
 export interface Deliverable {
   id: string;
   projectId: string;
@@ -830,35 +947,52 @@ export interface Deliverable {
   status: DeliverableStatus;
   versions: DeliverableVersion[];
   comments: ThreadedComment[];
-  deliverableType: "file" | "link" | "both";
-  invoiceSettings: {
-    requirePaymentToView: boolean;
-    requirePaymentToDownload: boolean;
-  };
+  deliverableType: DeliverableItemType;
+  invoiceSettings: InvoiceSettings;
   paymentProof?: PaymentProof;
-  revisionSettings: {
-    limitFreeRevisions: boolean;
-    maxFreeRevisions: number;
-    currentRevisionCount: number;
-  };
+  revisionSettings: RevisionSettings;
   revisions: DeliverableRevision[];
+  clientVisible: boolean;
+  dueDate: Timestamp | null;
+  paidCredits: number;
+  approvalWorkflow: ApprovalWorkflowEntry[];
   deliveryFlowSettings: {
     enableFeedback: boolean;
     enableReferrals: boolean;
     enableReviews: boolean;
     enableUpsell: boolean;
   };
-  deliveryProgress: {
-    completedSteps: string[];
-    currentStep: string;
-  };
+  deliveryProgress: DeliveryProgress;
+  isFinalPackage: boolean;
   finalPackageDelivered: boolean;
   finalPackageDeliveredAt?: Timestamp;
   finalPackageDeliveredBy?: string;
+  finalPackageDeliveryStatus: "not_delivered" | "delivered" | "viewed" | "completed";
+  finalPackageViewed: boolean;
+  finalPackageViewedAt?: Timestamp;
+  clientFeedback: ClientFeedback[];
+  referralTracking: ReferralTracking[];
+  reviewTracking: ReviewTracking[];
   isDeleted: boolean;
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface DeliverableRevisionComment {
+  id: string;
+  text: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  fileId?: string;
+  linkId?: string;
+  associationType?: "file" | "link" | "general";
+  associatedItemId?: string;
+  associatedItemType?: string;
+  associatedItemName?: string;
+  attachments: DeliverableFileAttachment[];
+  mentions: string[];
+  replies: ThreadedComment[];
 }
 
 export interface DeliverableRevision {
@@ -868,11 +1002,14 @@ export interface DeliverableRevision {
   requestedBy: string;
   requestDate: Timestamp;
   reason?: string;
-  comments: ThreadedComment[];
+  comments: DeliverableRevisionComment[];
+  attachments: DeliverableFileAttachment[];
   isExtraRevision: boolean;
   price?: number;
   status: "pending" | "in_progress" | "completed" | "cancelled";
+  is_read: boolean;
   completedAt?: Timestamp;
+  notes?: string;
 }
 
 // ─── Invoice ─────────────────────────────────────────────────────────────────
