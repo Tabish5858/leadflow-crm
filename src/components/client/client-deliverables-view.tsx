@@ -208,7 +208,7 @@ function ClientPaymentProof({ deliverable, userId, workspaceId, onUpdate }: {
   const [uploading, setUploading] = useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
-  if (!deliverable.invoiceSettings.requirePaymentToView && !deliverable.invoiceSettings.requirePaymentToDownload) return null;
+  if (!deliverable.invoiceSettings?.requirePaymentToView && !deliverable.invoiceSettings?.requirePaymentToDownload) return null;
   if (deliverable.paymentProof?.status === "approved") return (
     <div className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Payment approved</div>
   );
@@ -280,7 +280,7 @@ function ClientVersionRow({ version, deliverableId, deliverableTitle, userId, wo
       toast.success("Version approved");
       setReviewOpen(false);
       onRefresh();
-    } catch { toast.error("Failed to approve"); }
+    } catch (e) { toast.error(`Failed to approve: ${(e as Error)?.message || 'Unknown error'}`); }
     finally { setProcessing(false); }
   };
 
@@ -291,7 +291,7 @@ function ClientVersionRow({ version, deliverableId, deliverableTitle, userId, wo
       toast.success("Revision requested");
       setReviewOpen(false);
       onRefresh();
-    } catch { toast.error("Failed to request revision"); }
+    } catch (e) { toast.error(`Failed to request revision: ${(e as Error)?.message || 'Unknown error'}`); }
     finally { setProcessing(false); }
   };
 
