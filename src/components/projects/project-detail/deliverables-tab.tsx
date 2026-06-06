@@ -280,6 +280,43 @@ function CreateDeliverableModal({
 
 // ─── Add Version Modal (GigBase-style with categories + links) ─────────────
 
+function FileSection({ title, icon, fileList, onRemove }: { title: string; icon: React.ReactNode; fileList: File[]; onRemove: (i: number) => void }) {
+  if (fileList.length === 0) return null;
+  return (
+    <div>
+      <h4 className="text-[10px] font-medium text-muted-foreground uppercase mb-1 flex items-center gap-1">
+        {icon} {title} ({fileList.length})
+      </h4>
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+        {fileList.map((f, i) => {
+          const isImage = f.type.startsWith("image/");
+          return (
+            <div key={i} className="relative group border rounded-lg">
+              {isImage ? (
+                <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-14 object-cover rounded-lg" />
+              ) : (
+                <div className="w-full h-14 flex items-center justify-center bg-muted/30">
+                  {f.type.startsWith("video/") ? <Film className="h-5 w-5 text-muted-foreground" /> :
+                   f.type.startsWith("audio/") ? <Music className="h-5 w-5 text-muted-foreground" /> :
+                   <FileText className="h-5 w-5 text-muted-foreground" />}
+                </div>
+              )}
+              <div className="p-1">
+                <p className="text-[9px] truncate">{f.name}</p>
+                <p className="text-[8px] text-muted-foreground">{formatFileSize(f.size)}</p>
+              </div>
+              <button onClick={() => onRemove(i)}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AddVersionModal({
   open, onOpenChange, onSave, saving,
 }: {
@@ -330,43 +367,6 @@ function AddVersionModal({
 
   const removeLink = (index: number) => setLinks((prev) => prev.filter((_, i) => i !== index));
 
-  const FileSection = ({ title, icon, fileList }: { title: string; icon: React.ReactNode; fileList: File[] }) => {
-    if (fileList.length === 0) return null;
-    return (
-      <div>
-        <h4 className="text-[10px] font-medium text-muted-foreground uppercase mb-1 flex items-center gap-1">
-          {icon} {title} ({fileList.length})
-        </h4>
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-          {fileList.map((f, i) => {
-            const isImage = f.type.startsWith("image/");
-            return (
-              <div key={i} className="relative group border rounded-lg">
-                {isImage ? (
-                  <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-14 object-cover rounded-lg" />
-                ) : (
-                  <div className="w-full h-14 flex items-center justify-center bg-muted/30">
-                    {f.type.startsWith("video/") ? <Film className="h-5 w-5 text-muted-foreground" /> :
-                     f.type.startsWith("audio/") ? <Music className="h-5 w-5 text-muted-foreground" /> :
-                     <FileText className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                )}
-                <div className="p-1">
-                  <p className="text-[9px] truncate">{f.name}</p>
-                  <p className="text-[8px] text-muted-foreground">{formatFileSize(f.size)}</p>
-                </div>
-                <button onClick={() => removeFile(i)}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  ×
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -390,11 +390,11 @@ function AddVersionModal({
             {/* Categorized files */}
             {files.length > 0 && (
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                <FileSection title="Image Gallery" icon={<ImageIcon className="h-3 w-3" />} fileList={categorizedFiles.image} />
-                <FileSection title="Videos" icon={<Film className="h-3 w-3" />} fileList={categorizedFiles.video} />
-                <FileSection title="Documents" icon={<FileText className="h-3 w-3" />} fileList={categorizedFiles.document} />
-                <FileSection title="Audio Files" icon={<Music className="h-3 w-3" />} fileList={categorizedFiles.audio} />
-                <FileSection title="Downloads" icon={<FileArchive className="h-3 w-3" />} fileList={categorizedFiles.download} />
+                <FileSection title="Image Gallery" icon={<ImageIcon className="h-3 w-3" />} fileList={categorizedFiles.image} onRemove={removeFile} />
+                <FileSection title="Videos" icon={<Film className="h-3 w-3" />} fileList={categorizedFiles.video} onRemove={removeFile} />
+                <FileSection title="Documents" icon={<FileText className="h-3 w-3" />} fileList={categorizedFiles.document} onRemove={removeFile} />
+                <FileSection title="Audio Files" icon={<Music className="h-3 w-3" />} fileList={categorizedFiles.audio} onRemove={removeFile} />
+                <FileSection title="Downloads" icon={<FileArchive className="h-3 w-3" />} fileList={categorizedFiles.download} onRemove={removeFile} />
               </div>
             )}
           </div>

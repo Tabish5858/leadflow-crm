@@ -152,7 +152,9 @@ export async function deleteDeliverable(id: string): Promise<void> {
 function sanitizeForFirestore<T>(obj: T): T {
   if (obj === null || obj === undefined || typeof obj !== "object") return obj;
   // Preserve Timestamp and Date objects
-  if (obj instanceof Date || (obj as any).toDate !== undefined || (obj as any).seconds !== undefined) return obj;
+  if (obj instanceof Date) return obj;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((obj as any)?.toDate !== undefined || (obj as any)?.seconds !== undefined) return obj;
   // Don't modify Timestamp instances from Firestore
   if (obj.constructor?.name === "Timestamp") return obj;
 
