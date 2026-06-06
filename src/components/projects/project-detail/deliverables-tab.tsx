@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Deliverable, DeliverableFileAttachment } from "@/types";
+import type { Deliverable, DeliverableFileAttachment, ImageMarkup } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -207,15 +207,160 @@ function AddVersionModal({
 
 // ─── Version Preview Modal ───────────────────────────────────────────────────
 
+// ─── Delivery Progress Bar ───────────────────────────────────────────────────
+
+function DeliveryProgressBar({ del: _del }: { del: Deliverable }) {
+  const needsPayment = _del.invoiceSettings.requirePaymentToView || _del.invoiceSettings.requirePaymentToDownload;
+  const steps: { key: string; label: string; done: boolean; current: boolean }[] = [
+    { key: "created", label: "Created", done: _del.versions.length > 0, current: _del.versions.length === 0 },
+    { key: "approved", label: "Approved", done: _del.status === "approved" || _del.status === "delivered", current: _del.status !== "approved" && _del.status !== "delivered" && _del.versions.length > 0 },
+    { key: "payment", label: "Payment", done: needsPayment ? _del.paymentProof?.status === "approved" : true, current: needsPayment && _del.paymentProof?.status !== "approved" && (_del.status === "approved" || _del.status === "delivered") },
+    { key: "delivered", label: "Delivered", done: _del.finalPackageDelivered, current: !_del.finalPackageDelivered && (!needsPayment || _del.paymentProof?.status === "approved") },
+    { key: "feedback", label: "Feedback", done: _del.deliveryProgress?.completedSteps?.length > 0, current: _del.finalPackageDelivered && !_del.deliveryProgress?.completedSteps?.length },
+  ];
+
+  const currentIdx = steps.findIndex((s) => s.current);
+
+  return (
+    <div className="px-3 py-2 border-b border-border/50 bg-muted/5">
+      <div className="flex items-center gap-1">
+        {steps.map((s, i) => {
+          const isLast = i === steps.length - 1;
+          const isActive = currentIdx === i || (currentIdx < 0 && s.done);
+          const isDone = s.done || (currentIdx >= 0 && i < currentIdx);
+          return (
+            <div key={s.key} className="flex items-center gap-1 flex-1 min-w-0">
+              <div className={cn("flex items-center gap-1", isDone ? "text-success" : isActive ? "text-primary" : "text-muted-foreground/40")}>
+                {isDone ? (
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                ) : (
+                  <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", isActive ? "bg-primary" : "bg-muted-foreground/20")} />
+                )}
+                <span className={cn("text-[10px] truncate", isActive && "font-medium")}>{s.label}</span>
+              </div>
+              {!isLast && <div className={cn("flex-1 h-px mx-1", isDone ? "bg-success/50" : "bg-muted-foreground/10")} />}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Image Markup Overlay ────────────────────────────────────────────────────
+
+const MARKUP_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899"];
+
+function MarkupOverlay({ markups: _markups, imageRef: _imageRef }: { markups: ImageMarkup[]; imageRef?: React.RefObject<HTMLImageElement | null> }) {
+  if (!_markups.length) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {_markups.map((m) => {
+        const x = `${m.coordinates.x}%`;
+        const y = `${m.coordinates.y}%`;
+        const typeIdx = ["annotation", "highlight", "arrow", "shape", "voice_memo", "pen"].indexOf(m.markupType);
+        const color = m.content.color || MARKUP_COLORS[typeIdx >= 0 ? typeIdx % MARKUP_COLORS.length : 0];
+
+        switch (m.markupType) {
+          case "annotation":
+            return (
+              <div key={m.id} className="absolute pointer-events-auto group" style={{ left: x, top: y, transform: "translate(-50%, -100%)" }}>
+                <div style={{ backgroundColor: color }} className="px-2 py-1 rounded text-xs font-medium text-white whitespace-nowrap shadow-lg max-w-[200px] truncate drop-shadow-md">
+                  {m.content.text || "Annotation"}
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0" style={{ borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `5px solid ${color}` }} />
+              </div>
+            );
+
+          case "highlight": {
+            const w = m.coordinates.width ? `${m.coordinates.width}%` : "10%";
+            const h = m.coordinates.height ? `${m.coordinates.height}%` : "10%";
+            return (
+              <div key={m.id} className="absolute pointer-events-auto group" style={{ left: x, top: y, width: w, height: h, backgroundColor: color, opacity: 0.25, borderRadius: "4px" }} title={m.content.text || ""}>
+                {m.content.text && <span className="absolute -top-5 left-0 text-[10px] whitespace-nowrap hidden group-hover:inline" style={{ color }}>{m.content.text}</span>}
+              </div>
+            );
+          }
+
+          case "arrow":
+            return (
+              <div key={m.id} className="absolute pointer-events-auto" style={{ left: x, top: y }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" className="drop-shadow-md">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            );
+
+          case "shape": {
+            const w = m.coordinates.width ? `${m.coordinates.width}%` : "8%";
+            const h = m.coordinates.height ? `${m.coordinates.height}%` : "8%";
+            const isCircle = m.content.text === "circle" || (!m.coordinates.width && !m.coordinates.height);
+            return (
+              <div key={m.id} className="absolute pointer-events-auto" style={{ left: x, top: y, width: w, height: h, border: `2px solid ${color}`, borderRadius: isCircle ? "50%" : "4px", backgroundColor: `${color}10` }} title={m.content.text || ""} />
+            );
+          }
+
+          case "pen": {
+            if (!m.coordinates.points?.length && !m.content.path) return null;
+            return (
+              <svg key={m.id} className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: "visible" }}>
+                {m.coordinates.points?.length ? (
+                  <polyline points={m.coordinates.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth={m.content.strokeWidth || 3} strokeLinecap="round" strokeLinejoin="round" opacity={0.8} />
+                ) : (
+                  <path d={m.content.path!} fill="none" stroke={color} strokeWidth={m.content.strokeWidth || 3} strokeLinecap="round" strokeLinejoin="round" opacity={0.8} />
+                )}
+              </svg>
+            );
+          }
+
+          case "voice_memo":
+            return (
+              <div key={m.id} className="absolute pointer-events-auto group" style={{ left: x, top: y, transform: "translate(-50%, -50%)" }}>
+                <div className="p-1.5 rounded-full shadow-md cursor-pointer hover:scale-110 transition-transform" style={{ backgroundColor: color }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                </div>
+                {m.content.voiceMemoUrl && (
+                  <audio controls className="w-32 h-6 hidden group-hover:block absolute left-full ml-2 top-1/2 -translate-y-1/2" src={m.content.voiceMemoUrl} />
+                )}
+              </div>
+            );
+
+          default:
+            return (
+              <div key={m.id} className="absolute pointer-events-auto group" style={{ left: x, top: y }}>
+                <div className="w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-150 transition-transform" style={{ borderColor: color }} />
+              </div>
+            );
+        }
+      })}
+    </div>
+  );
+}
+
 function VersionPreviewModal({
   open, onOpenChange, files, title,
 }: {
   open: boolean; onOpenChange: () => void; files: DeliverableFileAttachment[]; title: string;
 }) {
   const [activeFile, setActiveFile] = useState<DeliverableFileAttachment | null>(files[0] || null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { if (open && files.length > 0) setActiveFile(files[0]); }, [open, files]);
 
   const getDownloadUrl = (f: DeliverableFileAttachment) => f.cloudinaryUrl || f.filePath;
+
+  const seekTo = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+    }
+  };
+
+  const formatTS = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,11 +388,16 @@ function VersionPreviewModal({
               })}
             </div>
             {activeFile && (
-              <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center min-h-[300px]">
+              <div className={cn("bg-muted/30 rounded-lg p-2 flex items-center justify-center min-h-[300px]", (activeFile.imageMarkups?.length || activeFile.videoMoments?.length) ? "relative" : "")}>
                 {activeFile.mimeType?.startsWith("image/") ? (
-                  <img src={getDownloadUrl(activeFile)} alt={activeFile.fileName} className="max-w-full max-h-[60vh] object-contain rounded" />
+                  <>
+                    <img src={getDownloadUrl(activeFile)} alt={activeFile.fileName} className="max-w-full max-h-[60vh] object-contain rounded" />
+                    {activeFile.imageMarkups?.length ? (
+                      <MarkupOverlay markups={activeFile.imageMarkups} />
+                    ) : null}
+                  </>
                 ) : activeFile.mimeType?.startsWith("video/") ? (
-                  <video controls className="w-full max-h-[60vh] rounded" src={getDownloadUrl(activeFile)} />
+                  <video ref={videoRef} controls className="w-full max-h-[60vh] rounded" src={getDownloadUrl(activeFile)} />
                 ) : activeFile.mimeType?.includes("pdf") ? (
                   <iframe src={getDownloadUrl(activeFile)} className="w-full h-[60vh] rounded" title={activeFile.fileName} />
                 ) : (
@@ -263,6 +413,23 @@ function VersionPreviewModal({
                 )}
               </div>
             )}
+
+            {/* Video moments timeline */}
+            {activeFile?.mimeType?.startsWith("video/") && activeFile.videoMoments?.length ? (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium flex items-center gap-1"><Video className="h-3.5 w-3.5" /> Video Moments</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {activeFile.videoMoments.map((m) => (
+                    <button key={m.id} onClick={() => seekTo(m.timestamp)}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border border-border hover:bg-accent/50 transition-colors group">
+                      <span className="font-mono text-primary">{formatTS(m.timestamp)}</span>
+                      <span className="text-muted-foreground group-hover:text-foreground truncate max-w-[120px]">{m.comment}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex justify-end gap-2">
               {activeFile && (
                 <Button variant="outline" size="sm" asChild>
@@ -987,6 +1154,9 @@ export default function DeliverablesTab({ projectId, workspaceId, userId, onProj
                         <CommentsSection deliverable={del} workspaceId={workspaceId} userId={userId} />
                       </div>
                     )}
+
+                    {/* Delivery Progress */}
+                    <DeliveryProgressBar del={del} />
 
                     {/* Payment Section */}
                     {del.paymentProof && (
