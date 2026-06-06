@@ -227,6 +227,11 @@ function analyzeSnapshot(snapshot: IWorkbookData): WorkbookAnalysis {
     // Recalculate totals using only data rows
     totalEmpty = columns.reduce((s, c) => s + c.empty, 0);
 
+    // Filter out columns with zero filled cells (no data)
+    const nonEmptyCols = columns.filter((c) => c.filled > 0);
+    // Rebuild column indices after filtering
+    nonEmptyCols.forEach((c, i) => (c.index = i));
+
     // Row completion distribution
     const buckets = [0, 0, 0, 0]; // 0-25%, 25-50%, 50-75%, 75-100%
     if (colCount > 0 && dataRowCount > 0) {
@@ -245,8 +250,8 @@ function analyzeSnapshot(snapshot: IWorkbookData): WorkbookAnalysis {
       sheetName,
       rowCount,
       dataRowCount,
-      colCount,
-      columns,
+      colCount: nonEmptyCols.length,
+      columns: nonEmptyCols,
       totalFilled,
       totalEmpty,
       rowCompletionBuckets: [
@@ -317,9 +322,8 @@ const DEFAULT_SP_CARDS: AnalyticsCardConfig[] = [
   { id: "dqs-empty", type: "kpi", title: "Fields Missing", metric: "empty_cells", order: 3 },
   { id: "sp-col-completeness", type: "bar_chart", title: "Column Completeness", metric: "auto_column_completeness", order: 4 },
   { id: "sp-data-health", type: "pie_chart", title: "Data Health", metric: "auto_data_density_chart", order: 5 },
-  { id: "sp-col-health", type: "bar_chart", title: "Column Health Breakdown", metric: "auto_column_health", order: 6 },
-  { id: "sp-row-distribution", type: "bar_chart", title: "Row Completion Distribution", metric: "auto_row_distribution", order: 7 },
-  { id: "sp-summary", type: "summary", title: "Sheet Summary", metric: "sheet_summary", order: 8 },
+  { id: "sp-row-distribution", type: "bar_chart", title: "Row Completion Distribution", metric: "auto_row_distribution", order: 6 },
+  { id: "sp-summary", type: "summary", title: "Sheet Summary", metric: "sheet_summary", order: 7 },
 ];
 
 function getSpCards(workspaceCards: AnalyticsCardConfig[] | undefined): AnalyticsCardConfig[] {
