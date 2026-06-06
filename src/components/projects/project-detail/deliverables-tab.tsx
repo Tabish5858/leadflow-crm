@@ -602,9 +602,9 @@ function VersionPreviewModal({
   open: boolean; onOpenChange: () => void;
   files: DeliverableFileAttachment[]; links?: LinkData[]; title: string;
 }) {
-  const [activeFile, setActiveFile] = useState<DeliverableFileAttachment | null>(files[0] || null);
+  const [activeFile, setActiveFile] = useState<DeliverableFileAttachment | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => { if (open && files.length > 0) setActiveFile(files[0]); }, [open, files]);
+  useEffect(() => { if (open) setActiveFile(null); }, [open]);
 
   const getUrl = (f: DeliverableFileAttachment) => f.cloudinaryUrl || f.filePath;
   const getProxyUrl = (f: DeliverableFileAttachment) => {
@@ -1383,6 +1383,16 @@ export default function DeliverablesTab({ projectId, workspaceId, userId, onProj
   }, [projectId]);
 
   useEffect(() => { loadDeliverables(); }, [loadDeliverables]);
+
+  // Auto-expand deliverables that have versions
+  useEffect(() => {
+    if (!loading && deliverables.length > 0 && expandedDeliverables.size === 0) {
+      const withVersions = deliverables.filter(d => d.versions.length > 0).map(d => d.id);
+      if (withVersions.length > 0) {
+        setExpandedDeliverables(new Set(withVersions));
+      }
+    }
+  }, [loading, deliverables]);
 
   const toggleExpanded = (id: string) => {
     setExpandedDeliverables((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });

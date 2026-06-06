@@ -86,7 +86,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // Dynamically loaded tab content - only loaded when user clicks the tab
@@ -100,8 +100,14 @@ export default function SettingsPage() {
   const { user, activeWorkspace, workspaces, switchWorkspace, refreshWorkspaces } = useWorkspace();
   const { firebaseUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
-    // Check if navigated from sidebar user profile click
+    // URL search param takes priority (persists across reloads)
+    const tabParam = searchParams.get("tab") as Tab | null;
+    if (tabParam && ["profile","workspace","members","preferences","integrations","client-portal"].includes(tabParam)) {
+      return tabParam;
+    }
+    // Fallback: navigated from sidebar user profile click (legacy)
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("leadflow_settings_tab");
       if (saved === "profile") {
@@ -489,7 +495,7 @@ export default function SettingsPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); router.replace(`/settings?tab=${tab.id}`, { scroll: false }); }}
                 className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${activeTab === tab.id
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"

@@ -93,7 +93,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 
 // ─── Status Config ────────────────────────────────────────────────────────────
@@ -154,8 +154,13 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Tab
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  // Tab — persisted via URL search param
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && TABS.some(t => t.id === tabParam)) return tabParam as TabId;
+    return "overview";
+  });
 
   // Task data
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
@@ -717,7 +722,7 @@ export default function ProjectDetailPage() {
         <ProjectHeader project={project} onEdit={startEditing} onDelete={() => setShowDeleteDialog(true)} />
 
         {/* ─── Tabs ─── */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as TabId); router.replace(`/projects/${projectId}?tab=${v}`, { scroll: false }); }}
           className="rounded-lg border border-border bg-card p-1"
         >
           <TabsList className="w-full justify-start bg-transparent gap-0 h-auto">
