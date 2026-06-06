@@ -328,6 +328,16 @@ const DEFAULT_SP_CARDS: AnalyticsCardConfig[] = [
 
 function getSpCards(workspaceCards: AnalyticsCardConfig[] | undefined): AnalyticsCardConfig[] {
   if (!workspaceCards || workspaceCards.length === 0) return DEFAULT_SP_CARDS;
+
+  // Auto-migrate: if saved cards contain any OLD default IDs (from v1 or v2), reset to new defaults
+  const oldDefaultIds = new Set([
+    "sp-kpi-sheets", "sp-kpi-rows", "sp-kpi-cols", "sp-kpi-fill-rate",
+    "sp-col-type", "sp-data-density", "sp-col-fill",
+    "sp-col-health",
+  ]);
+  const hasOldDefaults = workspaceCards.some((c) => oldDefaultIds.has(c.id));
+  if (hasOldDefaults) return DEFAULT_SP_CARDS;
+
   return [...workspaceCards].sort((a, b) => a.order - b.order);
 }
 
