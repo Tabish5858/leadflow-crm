@@ -54,13 +54,19 @@ interface NavItem {
 }
 
 const ALL_NAV_ITEMS: NavItem[] = [
+  // 1. Dashboard — overview first
   { href: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  // 2. Projects — work delivery
   { href: "/client/projects", label: "Projects", icon: FolderKanban, moduleKey: "projects" },
-  { href: "/client/messages", label: "Messages", icon: MessageSquare, moduleKey: "messages" },
-  { href: "/client/meetings", label: "Meetings", icon: Calendar, moduleKey: "meetings" },
+  // 3. Invoices — billing
   { href: "/client/invoices", label: "Invoices", icon: FileText, moduleKey: "invoices" },
+  // 4. Contracts — legal agreements
   { href: "/client/contracts", label: "Contracts", icon: FileText, moduleKey: "contracts" },
-  { href: "/client/documents", label: "Documents", icon: File, moduleKey: "documents" },
+  // 5. Meetings — scheduling
+  { href: "/client/meetings", label: "Meetings", icon: Calendar, moduleKey: "meetings" },
+  // 6. Messages — communication
+  { href: "/client/messages", label: "Messages", icon: MessageSquare, moduleKey: "messages" },
+  // 7. Settings — always last
   { href: "/client/settings", label: "Settings", icon: Settings },
 ];
 

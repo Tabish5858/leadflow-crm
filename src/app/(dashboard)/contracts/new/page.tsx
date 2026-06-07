@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { createContract, getContract } from "@/lib/firebase/contracts";
-import { getDocuments } from "@/lib/firebase/documents";
 import { db } from "@/lib/firebase/client";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import type { ContractType, ContractSigner, Project } from "@/types";

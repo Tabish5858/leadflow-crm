@@ -95,7 +95,6 @@ export type ModuleId =
   | "messages"
   | "automations"
   | "meetings"
-  | "documents"
   | "contracts"
   | "invoices"
   | "settings"
@@ -120,7 +119,6 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   automations: "Automations",
   meetings: "Meetings",
   invoices: "Invoices",
-  documents: "Documents",
   contracts: "Contracts",
   settings: "Settings",
   clients: "Clients",
@@ -137,7 +135,6 @@ export const DEFAULT_MEMBER_PERMISSIONS: ModulePermissionsMap = {
   automations: false,
   meetings: true,
   invoices: true,
-  documents: true,
   contracts: true,
   settings: true,
   clients: false,
@@ -154,7 +151,6 @@ export const DEFAULT_VIEWER_PERMISSIONS: ModulePermissionsMap = {
   automations: false,
   meetings: false,
   invoices: true,
-  documents: true,
   contracts: true,
   settings: true,
   clients: true,
@@ -171,7 +167,6 @@ export const DEFAULT_CLIENT_PERMISSIONS: ModulePermissionsMap = {
   automations: false,
   meetings: false,
   invoices: false,
-  documents: false,
   contracts: false,
   settings: false,
   clients: false,
@@ -1178,7 +1173,6 @@ export interface ClientPortalSettings {
     messages: boolean;
     meetings: boolean;
     invoices: boolean;
-    documents: boolean;
     contracts: boolean;
     time_tracking: boolean;
     project_requests: boolean;
@@ -1251,7 +1245,6 @@ export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> & { e
     messages: true,
     meetings: true,
     invoices: true,
-    documents: true,
     contracts: true,
     time_tracking: false,
     project_requests: true,
@@ -1263,7 +1256,7 @@ export const DEFAULT_CLIENT_PORTAL_SETTINGS: Partial<ClientPortalSettings> & { e
     bulletPoints: [
       "View real-time project progress and updates",
       "Send and receive messages with your project team",
-      "Access shared documents and resources",
+      "Access contracts and project resources",
     ],
     mediaUrl: null,
     mediaType: null,

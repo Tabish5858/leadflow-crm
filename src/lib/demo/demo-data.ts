@@ -706,53 +706,6 @@ const DEMO_INVOICES: Invoice[] = [
   },
 ];
 
-// ─── Demo Documents ────────────────────────────────────────────────────────────
-
-const DEMO_DOCUMENTS: Document[] = [
-  {
-    id: "demo-doc-001",
-    workspaceId: DEMO_WORKSPACE_ID,
-    leadId: "demo-lead-001",
-    fileName: "Project Proposal Q1.pdf",
-    fileType: "pdf",
-    mimeType: "application/pdf",
-    fileSize: 2_456_000,
-    cloudinaryPublicId: "leadflow/demo/proposal-q1",
-    cloudinaryUrl: "https://res.cloudinary.com/demo/image/upload/leadflow/demo/proposal-q1.pdf",
-    cloudinaryResourceType: "image",
-    uploadedBy: DEMO_USER_ID,
-    createdAt: daysAgo(10),
-  },
-  {
-    id: "demo-doc-002",
-    workspaceId: DEMO_WORKSPACE_ID,
-    leadId: "demo-lead-002",
-    fileName: "Brand Guidelines.png",
-    fileType: "image",
-    mimeType: "image/png",
-    fileSize: 1_200_000,
-    cloudinaryPublicId: "leadflow/demo/brand-guidelines",
-    cloudinaryUrl: "https://res.cloudinary.com/demo/image/upload/leadflow/demo/brand-guidelines.png",
-    cloudinaryResourceType: "image",
-    uploadedBy: DEMO_USER_ID,
-    createdAt: daysAgo(5),
-  },
-  {
-    id: "demo-doc-003",
-    workspaceId: DEMO_WORKSPACE_ID,
-    leadId: "",
-    fileName: "Contract Template.docx",
-    fileType: "document",
-    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    fileSize: 850_000,
-    cloudinaryPublicId: "leadflow/demo/contract-template",
-    cloudinaryUrl: "https://res.cloudinary.com/demo/image/upload/leadflow/demo/contract-template.docx",
-    cloudinaryResourceType: "raw",
-    uploadedBy: DEMO_USER_ID,
-    createdAt: daysAgo(3),
-  },
-];
-
 // ─── Mutable Store (for writes in demo mode) ──────────────────────────────────
 
 /**
@@ -766,7 +719,6 @@ export class DemoStore {
   timeEntries: TimeEntry[] = [...DEMO_TIME_ENTRIES];
   notifications: Notification[] = [...DEMO_NOTIFICATIONS];
   meetings: Meeting[] = [...DEMO_MEETINGS];
-  private _documents: Document[] = [...DEMO_DOCUMENTS];
   private _invoices: Invoice[] = [...DEMO_INVOICES];
   private _contracts: Contract[] = [];
   private _templates: ContractTemplate[] = [];
@@ -1584,47 +1536,6 @@ export class DemoStore {
 
   deleteInvoice(id: string): void {
     this._invoices = this._invoices.filter((inv) => inv.id !== id);
-  }
-
-  // ── Document Operations ──
-
-  getDocuments(): Document[] {
-    return [...this._documents];
-  }
-
-  getDocument(id: string): Document | null {
-    return this._documents.find((d) => d.id === id) ?? null;
-  }
-
-  uploadDocument(workspaceId: string, fileName: string, leadId?: string): { documentId: string; url: string } {
-    const id = `demo-doc-${Date.now()}`;
-    const doc: Document = {
-      id,
-      workspaceId,
-      leadId: leadId || "",
-      fileName,
-      fileType: "other",
-      mimeType: "application/octet-stream",
-      fileSize: 0,
-      cloudinaryPublicId: `demo/${fileName}`,
-      cloudinaryUrl: "#",
-      cloudinaryResourceType: "raw",
-      uploadedBy: DEMO_USER_ID,
-      createdAt: Timestamp.now(),
-    };
-    this._documents.unshift(doc);
-    return { documentId: id, url: "#" };
-  }
-
-  deleteDocument(id: string): void {
-    this._documents = this._documents.filter((d) => d.id !== id);
-  }
-
-  updateDocument(id: string, data: Record<string, unknown>): void {
-    const idx = this._documents.findIndex((d) => d.id === id);
-    if (idx !== -1) {
-      this._documents[idx] = { ...this._documents[idx], ...data } as Document;
-    }
   }
 
   // ── Time Entry Operations ──

@@ -1,7 +1,6 @@
 import { db } from "@/lib/firebase/client";
 import type {
   Conversation,
-  Document,
   Invoice,
   Meeting,
   Message,
@@ -188,47 +187,6 @@ export async function fetchClientInvoices(
       issueDate: data.issueDate?.toDate() ?? new Date(),
       dueDate: data.dueDate?.toDate() ?? new Date(),
       paidDate: data.paidDate?.toDate() ?? null,
-    };
-  });
-}
-
-// ─── Documents ────────────────────────────────────────────────────────────────
-
-export interface DocumentSummary {
-  id: string;
-  fileName: string;
-  fileType: string;
-  mimeType: string;
-  fileSize: number;
-  cloudinaryUrl: string;
-  createdAt: Date;
-}
-
-export async function fetchClientDocuments(
-  workspaceId: string,
-  _userId: string,
-  max = 50
-): Promise<DocumentSummary[]> {
-  // Documents shared with client: either clientId matches or no leadId (general docs)
-  // For Phase 3, return all workspace documents the client can see
-  const ref = collection(db, "documents");
-  const q = query(
-    ref,
-    where("workspaceId", "==", workspaceId),
-    orderBy("createdAt", "desc"),
-    limit(max)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => {
-    const data = d.data() as Document;
-    return {
-      id: d.id,
-      fileName: data.fileName || "Untitled",
-      fileType: data.fileType || "",
-      mimeType: data.mimeType || "",
-      fileSize: data.fileSize || 0,
-      cloudinaryUrl: data.cloudinaryUrl || "",
-      createdAt: data.createdAt?.toDate() ?? new Date(),
     };
   });
 }

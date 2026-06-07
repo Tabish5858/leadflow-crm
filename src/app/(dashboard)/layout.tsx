@@ -45,17 +45,26 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 const navItems: { href: string; label: string; icon: typeof LayoutDashboard; moduleId: ModuleId }[] = [
+  // 1. Dashboard — KPIs & overview first
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, moduleId: "dashboard" },
+  // 2. Leads — people/contacts (core CRM)
   { href: "/leads", label: "Leads", icon: Users, moduleId: "leads" },
-  // Pipeline removed — commented out in pipeline/page.tsx for later revival
+  // 3. Pipeline — deal tracking (commented out for later)
+  // 4. Projects — work delivery
   { href: "/projects", label: "Projects", icon: FolderKanban, moduleId: "projects" },
-  { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
-  { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
-  { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
+  // 5. Invoices — billing & revenue
   { href: "/invoices", label: "Invoices", icon: FileText, moduleId: "invoices" },
-  { href: "/documents", label: "Documents", icon: File, moduleId: "documents" },
+  // 6. Contracts — legal agreements
   { href: "/contracts", label: "Contracts", icon: FileText, moduleId: "contracts" },
+  // 7. Meetings — scheduling & calendar
+  { href: "/meetings", label: "Meetings", icon: Calendar, moduleId: "meetings" },
+  // 8. Messages — team communication
+  { href: "/messages", label: "Messages", icon: MessageSquare, moduleId: "messages" },
+  // 9. Time Tracker — resource tracking
+  { href: "/time-tracker", label: "Time Tracker", icon: Clock, moduleId: "time_tracker" },
+  // 10. Clients — agency client management
   { href: "/clients", label: "Clients", icon: UserCheck, moduleId: "clients" },
+  // 11. Settings — always last
   { href: "/settings", label: "Settings", icon: Settings, moduleId: "settings" },
 ];
 

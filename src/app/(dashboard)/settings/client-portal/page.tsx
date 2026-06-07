@@ -83,12 +83,6 @@ const MODULES: ModuleConfig[] = [
     description: "Show invoices, payment status, and history to clients",
   },
   {
-    key: "documents",
-    label: "Documents",
-    icon: File,
-    description: "Share documents and files with clients",
-  },
-  {
     key: "time_tracking",
     label: "Time Tracking",
     icon: Clock,
@@ -118,7 +112,6 @@ const DEFAULT_FORM: PortalSettingsForm = {
     messages: true,
     meetings: true,
     invoices: true,
-    documents: true,
     contracts: true,
     time_tracking: true,
     project_requests: true,
@@ -130,7 +123,7 @@ const DEFAULT_FORM: PortalSettingsForm = {
     bulletPoints: [
       "View real-time project progress and updates",
       "Send and receive messages with your project team",
-      "Access shared documents and resources",
+      "Access contracts and project resources",
     ],
     mediaUrl: null,
     mediaType: null,

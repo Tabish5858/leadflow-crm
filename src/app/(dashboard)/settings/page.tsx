@@ -468,7 +468,7 @@ export default function SettingsPage() {
 
   // Dashboard and Settings access is controlled by frontend guards (nav filtering + route guards),
   // not by module permissions - so exclude them from the toggle grid
-  const controlledModuleIds: ModuleId[] = ["leads", "projects", "time_tracker", "meetings", "messages", "invoices", "documents", "clients"];
+  const controlledModuleIds: ModuleId[] = ["leads", "projects", "time_tracker", "meetings", "messages", "invoices", "clients"];
 
   const allTabs: { id: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { id: "profile", label: "Profile", icon: <UserCircle className="h-4 w-4" /> },
