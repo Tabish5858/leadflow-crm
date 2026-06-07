@@ -91,17 +91,32 @@ interface ContractPdfProps {
   dateSigned?: string;
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, " ")
+function stripHtml(html: string): string[] {
+  // Replace block elements with newlines
+  let text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|h[1-6]|div|li|tr|blockquote|pre)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    .replace(/&mdash;/g, "—")
+    .replace(/&bull;/g, "•")
+    // Collapse multiple newlines
+    .replace(/\n{3,}/g, "\n\n")
+    // Trim each line
+    .split("\n")
+    .map((l) => l.trim())
+    .join("\n")
     .trim();
+
+  return text.split("\n\n").filter((p) => p.length > 0);
 }
 
 function ContractDocument({
@@ -129,7 +144,12 @@ function ContractDocument({
         </View>
 
         <View style={styles.content}>
-          <Text>{stripHtml(content) || "No content."}</Text>
+          {stripHtml(content).map((paragraph, i) => (
+            <Text key={i} style={{ marginBottom: 8 }}>
+              {paragraph}
+            </Text>
+          ))}
+          {!content && <Text>No content.</Text>}
         </View>
 
         {signers.length > 0 && (
@@ -144,8 +164,8 @@ function ContractDocument({
                   <Text style={{ fontSize: 9, color: "#999" }}>{signer.email}</Text>
                 </View>
                 <Text style={styles.signerStatus}>
-                  {signer.status === "signed" ? "✓ Signed" : "Pending"}
-                  {signer.signedAt ? ` (${signer.signedAt})` : ""}
+                  {signer.status === "signed" ? "SIGNED" : "Pending"}
+                  {signer.signedAt ? ` ${signer.signedAt}` : ""}
                 </Text>
               </View>
             ))}

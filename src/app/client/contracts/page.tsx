@@ -183,13 +183,43 @@ function ClientContractsPage() {
                     e.stopPropagation();
                     try {
                       const { generateContractPdf } = await import('@/lib/pdf-contract');
+
+                      // Format Firestore Timestamps to strings before passing to PDF
+                      const rawSigners: Array<Record<string, unknown>> = (contract as any).signers || [];
+                      const signers = rawSigners.map((s: Record<string, unknown>) => {
+                        const sa: unknown = s.signedAt;
+                        let signedAtStr = '';
+                        if (sa && typeof sa === 'object' && 'seconds' in (sa as Record<string, unknown>)) {
+                          const ts = sa as { seconds: number; nanoseconds?: number };
+                          signedAtStr = new Date(ts.seconds * 1000).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric',
+                          });
+                        } else if (typeof sa === 'string') {
+                          signedAtStr = sa;
+                        }
+                        return {
+                          name: String(s.name || ''),
+                          email: String(s.email || ''),
+                          status: String(s.status || 'pending'),
+                          signedAt: signedAtStr,
+                        };
+                      });
+
+                      const rawDateSent: unknown = (contract as any).dateSent;
+                      let dateSentStr = '';
+                      if (rawDateSent && typeof rawDateSent === 'object' && 'toDate' in (rawDateSent as Record<string, unknown>)) {
+                        dateSentStr = (rawDateSent as { toDate: () => Date }).toDate().toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric',
+                        });
+                      }
+
                       const blob = await generateContractPdf({
                         title: contract.contractTitle || 'Contract',
                         type: contract.type || 'contract',
                         status: contract.status || 'sent',
                         content: contract.content || '',
-                        signers: (contract as any).signers || [],
-                        dateSent: (contract as any).dateSent?.toDate?.()?.toLocaleDateString(),
+                        signers,
+                        dateSent: dateSentStr,
                       });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
