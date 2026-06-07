@@ -58,16 +58,21 @@ function ClientInvoicesPage() {
   }, [clientWorkspaceId, uid]);
 
   const filtered = useMemo(() => {
-    if (statusFilter === "all") return invoices;
-    return invoices.filter((inv) => inv.status === statusFilter);
+    // Never show drafts to clients
+    let visible = invoices.filter((inv) => inv.status !== "draft");
+    if (statusFilter !== "all") visible = visible.filter((inv) => inv.status === statusFilter);
+    return visible;
   }, [invoices, statusFilter]);
+
+  // Exclude drafts from summary
+  const visibleInvoices = useMemo(() => invoices.filter((inv) => inv.status !== "draft"), [invoices]);
 
   const totalOutstanding = useMemo(
     () =>
-      invoices
+      visibleInvoices
         .filter((inv) => inv.status === "sent" || inv.status === "overdue" || inv.status === "partial")
         .reduce((sum, inv) => sum + inv.total, 0),
-    [invoices]
+    [visibleInvoices]
   );
 
   if (error) {
@@ -89,17 +94,17 @@ function ClientInvoicesPage() {
         description={
           loading
             ? "Loading..."
-            : `${invoices.length} invoice${invoices.length !== 1 ? "s" : ""}`
+            : `${visibleInvoices.length} invoice${visibleInvoices.length !== 1 ? "s" : ""}`
         }
       />
 
       {/* Summary cards */}
-      {!loading && invoices.length > 0 && (
+      {!loading && visibleInvoices.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3 mb-6">
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">Total Invoices</p>
-              <p className="text-2xl font-bold">{invoices.length}</p>
+              <p className="text-2xl font-bold">{visibleInvoices.length}</p>
             </CardContent>
           </Card>
           <Card>
@@ -107,7 +112,7 @@ function ClientInvoicesPage() {
               <p className="text-xs text-muted-foreground mb-1">Paid</p>
               <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(
-                  invoices
+                  visibleInvoices
                     .filter((inv) => inv.status === "paid")
                     .reduce((sum, inv) => sum + inv.total, 0),
                   "USD"
@@ -127,7 +132,7 @@ function ClientInvoicesPage() {
       )}
 
       {/* Filter */}
-      {!loading && invoices.length > 0 && (
+      {!loading && visibleInvoices.length > 0 && (
         <div className="mb-4">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40">
@@ -138,7 +143,6 @@ function ClientInvoicesPage() {
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="sent">Sent</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="partial">Partial</SelectItem>
             </SelectContent>
           </Select>

@@ -5,12 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useClientUser } from "@/contexts/client-user-context";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { db } from "@/lib/firebase/client";
+import { submitPaymentProof } from "@/lib/firebase/invoices";
 import type { Invoice } from "@/types";
-import { doc, getDoc } from "firebase/firestore";
-import { Download } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import {
+  CheckCircle2,
+  Clock,
+  Download,
+  FileText,
+  Loader2,
+  Upload,
+  XCircle,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import {
   BackButton,
@@ -36,36 +46,108 @@ function formatCurrency(amount: number, currency: string) {
 
 export default function ClientInvoiceDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { clientWorkspaceId, uid } = useClientUser();
   const id = params.id as string;
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // ── Payment proof upload ──
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // ── Load invoice with real-time updates ──
   useEffect(() => {
-    if (!clientWorkspaceId || !id) return;
+    if (!clientWorkspaceId || !id || !uid) return;
     setLoading(true);
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, "invoices", id));
+
+    // Verify access first
+    getDoc(doc(db, "invoices", id))
+      .then((snap) => {
         if (!snap.exists()) {
           setError(new Error("Invoice not found"));
-          return;
+          return false;
         }
         const data = { id: snap.id, ...snap.data() } as Invoice;
-        // Verify client owns this invoice
         if (data.workspaceId !== clientWorkspaceId || data.clientId !== uid) {
           setError(new Error("You don't have access to this invoice"));
-          return;
+          return false;
         }
-        setInvoice(data);
-      } catch (e) {
-        setError(e as Error);
-      } finally {
+        return true;
+      })
+      .then((authorized) => {
+        if (!authorized) { setLoading(false); return; }
+
+        // Real-time listener for status/payment proof updates
+        const unsub = onSnapshot(
+          doc(db, "invoices", id),
+          (snap) => {
+            if (!snap.exists()) {
+              setError(new Error("Invoice not found"));
+              setLoading(false);
+              return;
+            }
+            setInvoice({ id: snap.id, ...snap.data() } as Invoice);
+            setLoading(false);
+          },
+          (err) => {
+            setError(err);
+            setLoading(false);
+          }
+        );
+        return () => unsub();
+      })
+      .catch((e) => {
+        setError(e);
         setLoading(false);
-      }
-    })();
+      });
   }, [clientWorkspaceId, id, uid]);
+
+  // ── Redirect draft invoices ──
+  useEffect(() => {
+    if (invoice && invoice.status === "draft") {
+      router.replace("/client/invoices");
+    }
+  }, [invoice, router]);
+
+  // ── Upload payment proof ──
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !invoice || !clientWorkspaceId) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("workspaceId", clientWorkspaceId);
+
+      const headers = await getApiAuthHeaders(clientWorkspaceId);
+      const res = await fetch("/api/documents/upload", {
+        method: "POST",
+        headers: { ...headers, "x-workspace-id": clientWorkspaceId },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Upload failed");
+      }
+
+      const result = await res.json();
+
+      await submitPaymentProof(invoice.id, uid!, {
+        fileName: result.fileName || file.name,
+        filePath: result.url || result.cloudinaryUrl,
+        fileSize: file.size,
+      });
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   if (loading) {
     return (
@@ -88,6 +170,13 @@ export default function ClientInvoiceDetailPage() {
       </div>
     );
   }
+
+  // Don't render draft invoices (redirect will fire)
+  if (invoice.status === "draft") return null;
+
+  const canUploadProof =
+    invoice.status === "sent" || invoice.status === "overdue";
+  const proof = invoice.paymentProof;
 
   return (
     <div>
@@ -114,7 +203,11 @@ export default function ClientInvoiceDetailPage() {
               variant="outline"
               className={STATUS_STYLES[invoice.status] || ""}
             >
-              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+              {invoice.status === "sent" &&
+              invoice.dueDate.toDate() < new Date()
+                ? "Overdue"
+                : invoice.status.charAt(0).toUpperCase() +
+                  invoice.status.slice(1)}
             </Badge>
             {invoice.pdfUrl && (
               <Button variant="outline" size="sm" className="gap-2" asChild>
@@ -151,7 +244,12 @@ export default function ClientInvoiceDetailPage() {
             </div>
             <div>
               <p className="text-muted-foreground mb-1">Status</p>
-              <p className="font-medium capitalize">{invoice.status}</p>
+              <p className="font-medium capitalize">
+                {invoice.status === "sent" &&
+                invoice.dueDate.toDate() < new Date()
+                  ? "overdue"
+                  : invoice.status}
+              </p>
             </div>
             {invoice.paidDate && (
               <div>
@@ -167,6 +265,85 @@ export default function ClientInvoiceDetailPage() {
             )}
           </div>
         </CardContent>
+      </Card>
+
+      {/* Payment Proof Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Payment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold mb-4">
+            {formatCurrency(invoice.total, invoice.currency)}
+          </div>
+
+          {invoice.status === "paid" ? (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 className="h-5 w-5" />
+              <span>Paid</span>
+              {proof && (
+                <span className="text-muted-foreground ml-2">
+                  &middot; {proof.fileName}
+                </span>
+              )}
+            </div>
+          ) : proof?.status === "pending" ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-amber-600">
+                <Clock className="h-5 w-5" />
+                <span>Payment proof submitted — awaiting review</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <FileText className="h-4 w-4" />
+                <span>{proof.fileName}</span>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={proof.filePath} target="_blank" rel="noopener noreferrer">
+                    View
+                  </a>
+                </Button>
+              </div>
+            </div>
+          ) : proof?.status === "rejected" ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <XCircle className="h-5 w-5" />
+                <span>Payment proof rejected</span>
+              </div>
+              {proof.reviewNotes && (
+                <p className="text-sm text-muted-foreground">
+                  Reason: {proof.reviewNotes}
+                </p>
+              )}
+              <div className="pt-2">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Please upload a corrected payment proof.
+                </p>
+                <UploadPaymentProofButton
+                  uploading={uploading}
+                  onUpload={() => fileRef.current?.click()}
+                />
+              </div>
+            </div>
+          ) : canUploadProof ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Pay via bank transfer or other method, then upload your payment
+                receipt or proof for the admin to verify.
+              </p>
+              <UploadPaymentProofButton
+                uploading={uploading}
+                onUpload={() => fileRef.current?.click()}
+              />
+            </div>
+          ) : null}
+        </CardContent>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,.pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
       </Card>
 
       {/* Line items */}
@@ -214,6 +391,28 @@ export default function ClientInvoiceDetailPage() {
               </span>
               <span>{formatCurrency(invoice.taxAmount, invoice.currency)}</span>
             </div>
+            {invoice.discount && invoice.discount.amount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Discount
+                  {invoice.discount.type === "percentage"
+                    ? ` (${invoice.discount.amount}%)`
+                    : ""}
+                </span>
+                <span className="text-green-600">
+                  -
+                  {formatCurrency(
+                    invoice.discount.type === "percentage"
+                      ? invoice.subtotal * (invoice.discount.amount / 100)
+                      : Math.min(
+                          invoice.discount.amount,
+                          invoice.subtotal + invoice.taxAmount
+                        ),
+                    invoice.currency
+                  )}
+                </span>
+              </div>
+            )}
             <Separator className="my-2" />
             <div className="flex justify-between text-base font-bold">
               <span>Total</span>
@@ -237,5 +436,31 @@ export default function ClientInvoiceDetailPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+// ─── Upload button sub-component ─────────────────────────────────────────────
+
+function UploadPaymentProofButton({
+  uploading,
+  onUpload,
+}: {
+  uploading: boolean;
+  onUpload: () => void;
+}) {
+  return (
+    <Button onClick={onUpload} disabled={uploading} className="gap-2">
+      {uploading ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Uploading...
+        </>
+      ) : (
+        <>
+          <Upload className="h-4 w-4" />
+          Upload Payment Proof
+        </>
+      )}
+    </Button>
   );
 }

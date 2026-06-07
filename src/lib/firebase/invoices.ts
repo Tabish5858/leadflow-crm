@@ -14,7 +14,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import type { Invoice, InvoiceStatus, InvoiceLineItem, InvoiceDiscount } from "@/types";
+import type { Invoice, InvoiceStatus, InvoiceLineItem, InvoiceDiscount, PaymentProof } from "@/types";
 
 const COLLECTION = "invoices";
 
@@ -261,4 +261,86 @@ export async function deleteInvoice(id: string): Promise<void> {
     return;
   }
   await deleteDoc(doc(db, COLLECTION, id));
+}
+
+// ── Payment Proof ────────────────────────────────────────────────────────────
+
+export async function submitPaymentProof(
+  invoiceId: string,
+  userId: string,
+  proof: { fileName: string; filePath: string; fileSize: number }
+): Promise<void> {
+  if (isDemoMode()) return;
+
+  const paymentProof: PaymentProof = {
+    status: "pending",
+    uploadedBy: userId,
+    uploadedAt: Timestamp.now(),
+    fileName: proof.fileName,
+    filePath: proof.filePath,
+    fileSize: proof.fileSize,
+  };
+
+  await updateDoc(doc(db, COLLECTION, invoiceId), {
+    paymentProof,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function approvePaymentProof(
+  invoiceId: string,
+  userId: string,
+  notes?: string
+): Promise<void> {
+  if (isDemoMode()) return;
+
+  const ref = doc(db, COLLECTION, invoiceId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Invoice not found");
+
+  const current = snap.data().paymentProof as PaymentProof | undefined;
+  if (!current) throw new Error("No payment proof to approve");
+
+  const updatedProof: PaymentProof = {
+    ...current,
+    status: "approved",
+    reviewedBy: userId,
+    reviewedAt: Timestamp.now(),
+    reviewNotes: notes || current.reviewNotes,
+  };
+
+  await updateDoc(ref, {
+    paymentProof: updatedProof,
+    status: "paid",
+    paidDate: Timestamp.now(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function rejectPaymentProof(
+  invoiceId: string,
+  userId: string,
+  notes?: string
+): Promise<void> {
+  if (isDemoMode()) return;
+
+  const ref = doc(db, COLLECTION, invoiceId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Invoice not found");
+
+  const current = snap.data().paymentProof as PaymentProof | undefined;
+  if (!current) throw new Error("No payment proof to reject");
+
+  const updatedProof: PaymentProof = {
+    ...current,
+    status: "rejected",
+    reviewedBy: userId,
+    reviewedAt: Timestamp.now(),
+    reviewNotes: notes || current.reviewNotes,
+  };
+
+  await updateDoc(ref, {
+    paymentProof: updatedProof,
+    updatedAt: serverTimestamp(),
+  });
 }
