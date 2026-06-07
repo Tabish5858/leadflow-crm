@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/lib/toast";
+import { db } from "@/lib/firebase/client";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import {
   FileText,
   Loader2,
@@ -94,6 +96,34 @@ export default function ContractsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteType, setDeleteType] = useState<"contract" | "template">("contract");
+  const [clientMap, setClientMap] = useState<Map<string, { name: string; email: string }>>(new Map());
+
+  // Build a lookup map of client IDs → { name, email }
+  const loadClients = useCallback(async () => {
+    if (!activeWorkspace?.id) return;
+    try {
+      const wsSnap = await getDocs(
+        query(collection(db, "workspaces"), where("__name__", "==", activeWorkspace.id))
+      );
+      const memberIds: string[] = wsSnap.docs[0]?.data()?.memberIds || [];
+      const map = new Map<string, { name: string; email: string }>();
+      for (const uid of memberIds) {
+        const userSnap = await getDocs(
+          query(collection(db, "users"), where("__name__", "==", uid))
+        );
+        const userData = userSnap.docs[0]?.data();
+        if (userData) {
+          map.set(uid, {
+            name: userData.displayName || userData.email || uid,
+            email: userData.email || "",
+          });
+        }
+      }
+      setClientMap(map);
+    } catch {
+      // Silently fail — client names just won't show
+    }
+  }, [activeWorkspace?.id]);
 
   const loadContracts = useCallback(async () => {
     if (!activeWorkspace?.id) return;
@@ -110,6 +140,9 @@ export default function ContractsPage() {
       setLoading(false);
     }
   }, [activeWorkspace?.id]);
+
+  // Load clients once on mount
+  useEffect(() => { loadClients(); }, [loadClients]);
 
   const loadTemplates = useCallback(async () => {
     if (!activeWorkspace?.id) return;
@@ -316,8 +349,26 @@ export default function ContractsPage() {
                   <span className="capitalize">{contract.type}</span>
                 </div>
                 <div>{getStatusBadge(contract.status)}</div>
-                <div className="text-xs text-muted-foreground">
-                  {contract.clientId ? contract.clientId.slice(0, 8) + "..." : "-"}
+                <div className="flex items-center gap-2">
+                  {contract.clientId && clientMap.has(contract.clientId) ? (
+                    <>
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                        {(clientMap.get(contract.clientId)?.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                        {clientMap.get(contract.clientId)?.name}
+                      </span>
+                    </>
+                  ) : contract.clientId ? (
+                    <>
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                        ?
+                      </div>
+                      <span className="text-xs text-muted-foreground">Unknown</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {formatDate(contract.dateSent)}
