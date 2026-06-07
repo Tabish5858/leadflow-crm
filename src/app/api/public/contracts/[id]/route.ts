@@ -48,7 +48,11 @@ export async function GET(
           required: s.required,
           signedAt: s.signedAt?.toMillis?.() || s.signedAt || null,
         })),
-        signatures: contract.signatures || [],
+        signatures: (contract.signatures || []).map((sig: any) => ({
+          signer: sig.signer,
+          signature: sig.signature,
+          signedAt: sig.signedAt?.toMillis?.() || sig.signedAt || null,
+        })),
         dateSent: contract.dateSent?.toMillis?.() || null,
         dateSigned: contract.dateSigned?.toMillis?.() || null,
         createdAt: contract.createdAt?.toMillis?.() || null,
