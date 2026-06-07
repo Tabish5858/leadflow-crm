@@ -181,7 +181,14 @@ function ClientContractsPage() {
                   className="h-8 w-8 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push(`/client/contracts/${contract.id}`);
+                    // Download contract content as HTML file
+                    const blob = new Blob([contract.content || contract.contractTitle], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${contract.contractTitle.replace(/[^a-z0-9]/gi, '_')}.html`;
+                    a.click();
+                    URL.revokeObjectURL(url);
                   }}
                 >
                   <Download className="h-4 w-4" />

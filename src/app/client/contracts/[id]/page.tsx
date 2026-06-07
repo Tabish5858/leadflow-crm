@@ -3,7 +3,8 @@
 import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useClientUser } from "@/contexts/client-user-context";
-import { getContract, signContract, rejectContract } from "@/lib/firebase/contracts";
+import { getContract, signContract, rejectContract, updateContract } from "@/lib/firebase/contracts";
+import { Timestamp } from "firebase/firestore";
 import type { Contract } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,12 +84,26 @@ function ClientContractDetailPage({ params }: { params: Promise<{ id: string }> 
         return;
       }
       setContract(data);
+
+      // Record view activity (fire-and-forget)
+      if (data.status === "sent" && uid) {
+        const viewActivity = {
+          type: "viewed" as const,
+          userId: uid,
+          userName: uid,
+          timestamp: Timestamp.now(),
+          details: "Viewed by client",
+        };
+        updateContract(data.id, {
+          activities: [...(data.activities || []), viewActivity],
+        } as Partial<Contract>).catch(() => {});
+      }
     } catch (e) {
       setError(e instanceof Error ? e : new Error("Failed to load contract"));
     } finally {
       setLoading(false);
     }
-  }, [id, router]);
+  }, [id, router, uid]);
 
   useEffect(() => {
     load();
@@ -98,7 +113,9 @@ function ClientContractDetailPage({ params }: { params: Promise<{ id: string }> 
     if (!contract || !uid) return;
     setSigning(true);
     try {
-      const signerId = `signer-${uid}`;
+      // Find the signer by matching uid in the signers list
+      const matchingSigner = contract.signers?.find((s) => s.email === uid || s.id.includes(uid));
+      const signerId = matchingSigner?.id || `signer-${uid}`;
       await signContract(contract.id, signerId, uid);
       toast.success("Document signed successfully");
       setShowSignDialog(false);
@@ -114,7 +131,11 @@ function ClientContractDetailPage({ params }: { params: Promise<{ id: string }> 
     if (!contract) return;
     setSigning(true);
     try {
-      await rejectContract(contract.id, rejectReason);
+      const matchingSigner = contract.signers?.find((s) => s.email === uid || s.id.includes(uid));
+      await rejectContract(contract.id, rejectReason, {
+        userId: uid,
+        userName: matchingSigner?.name || uid,
+      });
       toast.success("Document rejected");
       setShowRejectDialog(false);
       load();
@@ -185,7 +206,7 @@ function ClientContractDetailPage({ params }: { params: Promise<{ id: string }> 
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+              className="gap-2 text-red-600 border-red-200 hover:bg-accent hover:text-red-700"
               onClick={() => setShowRejectDialog(true)}
             >
               <X className="h-4 w-4" />

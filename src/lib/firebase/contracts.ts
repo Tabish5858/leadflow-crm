@@ -169,21 +169,65 @@ export async function deleteContract(
 
 // ─── Contract Status Transitions ─────────────────────────────────────────────
 
-export async function sendContract(contractId: string): Promise<void> {
+export async function sendContract(
+  contractId: string,
+  opts?: { userId?: string; userName?: string }
+): Promise<void> {
   if (isDemoMode()) {
     const { demoStore } = await import("@/lib/demo/demo-data");
     demoStore.updateContract(contractId, {
       status: "sent",
       dateSent: now(),
-      signers: [],
     });
     return;
   }
+
+  // Get current contract to merge signers + activities
+  const contract = await getContract(contractId);
+  if (!contract) throw new Error("Contract not found");
+
+  const existingSigners = contract.signers || [];
+  const ownerName = opts?.userName || "Owner";
+  const ownerId = opts?.userId || "owner";
+
+  // Add owner as a signed signer if not already present
+  const ownerExists = existingSigners.some((s) => s.id === ownerId);
+  const updatedSigners = ownerExists
+    ? existingSigners.map((s) =>
+        s.id === ownerId ? { ...s, status: "signed" as const, signedAt: now() } : s
+      )
+    : [
+        {
+          id: ownerId,
+          email: "",
+          name: ownerName,
+          title: "Owner",
+          type: "owner" as const,
+          status: "signed" as const,
+          required: false,
+          signedAt: now(),
+        } as ContractSigner,
+        ...existingSigners,
+      ];
+
+  // Record activity
+  const activities = [
+    ...(contract.activities || []),
+    {
+      type: "sent" as const,
+      userId: ownerId,
+      userName: ownerName,
+      timestamp: now(),
+      details: `Sent by ${ownerName}`,
+    },
+  ];
 
   const ref = doc(db, CONTRACTS_COLLECTION, contractId);
   await updateDoc(ref, {
     status: "sent",
     dateSent: now(),
+    signers: updatedSigners,
+    activities,
     updatedAt: now(),
   });
 }
@@ -208,13 +252,28 @@ export async function signContract(
       : s
   );
 
+  const signedSigner = contract.signers.find((s) => s.id === signerId);
+  const signerName = signedSigner?.name || signerId;
+
+  const activities = [
+    ...(contract.activities || []),
+    {
+      type: "signed" as const,
+      userId: signerId,
+      userName: signerName,
+      timestamp: now(),
+      details: `Signed by ${signerName}`,
+    },
+  ];
+
   const allSigned = updatedSigners.every((s) => s.status === "signed");
-  const updates: Partial<Contract> = {
+  const updates: Partial<Contract> & Record<string, unknown> = {
     signers: updatedSigners,
     signatures: [
       ...(contract.signatures || []),
       { signer: signerId, signature, signedAt: now() },
     ],
+    activities,
     updatedAt: now(),
   };
 
@@ -224,12 +283,13 @@ export async function signContract(
   }
 
   const ref = doc(db, CONTRACTS_COLLECTION, contractId);
-  await updateDoc(ref, updates as Record<string, unknown>);
+  await updateDoc(ref, updates);
 }
 
 export async function rejectContract(
   contractId: string,
-  reason?: string
+  reason?: string,
+  opts?: { userId?: string; userName?: string }
 ): Promise<void> {
   if (isDemoMode()) {
     const { demoStore } = await import("@/lib/demo/demo-data");
@@ -237,9 +297,25 @@ export async function rejectContract(
     return;
   }
 
+  const contract = await getContract(contractId);
+
+  const activities = contract?.activities
+    ? [
+        ...contract.activities,
+        {
+          type: "rejected" as const,
+          userId: opts?.userId || "",
+          userName: opts?.userName || "Unknown",
+          timestamp: now(),
+          details: reason || `Rejected by ${opts?.userName || "Unknown"}`,
+        },
+      ]
+    : [];
+
   const ref = doc(db, CONTRACTS_COLLECTION, contractId);
   await updateDoc(ref, {
     status: "rejected",
+    activities,
     updatedAt: now(),
   });
 }

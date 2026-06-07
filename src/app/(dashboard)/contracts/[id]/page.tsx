@@ -198,7 +198,7 @@ function EditorToolbar({ editor }: { editor: any }) {
 export default function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, user } = useWorkspace();
 
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
@@ -288,8 +288,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     }
     try {
       await handleSave();
-      await sendContract(contract.id);
-      setContract((prev) => prev ? { ...prev, status: "sent", dateSent: null } : null);
+      await sendContract(contract.id, {
+        userId: user?.id || "owner",
+        userName: user?.displayName || "Owner",
+      });
       toast.success("Contract sent");
       load();
     } catch {
