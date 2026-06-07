@@ -32,6 +32,7 @@ const STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
   cancelled: "Cancelled",
   partial: "Partial",
+  pending_review: "Pending Review",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -41,6 +42,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   cancelled: "bg-muted text-muted-foreground",
   partial: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  pending_review: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
 function formatCurrency(amount: number, currency: string) {
@@ -151,6 +153,7 @@ function ClientInvoicesPage() {
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="sent">Unpaid</SelectItem>
+              <SelectItem value="pending_review">Pending Review</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="partial">Partial</SelectItem>
             </SelectContent>

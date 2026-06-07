@@ -439,7 +439,19 @@ export interface DeliverableRevision {
 
 // ─── Invoice ─────────────────────────────────────────────────────────────────
 
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled" | "partial";
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled" | "partial" | "pending_review";
+
+export interface PaymentProof {
+  status: "pending" | "approved" | "rejected";
+  uploadedBy: string;
+  uploadedAt: Timestamp;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  reviewedBy?: string;
+  reviewedAt?: Timestamp;
+  reviewNotes?: string;
+}
 
 export interface InvoiceLineItem {
   description: string;

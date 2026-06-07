@@ -283,6 +283,7 @@ export async function submitPaymentProof(
 
   await updateDoc(doc(db, COLLECTION, invoiceId), {
     paymentProof,
+    status: "pending_review",
     updatedAt: serverTimestamp(),
   });
 }
@@ -341,6 +342,7 @@ export async function rejectPaymentProof(
 
   await updateDoc(ref, {
     paymentProof: updatedProof,
+    status: "sent",
     updatedAt: serverTimestamp(),
   });
 }

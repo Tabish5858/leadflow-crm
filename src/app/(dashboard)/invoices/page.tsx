@@ -33,6 +33,7 @@ const STATUS_STYLES: Record<string, string> = {
   overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   cancelled: "bg-muted text-muted-foreground",
   partial: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  pending_review: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -191,11 +192,17 @@ export default function InvoicesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              {Object.entries(STATUS_STYLES).map(([key]) => (
-                <SelectItem key={key} value={key}>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </SelectItem>
-              ))}
+              {Object.entries(STATUS_STYLES).map(([key]) => {
+                const label =
+                  key === "pending_review"
+                    ? "Pending Review"
+                    : key.charAt(0).toUpperCase() + key.slice(1);
+                return (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -274,7 +281,11 @@ export default function InvoicesPage() {
                                 variant="outline"
                                 className={cn("text-[10px] px-1.5 py-0", statusStyle)}
                               >
-                                {isOverdue ? "Overdue" : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                {isOverdue
+                                  ? "Overdue"
+                                  : invoice.status === "pending_review"
+                                    ? "Pending Review"
+                                    : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground truncate mt-0.5">

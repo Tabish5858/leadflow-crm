@@ -35,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
   cancelled: "Cancelled",
   partial: "Partial",
+  pending_review: "Pending Review",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -44,6 +45,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   cancelled: "bg-muted text-muted-foreground",
   partial: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  pending_review: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
 function formatCurrency(amount: number, currency: string) {
@@ -185,6 +187,7 @@ export default function ClientInvoiceDetailPage() {
 
   const canUploadProof =
     invoice.status === "sent" || invoice.status === "overdue";
+  const isPendingReview = invoice.status === "pending_review";
   const proof = invoice.paymentProof;
 
   return (
@@ -297,7 +300,7 @@ export default function ClientInvoiceDetailPage() {
                 </span>
               )}
             </div>
-          ) : proof?.status === "pending" ? (
+          ) : isPendingReview && proof ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-amber-600">
                 <Clock className="h-5 w-5" />

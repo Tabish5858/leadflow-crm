@@ -52,6 +52,7 @@ const STATUS_STYLES: Record<string, string> = {
   overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   cancelled: "bg-muted text-muted-foreground",
   partial: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  pending_review: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
 const TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
@@ -61,6 +62,7 @@ const TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
   overdue: ["paid", "cancelled"],
   cancelled: [],
   partial: ["paid"],
+  pending_review: ["paid", "sent"],
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -216,9 +218,19 @@ export default function InvoiceDetailPage() {
   const statusStyle = STATUS_STYLES[invoice.status] || STATUS_STYLES.draft;
   const availableTransitions = TRANSITIONS[invoice.status] || [];
 
-  // ── Button label map ──
+  // ── Display labels ──
+  const statusLabels: Record<string, string> = {
+    draft: "Draft",
+    sent: "Sent",
+    paid: "Paid",
+    overdue: "Overdue",
+    cancelled: "Cancelled",
+    partial: "Partial",
+    pending_review: "Pending Review",
+  };
+
   const transitionLabels: Record<string, string> = {
-    sent: "Send Invoice",
+    sent: invoice.status === "pending_review" ? "Reject & Revert" : "Send Invoice",
     paid: "Mark as Paid",
     cancelled: "Cancel Invoice",
   };
@@ -242,7 +254,7 @@ export default function InvoiceDetailPage() {
             <Badge variant="outline" className={cn("text-xs", statusStyle)}>
               {invoice.status === "sent" && invoice.dueDate?.toDate() < new Date()
                 ? "Overdue"
-                : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                : statusLabels[invoice.status] || invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
@@ -511,9 +523,9 @@ export default function InvoiceDetailPage() {
                   } else {
                     await rejectPaymentProof(invoice.id, user?.id || "", reviewNotes || undefined);
                     setInvoice((prev) =>
-                      prev ? { ...prev, paymentProof: { ...prev.paymentProof!, status: "rejected", reviewedBy: user?.id, reviewedAt: { toDate: () => new Date() } as any } } : prev
+                      prev ? { ...prev, status: "sent" as InvoiceStatus, paymentProof: { ...prev.paymentProof!, status: "rejected", reviewedBy: user?.id, reviewedAt: { toDate: () => new Date() } as any } } : prev
                     );
-                    toast.success("Payment proof rejected");
+                    toast.success("Payment proof rejected — invoice reverted to Unpaid");
                   }
                 } catch {
                   toast.error("Failed to review payment proof");
