@@ -26,6 +26,7 @@ import {
   FileCheck,
   FileX,
   Clock,
+  RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -87,6 +88,7 @@ export default function ContractsPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -96,11 +98,14 @@ export default function ContractsPage() {
   const loadContracts = useCallback(async () => {
     if (!activeWorkspace?.id) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await getContracts(activeWorkspace.id, { max: 200 });
       setContracts(data);
-    } catch {
-      toast.error("Failed to load contracts");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setError(msg);
+      toast.error("Failed to load contracts: " + msg);
     } finally {
       setLoading(false);
     }
@@ -109,11 +114,14 @@ export default function ContractsPage() {
   const loadTemplates = useCallback(async () => {
     if (!activeWorkspace?.id) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await getTemplates(activeWorkspace.id);
       setTemplates(data);
-    } catch {
-      toast.error("Failed to load templates");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setError(msg);
+      toast.error("Failed to load templates: " + msg);
     } finally {
       setLoading(false);
     }
@@ -235,6 +243,23 @@ export default function ContractsPage() {
             </select>
           )}
         </div>
+      )}
+
+      {/* Error state */}
+      {error && !loading && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="text-destructive mb-4">
+              <FileText className="h-12 w-12 mx-auto opacity-50" />
+            </div>
+            <h3 className="text-lg font-semibold">Failed to load</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">{error}</p>
+            <Button variant="outline" size="sm" onClick={() => activeTab === "Contracts" ? loadContracts() : loadTemplates()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Content */}
