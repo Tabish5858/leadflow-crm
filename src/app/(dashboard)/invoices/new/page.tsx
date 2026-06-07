@@ -4,7 +4,14 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { createInvoice, generateInvoiceNumber } from "@/lib/firebase/invoices";
 import { getProjects } from "@/lib/firebase/projects";
 import { getWorkspaceMembers } from "@/lib/firebase/workspaces";
-import type { InvoiceDiscount, InvoiceLineItem, Project, WorkspaceMember } from "@/types";
+import type { InvoiceDiscount, InvoiceLineItem, WorkspaceMember } from "@/types";
+
+// ─── Local type for project data (Project type not exported from @/types) ────
+interface SelectableProject {
+  id: string;
+  name: string;
+  clients: string[];
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -97,7 +104,7 @@ export default function NewInvoicePage() {
 
   // ── Data ────────────────────────────────────────────────────────────────────
   const [clients, setClients] = useState<WorkspaceMember[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<SelectableProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
