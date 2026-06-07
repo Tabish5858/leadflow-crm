@@ -270,13 +270,13 @@ export default function NewContractPage() {
                 onClick={() => setType("proposal")}
                 className={`flex flex-col gap-2 p-4 rounded-lg border-2 text-left transition-all ${
                   type === "proposal"
-                    ? "border-black bg-gray-50"
-                    : "border-gray-200 hover:border-black/50"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">Proposal</span>
-                  <FileCheck className="h-5 w-5 text-purple-600" />
+                  <FileCheck className="h-5 w-5 text-purple-500" />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   A persuasive document that outlines your plan or offer.
@@ -287,13 +287,13 @@ export default function NewContractPage() {
                 onClick={() => setType("contract")}
                 className={`flex flex-col gap-2 p-4 rounded-lg border-2 text-left transition-all ${
                   type === "contract"
-                    ? "border-black bg-gray-50"
-                    : "border-gray-200 hover:border-black/50"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">Contract</span>
-                  <FileSignature className="h-5 w-5 text-blue-600" />
+                  <FileSignature className="h-5 w-5 text-blue-500" />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   A legally binding agreement that outlines terms, conditions, and responsibilities.

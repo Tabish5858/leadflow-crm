@@ -269,7 +269,7 @@ export default function ContractsPage() {
             <Skeleton key={i} className="h-16 w-full rounded-lg" />
           ))}
         </div>
-      ) : activeTab === "Contracts" ? (
+      ) : !error && activeTab === "Contracts" ? (
         filteredContracts.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -340,7 +340,7 @@ export default function ContractsPage() {
             ))}
           </div>
         )
-      ) : (
+      ) : !error && (
         // Templates tab
         filteredTemplates.length === 0 ? (
           <Card>
