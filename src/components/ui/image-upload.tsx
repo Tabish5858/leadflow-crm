@@ -12,6 +12,8 @@ interface ImageUploadProps {
   endpoint: "/api/upload/avatar" | "/api/upload/workspace-logo";
   /** Called when upload succeeds with the new URL */
   onUploaded: (url: string) => void;
+  /** Workspace ID (required for auth headers) */
+  workspaceId: string;
   /** Button label */
   label?: string;
   /** Additional CSS */
@@ -24,6 +26,7 @@ export function ImageUpload({
   currentUrl,
   endpoint,
   onUploaded,
+  workspaceId,
   label = "Upload Image",
   className,
   accept = "image/jpeg,image/png,image/webp,image/gif",
@@ -42,11 +45,26 @@ export function ImageUpload({
     setErrorMsg("");
 
     try {
+      // Get fresh Firebase auth token
+      const { getAuth } = await import("firebase/auth");
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error("You must be signed in to upload files");
+      }
+
+      const token = await user.getIdToken();
+
       const formData = new FormData();
       formData.append("file", file);
 
       const res = await fetch(endpoint, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-workspace-id": workspaceId,
+        },
         body: formData,
       });
 

@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -71,12 +72,14 @@ export default function ClientSettingsPage() {
     uid,
     displayName: initialName,
     email,
-    photoURL,
+    photoURL: initialPhoto,
+    clientWorkspaceId,
     workspaceName,
   } = useClientUser();
   const { settings, isModuleEnabled, isPortalEnabled } = useClientPortal();
 
   const [displayName, setDisplayName] = useState(initialName);
+  const [photoURL, setPhotoURL] = useState(initialPhoto);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [memberSince, setMemberSince] = useState<Date | null>(null);
@@ -104,6 +107,7 @@ export default function ClientSettingsPage() {
     try {
       await updateDoc(doc(db, "users", uid), {
         displayName: displayName.trim(),
+        photoURL: photoURL || null,
         updatedAt: new Date(),
       });
       setSaved(true);
@@ -139,7 +143,7 @@ export default function ClientSettingsPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+          <CardContent className="space-y-6">
           {/* Avatar + Info */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <Avatar className="h-20 w-20 border-2 shrink-0">
@@ -168,6 +172,29 @@ export default function ClientSettingsPage() {
               )}
             </div>
           </div>
+
+          {/* Photo Upload */}
+          {clientWorkspaceId && (
+            <div className="flex items-center gap-3">
+              <ImageUpload
+                currentUrl={photoURL || null}
+                endpoint="/api/upload/avatar"
+                workspaceId={clientWorkspaceId}
+                onUploaded={(url) => {
+                  setPhotoURL(url);
+                  // Persist immediately
+                  updateDoc(doc(db, "users", uid), {
+                    photoURL: url || null,
+                    updatedAt: new Date(),
+                  }).catch(() => {});
+                }}
+                label="Upload Photo"
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload a profile image. Leave empty to show initials.
+              </p>
+            </div>
+          )}
 
           <Separator />
 

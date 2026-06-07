@@ -574,6 +574,7 @@ export default function SettingsPage() {
                   <ImageUpload
                     currentUrl={profilePhotoURL || null}
                     endpoint="/api/upload/avatar"
+                    workspaceId={activeWorkspace?.id || ""}
                     onUploaded={(url) => setProfilePhotoURL(url)}
                     label="Upload Photo"
                     className="mt-2"
@@ -634,6 +635,7 @@ export default function SettingsPage() {
                   <ImageUpload
                     currentUrl={activeWorkspace?.logoUrl || null}
                     endpoint="/api/upload/workspace-logo"
+                    workspaceId={activeWorkspace?.id || ""}
                     onUploaded={async (url) => {
                       if (!activeWorkspace) return;
                       try {
