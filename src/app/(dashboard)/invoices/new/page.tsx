@@ -128,23 +128,31 @@ export default function NewInvoicePage() {
   // ── Load initial data ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeWorkspace?.id) return;
+    let cancelled = false;
+
     const load = async () => {
       try {
-        const [memberData, projectData, invNum] = await Promise.all([
+        const [memberData, projectData] = await Promise.all([
           getWorkspaceMembers(activeWorkspace.id),
           getProjects(activeWorkspace.id),
-          generateInvoiceNumber(activeWorkspace.id),
         ]);
+        if (cancelled) return;
         setClients(memberData.filter((m) => m.role === "client"));
         setProjects(projectData);
-        setInvoiceNumber(invNum);
       } catch {
-        toast.error("Failed to load data");
+        if (!cancelled) toast.error("Failed to load clients or projects");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
+    // Fetch invoice number separately to avoid blocking the form
+    generateInvoiceNumber(activeWorkspace.id)
+      .then((num) => { if (!cancelled) setInvoiceNumber(num); })
+      .catch(() => { /* invoice number is non-critical; user can see it after save */ });
+
     load();
+    return () => { cancelled = true; };
   }, [activeWorkspace?.id]);
 
   // ── Projects filtered by selected client ────────────────────────────────────

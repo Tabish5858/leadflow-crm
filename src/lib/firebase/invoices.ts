@@ -34,24 +34,48 @@ export async function generateInvoiceNumber(
   }
 
   const year = new Date().getFullYear();
-  const q = query(
-    collection(db, COLLECTION),
-    where("workspaceId", "==", workspaceId),
-    where("invoiceNumber", ">=", `INV-${year}-`),
-    where("invoiceNumber", "<", `INV-${year}-~`),
-    orderBy("invoiceNumber", "desc"),
-    limit(1)
-  );
-  const snap = await getDocs(q);
 
-  let seq = 1;
-  if (!snap.empty) {
-    const last = snap.docs[0].data().invoiceNumber as string;
-    const parts = last.split("-");
-    seq = (parseInt(parts[parts.length - 1], 10) || 0) + 1;
+  // Try composite index query first, fall back to scan if index missing
+  try {
+    const q = query(
+      collection(db, COLLECTION),
+      where("workspaceId", "==", workspaceId),
+      where("invoiceNumber", ">=", `INV-${year}-`),
+      where("invoiceNumber", "<", `INV-${year}-~`),
+      orderBy("invoiceNumber", "desc"),
+      limit(1)
+    );
+    const snap = await getDocs(q);
+
+    let seq = 1;
+    if (!snap.empty) {
+      const last = snap.docs[0].data().invoiceNumber as string;
+      const parts = last.split("-");
+      seq = (parseInt(parts[parts.length - 1], 10) || 0) + 1;
+    }
+
+    return `INV-${year}-${String(seq).padStart(3, "0")}`;
+  } catch {
+    // Fallback: scan all workspace invoices and find max number
+    const q = query(
+      collection(db, COLLECTION),
+      where("workspaceId", "==", workspaceId),
+      orderBy("createdAt", "desc"),
+      limit(500)
+    );
+    const snap = await getDocs(q);
+
+    let maxSeq = 0;
+    snap.docs.forEach((d) => {
+      const num = d.data().invoiceNumber as string;
+      if (!num) return;
+      const parts = num.split("-");
+      const n = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(n) && n > maxSeq) maxSeq = n;
+    });
+
+    return `INV-${year}-${String(maxSeq + 1).padStart(3, "0")}`;
   }
-
-  return `INV-${year}-${String(seq).padStart(3, "0")}`;
 }
 
 // ── Create ───────────────────────────────────────────────────────────────────
