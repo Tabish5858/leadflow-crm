@@ -28,9 +28,18 @@ import {
   SkeletonCard,
 } from "@/components/client/module-layout";
 
+const STATUS_LABELS: Record<string, string> = {
+  paid: "Paid",
+  sent: "Unpaid",
+  overdue: "Overdue",
+  draft: "Draft",
+  cancelled: "Cancelled",
+  partial: "Partial",
+};
+
 const STATUS_STYLES: Record<string, string> = {
   paid: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  sent: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  sent: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   draft: "bg-muted text-muted-foreground",
   cancelled: "bg-muted text-muted-foreground",
@@ -206,8 +215,9 @@ export default function ClientInvoiceDetailPage() {
               {invoice.status === "sent" &&
               invoice.dueDate.toDate() < new Date()
                 ? "Overdue"
-                : invoice.status.charAt(0).toUpperCase() +
-                  invoice.status.slice(1)}
+                : STATUS_LABELS[invoice.status] ||
+                  invoice.status.charAt(0).toUpperCase() +
+                    invoice.status.slice(1)}
             </Badge>
             {invoice.pdfUrl && (
               <Button variant="outline" size="sm" className="gap-2" asChild>
@@ -247,8 +257,8 @@ export default function ClientInvoiceDetailPage() {
               <p className="font-medium capitalize">
                 {invoice.status === "sent" &&
                 invoice.dueDate.toDate() < new Date()
-                  ? "overdue"
-                  : invoice.status}
+                  ? "Overdue"
+                  : STATUS_LABELS[invoice.status] || invoice.status}
               </p>
             </div>
             {invoice.paidDate && (

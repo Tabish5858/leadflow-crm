@@ -25,9 +25,18 @@ import {
   SkeletonList,
 } from "@/components/client/module-layout";
 
+const STATUS_LABELS: Record<string, string> = {
+  paid: "Paid",
+  sent: "Unpaid",
+  overdue: "Overdue",
+  draft: "Draft",
+  cancelled: "Cancelled",
+  partial: "Partial",
+};
+
 const STATUS_STYLES: Record<string, string> = {
   paid: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  sent: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  sent: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   draft: "bg-muted text-muted-foreground",
   cancelled: "bg-muted text-muted-foreground",
@@ -141,7 +150,7 @@ function ClientInvoicesPage() {
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
+              <SelectItem value="sent">Unpaid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="partial">Partial</SelectItem>
             </SelectContent>
@@ -190,7 +199,7 @@ function ClientInvoicesPage() {
                           STATUS_STYLES[inv.status] || ""
                         )}
                       >
-                        {inv.status}
+                        {STATUS_LABELS[inv.status] || inv.status}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">

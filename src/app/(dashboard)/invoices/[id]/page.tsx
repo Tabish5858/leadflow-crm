@@ -154,7 +154,11 @@ export default function InvoiceDetailPage() {
             }
           : prev
       );
-      toast.success(`Invoice marked as ${newStatus}`);
+      toast.success(
+        newStatus === "sent"
+          ? "Invoice sent to client"
+          : `Invoice marked as ${newStatus}`
+      );
     } catch {
       toast.error("Failed to update invoice");
     } finally {

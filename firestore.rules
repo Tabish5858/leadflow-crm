@@ -292,7 +292,11 @@ service cloud.firestore {
     match /invoices/{invoiceId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
       allow create: if canWrite(request.resource.data.workspaceId);
-      allow update: if canWrite(resource.data.workspaceId);
+      allow update: if canWrite(resource.data.workspaceId) || (
+        isClient(resource.data.workspaceId) &&
+        resource.data.clientId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentProof', 'updatedAt'])
+      );
       allow delete: if hasRole(resource.data.workspaceId, 'admin') ||
         getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }
