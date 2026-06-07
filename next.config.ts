@@ -66,7 +66,9 @@ export default withSentryConfig(nextConfig, {
   tunnelRoute: "/monitoring",
   telemetry: false,
   silent: !process.env.CI,
+  // Disable source map upload to speed up Vercel builds on free plan
+  // Source maps are not essential for error tracking to work
   sourcemaps: {
-    disable: process.env.VERCEL_ENV !== "production",
+    disable: true,
   },
 });
