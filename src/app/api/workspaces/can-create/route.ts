@@ -10,10 +10,8 @@ import { withAuth } from "@/lib/api/middleware";
  */
 export async function GET(req: NextRequest) {
   return withAuth(req, async (ctx) => {
-    // Read from server-only env var (NOT NEXT_PUBLIC_ — that leaks to browser)
-    const raw = process.env.ALLOWED_WORKSPACE_CREATORS
-      // Fallback to old NEXT_PUBLIC_ name for backward compatibility
-      || process.env.NEXT_PUBLIC_ALLOWED_WORKSPACE_CREATORS;
+    // Server-only env var (NOT NEXT_PUBLIC_ — never exposed to browser bundle)
+    const raw = process.env.ALLOWED_WORKSPACE_CREATORS;
 
     if (!raw) {
       return NextResponse.json({ canCreate: false });

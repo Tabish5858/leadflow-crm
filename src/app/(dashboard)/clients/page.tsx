@@ -155,12 +155,15 @@ export default function ClientsPage() {
         return;
       }
 
-      const usersSnap = await getDocs(
-        query(
-          collection(db, "users"),
-          where("__name__", "in", memberIds.slice(0, 10))
-        )
-      );
+      // Chunk into batches of 30 (Firestore `in` limit) to support large workspaces
+      const allUsers: Record<string, unknown>[] = [];
+      for (let i = 0; i < memberIds.length; i += 30) {
+        const chunk = memberIds.slice(i, i + 30);
+        const usersSnap = await getDocs(
+          query(collection(db, "users"), where("__name__", "in", chunk))
+        );
+        usersSnap.docs.forEach((doc) => allUsers.push({ id: doc.id, ...doc.data() }));
+      }
 
       const projectsSnap = await getDocs(
         query(
@@ -182,23 +185,23 @@ export default function ClientsPage() {
       });
 
       const clientList: ClientMember[] = [];
-      usersSnap.forEach((d) => {
-        const userData = d.data();
-        const role =
-          userData.workspaceRoles?.[activeWorkspace.id] || userData.role;
+      for (const userData of allUsers) {
+        const u = userData as Record<string, unknown>;
+        const uid = u.id as string;
+        const wsRoles = u.workspaceRoles as Record<string, string> | undefined;
+        const role = wsRoles?.[activeWorkspace.id] || (u.role as string | undefined);
         if (role === "client") {
           clientList.push({
-            userId: d.id,
-            email: userData.email || "",
-            displayName: userData.displayName || "",
-            photoURL: userData.photoURL || null,
+            userId: uid,
+            email: (u.email as string) || "",
+            displayName: (u.displayName as string) || "",
+            photoURL: (u.photoURL as string) || null,
             joinedAt:
-              userData.createdAt?.toDate?.()?.toLocaleDateString() || "-",
-            projectCount: projectClientMap.get(d.id) || 0,
+              ((u.createdAt as { toDate?: () => Date })?.toDate?.()?.toLocaleDateString()) || "-",
+            projectCount: projectClientMap.get(uid) || 0,
           });
         }
-      });
-
+      }
       setClients(clientList);
     } catch (err) {
       console.error("Failed to load clients:", err);

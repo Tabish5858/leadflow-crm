@@ -4,18 +4,54 @@ import { Timestamp } from "firebase-admin/firestore";
 
 const CONTRACTS_COLLECTION = "contracts";
 
+// In-memory rate limiting for public sign endpoint (prevents brute force)
+const signRateLimit = new Map<string, { count: number; reset: number }>();
+const MAX_SIGN_ATTEMPTS = 5;
+const SIGN_RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkSignRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = signRateLimit.get(key);
+  if (!entry || now > entry.reset) {
+    signRateLimit.set(key, { count: 1, reset: now + SIGN_RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= MAX_SIGN_ATTEMPTS) return false;
+  entry.count++;
+  return true;
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+
+    // Rate limiting by IP + contract ID
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const rateLimitKey = `${ip}:sign:${id}`;
+    if (!checkSignRateLimit(rateLimitKey)) {
+      return NextResponse.json(
+        { error: "Too many sign attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { signerId, signature, token } = body;
 
     if (!id || !signerId || !signature) {
       return NextResponse.json(
         { error: "Missing required fields: contractId, signerId, signature" },
+        { status: 400 }
+      );
+    }
+
+    // Validate signature is a string with reasonable length (prevent blob injection)
+    if (typeof signature !== "string" || signature.length > 5000) {
+      return NextResponse.json(
+        { error: "Invalid signature data" },
         { status: 400 }
       );
     }
@@ -32,6 +68,16 @@ export async function POST(
     }
 
     const rawData = docSnap.data() as Record<string, unknown>;
+    const contractStatus = rawData.status as string | undefined;
+
+    // Only allow signing for sent contracts
+    if (contractStatus !== "sent" && contractStatus !== "signed") {
+      return NextResponse.json(
+        { error: "Contract is not available for signing" },
+        { status: 403 }
+      );
+    }
+
     const rawSigners = (rawData.signers as Array<Record<string, unknown>>) || [];
     const signerIndex = rawSigners.findIndex((s) => s.id === signerId);
 
@@ -39,6 +85,15 @@ export async function POST(
       return NextResponse.json(
         { error: "Signer not found on this contract" },
         { status: 404 }
+      );
+    }
+
+    // Verify signing token if present (strong auth), otherwise allow but log
+    const signerToken = rawSigners[signerIndex].signToken as string | undefined;
+    if (signerToken && token !== signerToken) {
+      return NextResponse.json(
+        { error: "Invalid signing token. Please use the link from your email." },
+        { status: 403 }
       );
     }
 

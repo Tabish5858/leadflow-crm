@@ -261,13 +261,13 @@ service cloud.firestore {
         (isClient(resource.data.workspaceId) && resource.data.clientId == request.auth.uid);
       // Only workspace members with write access can create
       allow create: if canWrite(request.resource.data.workspaceId);
-      // Workspace members can update; clients can sign (limited fields)
+      // Workspace members can update; clients can only update signer fields
       allow update: if canWrite(resource.data.workspaceId) || (
         isClient(resource.data.workspaceId) &&
         resource.data.clientId == request.auth.uid &&
-        // Clients can only update signer status and signatures
-        request.resource.data.signers != null &&
-        request.resource.data.signatures != null
+        // Clients can only update signers, signatures, activities, updatedAt
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["signers", "signatures", "activities", "updatedAt"])
       );
       // Only admin/owner can delete
       allow delete: if getWorkspace(resource.data.workspaceId).ownerId == request.auth.uid ||
@@ -302,7 +302,13 @@ service cloud.firestore {
     // Email Events (tracking opens/clicks)
     match /email_events/{eventId} {
       allow read: if isWorkspaceMember(resource.data.workspaceId);
-      allow create: if true;  // Public tracking endpoints
+      // Public tracking endpoints — validate required fields to prevent abuse
+      allow create: if request.resource.data.keys().hasAll([
+        "workspaceId",
+        "emailId",
+        "type",
+        "timestamp"
+      ]) && request.resource.data.type in ["open", "click"];
     }
 
     // ─── Phase 3: Client-facing collections ──────────────────────────────────

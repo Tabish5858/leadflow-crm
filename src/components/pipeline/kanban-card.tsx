@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Lead } from "@/types";
@@ -34,7 +35,7 @@ function formatDate(ts: { toDate?: () => Date; seconds?: number } | null): strin
   }
 }
 
-export function KanbanCard({ lead, stageProbability, isDragging, onClick }: KanbanCardProps) {
+export const KanbanCard = memo(function KanbanCard({ lead, stageProbability, isDragging, onClick }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -139,4 +140,4 @@ export function KanbanCard({ lead, stageProbability, isDragging, onClick }: Kanb
       </div>
     </div>
   );
-}
+});

@@ -1,15 +1,16 @@
 /**
  * Checks whether a given email is allowed to create workspaces.
- * Only emails listed in NEXT_PUBLIC_ALLOWED_WORKSPACE_CREATORS can create.
+ * Uses server-only env var ALLOWED_WORKSPACE_CREATORS (comma-separated emails).
+ * Only emails in this list can create workspaces.
  *
- * The env var is a comma-separated list of emails.
- * Whitespace around each email is trimmed automatically.
- * If the env var is empty or not set, no one can create workspaces.
+ * ⚠️  This function is server-only and must NOT be imported in client components.
+ * The env var is never exposed to the browser bundle.
  */
 export function canCreateWorkspace(email: string | null | undefined): boolean {
   if (!email) return false;
 
-  const raw = process.env.NEXT_PUBLIC_ALLOWED_WORKSPACE_CREATORS;
+  // Server-only env var (NOT prefixed with NEXT_PUBLIC_, never leaks to client)
+  const raw = process.env.ALLOWED_WORKSPACE_CREATORS;
 
   if (!raw) return false;
 

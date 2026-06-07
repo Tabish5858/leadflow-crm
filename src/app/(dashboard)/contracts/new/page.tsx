@@ -108,22 +108,28 @@ export default function NewContractPage() {
           )
         );
         const workspaceData = workspaceRef.docs[0]?.data();
-        const memberIds = workspaceData?.memberIds || [];
+        const memberIds: string[] = workspaceData?.memberIds || [];
 
-        // Fetch user details for all members
+        // Fetch user details for all members — batched for performance
         const clientList: ClientOption[] = [];
-        for (const uid of memberIds) {
+        const chunks = [];
+        for (let i = 0; i < memberIds.length; i += 30) {
+          chunks.push(memberIds.slice(i, i + 30));
+        }
+        for (const chunk of chunks) {
           const userSnap = await getDocs(
-            query(collection(db, "users"), where("__name__", "==", uid))
+            query(collection(db, "users"), where("__name__", "in", chunk))
           );
-          const userData = userSnap.docs[0]?.data();
-          if (userData && (userData.role === "client")) {
-            clientList.push({
-              id: uid,
-              name: userData.displayName || userData.email || uid,
-              email: userData.email || "",
-            });
-          }
+          userSnap.docs.forEach((doc) => {
+            const userData = doc.data();
+            if (userData && (userData.role === "client")) {
+              clientList.push({
+                id: doc.id,
+                name: userData.displayName || userData.email || doc.id,
+                email: userData.email || "",
+              });
+            }
+          });
         }
         setClients(clientList);
 

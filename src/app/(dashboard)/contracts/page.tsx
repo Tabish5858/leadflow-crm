@@ -107,17 +107,24 @@ export default function ContractsPage() {
       );
       const memberIds: string[] = wsSnap.docs[0]?.data()?.memberIds || [];
       const map = new Map<string, { name: string; email: string }>();
-      for (const uid of memberIds) {
+      // Batch user lookups — Firestore `in` queries support up to 30 values
+      const chunks = [];
+      for (let i = 0; i < memberIds.length; i += 30) {
+        chunks.push(memberIds.slice(i, i + 30));
+      }
+      for (const chunk of chunks) {
         const userSnap = await getDocs(
-          query(collection(db, "users"), where("__name__", "==", uid))
+          query(collection(db, "users"), where("__name__", "in", chunk))
         );
-        const userData = userSnap.docs[0]?.data();
-        if (userData) {
-          map.set(uid, {
-            name: userData.displayName || userData.email || uid,
-            email: userData.email || "",
-          });
-        }
+        userSnap.docs.forEach((doc) => {
+          const userData = doc.data();
+          if (userData) {
+            map.set(doc.id, {
+              name: userData.displayName || userData.email || doc.id,
+              email: userData.email || "",
+            });
+          }
+        });
       }
       setClientMap(map);
     } catch {

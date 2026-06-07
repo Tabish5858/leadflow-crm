@@ -5,6 +5,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   Timestamp,
   type QueryConstraint,
 } from "firebase/firestore";
@@ -85,6 +86,7 @@ export async function getEmailsForLead(leadId: string, workspaceId?: string): Pr
   const constraints: QueryConstraint[] = [where("leadId", "==", leadId)];
   if (workspaceId) constraints.push(where("workspaceId", "==", workspaceId));
   constraints.push(orderBy("createdAt", "desc"));
+  constraints.push(limit(200)); // Prevent unbounded fetch
   const q = query(collection(db, EMAILS_COLLECTION), ...constraints);
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EmailRecord));
@@ -94,7 +96,8 @@ export async function getEmailsForWorkspace(workspaceId: string): Promise<EmailR
   const q = query(
     collection(db, EMAILS_COLLECTION),
     where("workspaceId", "==", workspaceId),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "desc"),
+    limit(200) // Prevent unbounded fetch
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EmailRecord));

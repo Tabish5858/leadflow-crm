@@ -1,6 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/middleware";
 
+// Blocklist of internal/private hosts to prevent SSRF
+const BLOCKED_HOST_PATTERNS: readonly string[] = [
+  "127.0.0.1",
+  "localhost",
+  "0.0.0.0",
+  "169.254.169.254", // AWS/Azure/GCP metadata endpoint
+  "metadata.google.internal", // GCP metadata
+  "[::1]", // IPv6 loopback
+] as const;
+
+const BLOCKED_IP_RANGES = [
+  { start: ipToInt("10.0.0.0"), end: ipToInt("10.255.255.255") },
+  { start: ipToInt("172.16.0.0"), end: ipToInt("172.31.255.255") },
+  { start: ipToInt("192.168.0.0"), end: ipToInt("192.168.255.255") },
+  { start: ipToInt("127.0.0.0"), end: ipToInt("127.255.255.255") },
+  { start: ipToInt("0.0.0.0"), end: ipToInt("0.255.255.255") },
+  { start: ipToInt("169.254.0.0"), end: ipToInt("169.254.255.255") },
+];
+
+function ipToInt(ip: string): number {
+  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+}
+
+function isPrivateIp(hostname: string): boolean {
+  // Check against blocklist first (covers hostnames and raw IPs)
+  const lower = hostname.toLowerCase();
+  if (BLOCKED_HOST_PATTERNS.some((p) => lower === p || lower.endsWith(`.${p}`))) {
+    return true;
+  }
+
+  // Check CIDR ranges for IP addresses
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    const ipInt = ipToInt(hostname);
+    return BLOCKED_IP_RANGES.some((range) => ipInt >= range.start && ipInt <= range.end);
+  }
+
+  return false;
+}
+
 /**
  * Fetches metadata (title, description, favicon, site name, image) for a given URL.
  * Used by the deliverable version adding modal to show rich link previews.
@@ -20,6 +59,16 @@ export async function POST(req: NextRequest) {
         parsedUrl = new URL(url.startsWith("http") ? url : `https://${url}`);
       } catch {
         return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      }
+
+      // Block non-HTTP protocols (file://, ftp://, gopher://, etc.)
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        return NextResponse.json({ error: "Only HTTP and HTTPS URLs are allowed" }, { status: 400 });
+      }
+
+      // Block internal/private IPs and hostnames (SSRF prevention)
+      if (isPrivateIp(parsedUrl.hostname)) {
+        return NextResponse.json({ error: "Cannot fetch metadata from internal URLs" }, { status: 400 });
       }
 
       // Fetch the page and extract metadata
