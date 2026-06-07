@@ -22,40 +22,48 @@ export async function GET(
       return NextResponse.json({ error: "Contract not found" }, { status: 404 });
     }
 
-    const contract = docSnap.data()!;
+    const data = docSnap.data();
 
     // Only return public contracts (sent/signed status)
-    if (contract.status !== "sent" && contract.status !== "signed") {
+    if (data?.status !== "sent" && data?.status !== "signed") {
       return NextResponse.json({ error: "Contract is not publicly accessible" }, { status: 403 });
     }
+
+    // Safe cast since we verified the doc exists
+    const contract = data as Record<string, unknown>;
+    const signersRaw = (contract.signers as Array<Record<string, unknown>>) || [];
+    const signaturesRaw = (contract.signatures as Array<Record<string, unknown>>) || [];
+    const dateSentRaw = contract.dateSent as { toMillis?: () => number | null } | null | undefined;
+    const dateSignedRaw = contract.dateSigned as { toMillis?: () => number | null } | null | undefined;
+    const createdAtRaw = contract.createdAt as { toMillis?: () => number | null } | null | undefined;
 
     // Return sanitized contract data (no internal fields)
     return NextResponse.json({
       success: true,
       contract: {
         id: docSnap.id,
-        contractTitle: contract.contractTitle,
-        type: contract.type,
-        status: contract.status,
-        content: contract.content,
-        signers: (contract.signers || []).map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          email: s.email,
-          title: s.title,
-          type: s.type,
-          status: s.status,
-          required: s.required,
-          signedAt: s.signedAt?.toMillis?.() || s.signedAt || null,
+        contractTitle: contract.contractTitle as string,
+        type: contract.type as string,
+        status: contract.status as string,
+        content: contract.content as string,
+        signers: signersRaw.map((s) => ({
+          id: s.id as string,
+          name: s.name as string,
+          email: s.email as string,
+          title: s.title as string,
+          type: s.type as string,
+          status: s.status as string,
+          required: s.required as boolean,
+          signedAt: (s.signedAt as { toMillis?: () => number | null })?.toMillis?.() || (s.signedAt as number | null) || null,
         })),
-        signatures: (contract.signatures || []).map((sig: any) => ({
-          signer: sig.signer,
-          signature: sig.signature,
-          signedAt: sig.signedAt?.toMillis?.() || sig.signedAt || null,
+        signatures: signaturesRaw.map((sig) => ({
+          signer: sig.signer as string,
+          signature: sig.signature as string,
+          signedAt: (sig.signedAt as { toMillis?: () => number | null })?.toMillis?.() || (sig.signedAt as number | null) || null,
         })),
-        dateSent: contract.dateSent?.toMillis?.() || null,
-        dateSigned: contract.dateSigned?.toMillis?.() || null,
-        createdAt: contract.createdAt?.toMillis?.() || null,
+        dateSent: dateSentRaw?.toMillis?.() || null,
+        dateSigned: dateSignedRaw?.toMillis?.() || null,
+        createdAt: createdAtRaw?.toMillis?.() || null,
       },
     });
   } catch (error) {

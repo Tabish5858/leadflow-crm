@@ -31,9 +31,9 @@ export async function POST(
       );
     }
 
-    const contract = docSnap.data()!;
-    const signers = contract.signers || [];
-    const signerIndex = signers.findIndex((s: any) => s.id === signerId);
+    const rawData = docSnap.data() as Record<string, unknown>;
+    const rawSigners = (rawData.signers as Array<Record<string, unknown>>) || [];
+    const signerIndex = rawSigners.findIndex((s) => s.id === signerId);
 
     if (signerIndex === -1) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(
       );
     }
 
-    if (signers[signerIndex].status === "signed") {
+    if (rawSigners[signerIndex].status === "signed") {
       return NextResponse.json(
         { error: "Signer has already signed" },
         { status: 409 }
@@ -50,16 +50,17 @@ export async function POST(
     }
 
     // Update signer status
-    signers[signerIndex].status = "signed";
-    signers[signerIndex].signedAt = Timestamp.now();
-    signers[signerIndex].selectedFields = {
-      ...(signers[signerIndex].selectedFields || {}),
+    rawSigners[signerIndex].status = "signed";
+    rawSigners[signerIndex].signedAt = Timestamp.now();
+    rawSigners[signerIndex].selectedFields = {
+      ...((rawSigners[signerIndex].selectedFields as Record<string, unknown>) || {}),
       signature,
     };
 
     // Add to signatures array
+    const rawSignatures = (rawData.signatures as Array<Record<string, unknown>>) || [];
     const signatures = [
-      ...(contract.signatures || []),
+      ...rawSignatures,
       {
         signer: signerId,
         signature,
@@ -68,9 +69,9 @@ export async function POST(
     ];
 
     // Check if all signers have signed
-    const allSigned = signers.every((s: any) => s.status === "signed");
+    const allSigned = rawSigners.every((s) => s.status === "signed");
     const updateData: Record<string, unknown> = {
-      signers,
+      signers: rawSigners,
       signatures,
       updatedAt: Timestamp.now(),
     };
@@ -81,14 +82,15 @@ export async function POST(
     }
 
     // Add activity
+    const rawActivities = (rawData.activities as Array<Record<string, unknown>>) || [];
     const activities = [
-      ...(contract.activities || []),
+      ...rawActivities,
       {
         type: "signed",
         userId: signerId,
-        userName: signers[signerIndex].name || "Signer",
+        userName: rawSigners[signerIndex].name || "Signer",
         timestamp: Timestamp.now(),
-        details: `Signed by ${signers[signerIndex].email}`,
+        details: `Signed by ${rawSigners[signerIndex].email as string}`,
       },
     ];
     updateData.activities = activities;

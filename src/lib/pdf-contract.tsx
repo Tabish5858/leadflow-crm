@@ -93,7 +93,7 @@ interface ContractPdfProps {
 
 function stripHtml(html: string): string[] {
   // Replace block elements with newlines
-  let text = html
+  const text = html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|h[1-6]|div|li|tr|blockquote|pre)>/gi, "\n")
     .replace(/<li[^>]*>/gi, "• ")

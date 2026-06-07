@@ -185,11 +185,11 @@ function ClientContractsPage() {
                       const { generateContractPdf } = await import('@/lib/pdf-contract');
 
                       // Format Firestore Timestamps to strings before passing to PDF
-                      const rawSigners: Array<Record<string, unknown>> = (contract as any).signers || [];
-                      const signers = rawSigners.map((s: Record<string, unknown>) => {
-                        const sa: unknown = s.signedAt;
+                      const rawSigners = contract.signers || [];
+                      const signers = rawSigners.map((s) => {
+                        const sa = s.signedAt;
                         let signedAtStr = '';
-                        if (sa && typeof sa === 'object' && 'seconds' in (sa as Record<string, unknown>)) {
+                        if (sa && typeof sa === 'object' && 'seconds' in sa) {
                           const ts = sa as { seconds: number; nanoseconds?: number };
                           signedAtStr = new Date(ts.seconds * 1000).toLocaleDateString('en-US', {
                             month: 'short', day: 'numeric', year: 'numeric',
@@ -198,16 +198,16 @@ function ClientContractsPage() {
                           signedAtStr = sa;
                         }
                         return {
-                          name: String(s.name || ''),
-                          email: String(s.email || ''),
-                          status: String(s.status || 'pending'),
+                          name: s.name || '',
+                          email: s.email || '',
+                          status: s.status || 'pending',
                           signedAt: signedAtStr,
                         };
                       });
 
-                      const rawDateSent: unknown = (contract as any).dateSent;
+                      const rawDateSent = contract.dateSent;
                       let dateSentStr = '';
-                      if (rawDateSent && typeof rawDateSent === 'object' && 'toDate' in (rawDateSent as Record<string, unknown>)) {
+                      if (rawDateSent && typeof rawDateSent === 'object' && 'toDate' in rawDateSent) {
                         dateSentStr = (rawDateSent as { toDate: () => Date }).toDate().toLocaleDateString('en-US', {
                           month: 'short', day: 'numeric', year: 'numeric',
                         });

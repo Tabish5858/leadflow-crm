@@ -38,10 +38,8 @@ import { ContractSections } from "@/components/contracts/contract-sections";
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
-function EditorToolbar({ editor }: { editor: any }) {
-  if (!editor) return null;
-
-  const ToolBtn = ({ action, active, label }: { action: () => void; active?: boolean; label: string }) => (
+function ToolBtn({ action, active, label }: { action: () => void; active?: boolean; label: string }) {
+  return (
     <button
       type="button"
       onClick={action}
@@ -50,6 +48,10 @@ function EditorToolbar({ editor }: { editor: any }) {
       {label}
     </button>
   );
+}
+
+function EditorToolbar({ editor }: { editor: import("@tiptap/react").Editor | null }) {
+  if (!editor) return null;
 
   return (
     <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30 rounded-t-lg">

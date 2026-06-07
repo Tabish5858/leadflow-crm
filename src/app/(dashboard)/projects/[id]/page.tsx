@@ -830,7 +830,7 @@ export default function ProjectDetailPage() {
                 <LinksEmbedsCard project={project} onProjectUpdated={loadProject} />
                 <DeliveryFlowCard project={project} onProjectUpdated={loadProject} />
                 <NotesCard notes={notes} onCreateNote={handleCreateNote} onDeleteNote={handleDeleteNote} />
-                <ContractsCard projectId={projectId} />
+                <ContractsCard projectId={projectId} workspaceId={activeWorkspace?.id || ""} clientId={project.clients?.[0]} />
                 <InvoicesCard projectId={projectId} workspaceId={activeWorkspace?.id || ""} clientId={project.clients?.[0]} />
                 <ProfitabilityCard budget={project.budget} />
                 <CustomFieldsCard project={project} />

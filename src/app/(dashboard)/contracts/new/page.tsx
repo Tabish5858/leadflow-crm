@@ -158,7 +158,7 @@ export default function NewContractPage() {
     // Add client as a signer if not already added
     if (!signers.find((s) => s.email === client.email)) {
       const newSigner: ContractSigner = {
-        id: `signer-${Date.now()}`,
+        id: `signer-${signers.length}-${client.email.replace(/[^a-z0-9]/gi, "")}`,
         email: client.email,
         name: client.name,
         title: "Client",
