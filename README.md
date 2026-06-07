@@ -83,6 +83,7 @@ Most CRMs lock you into monthly subscriptions, limit your data portability, and 
 
 | Module            | What You Get                                                                                                                          |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**     | Drag-and-drop reorderable cards for each module (Tasks, Projects, Invoices, Contracts, Meetings, Messages). Permission-gated visibility. Card order persists per user. |
 | **Time Tracking** | Live stopwatch, manual entries, per-lead association, billable tracking, daily grouped view, real-time sync                           |
 | **Documents**     | Cloudinary upload (drag-and-drop), preview, type icons, 10MB limit, per-lead and per-workspace organization, delete with confirmation |
 | **Analytics**     | KPI cards, time-series charts, pipeline/revenue/source distributions, conversion funnel, industry breakdown, PDF export               |
@@ -95,6 +96,17 @@ Most CRMs lock you into monthly subscriptions, limit your data portability, and 
 | **Workspaces**      | Multi-workspace membership, 4 roles (Owner/Admin/Member/Viewer), email invite system, full audit logging |
 | **Automation**      | Trigger/action engine (5 triggers, 5 actions), enable/disable per rule, full CRUD                        |
 | **User Management** | Editable profiles (name, photo), synced across workspace member views, role-based permissions            |
+
+### Client Portal
+
+| Module              | What You Get                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Projects**        | Clients view assigned projects with status and progress tracking                                         |
+| **Invoices**        | Clients view their invoices with status badges (paid, overdue, sent)                                     |
+| **Contracts**       | Clients view and sign contracts/proposals shared with them                                               |
+| **Meetings**        | Clients view upcoming meetings they're invited to                                                        |
+| **Messages**        | Real-time messaging between clients and team members                                                     |
+| **Portal Settings** | Welcome cards, onboarding checklists, helpful links/files configurable per workspace                     |
 
 ### Customization
 
@@ -291,8 +303,14 @@ leadflow/
 | `users`                 | User profiles                                                      |
 | `password_reset_tokens` | Self-managed password reset tokens                                 |
 | `projects`              | Project records                                                    |
-| `invoices`              | Invoice records                                                    |
+| `project_tasks`         | Project-scoped tasks with assignee, priority, due dates            |
+| `project_milestones`    | Milestone tracking per project                                     |
+| `project_deliverables`  | Deliverable submission and approval workflow                       |
+| `invoices`              | Invoice records with line items, payments, proof of payment        |
+| `contracts`             | Contract/proposal records with e-signatures and activity log       |
+| `contract_templates`    | Reusable contract templates                                        |
 | `client_documents`      | Client-facing document metadata                                    |
+| `client_portal_settings`| Per-workspace client portal configuration (modules, welcome card)  |
 
 ---
 
