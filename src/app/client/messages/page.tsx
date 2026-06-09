@@ -1,802 +1,600 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ConversationList, type ConversationSection } from "@/components/messages/conversation-list";
+import { MessageInput } from "@/components/messages/message-input";
+import { MessageThread } from "@/components/messages/message-thread";
+import { NewMemberConversationDialog } from "@/components/messages/new-member-conversation-dialog";
 import { ModuleGuard } from "@/components/client/module-guard";
 import { useClientUser } from "@/contexts/client-user-context";
-import { cn } from "@/lib/utils";
-import { db } from "@/lib/firebase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  createConversation,
+  deleteConversation,
+  deleteMessage,
+  editMessage,
+  sendMessage,
+  subscribeToConversations,
+  subscribeToMessages,
+  toggleReaction,
+  markConversationAsRead,
+} from "@/lib/firebase/messages";
+import { getWorkspaceMembers } from "@/lib/firebase/workspaces";
+import { getApiAuthHeaders } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
-import type { Conversation } from "@/types";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import {
-  ArrowLeft,
-  Loader2,
-  MessageSquare,
-  MessageSquarePlus,
-  Send,
-} from "lucide-react";
-import { nanoid } from "nanoid";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import { getInitials } from "@/lib/utils";
+import type { Conversation, Message, WorkspaceMember } from "@/types";
+import { Plus, Mail, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface ClientConversation {
-  id: string;
-  participantIds: string[];
-  participantNames: string[];
-  lastMessage: string;
-  lastMessageAt: Date;
-  unreadCount: number;
-}
-
-interface ClientMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  body: string;
-  createdAt: Date | null;
-  pending?: boolean;
-}
-
-interface WorkspaceContact {
-  id: string;
-  displayName: string;
-  email: string;
-  photoURL: string | null;
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatMessageTime(date: Date) {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / 86400000);
-
-  if (days === 0) {
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  }
-  if (days === 1) return "Yesterday";
-  if (days < 7) {
-    return date.toLocaleDateString("en-US", { weekday: "short" });
-  }
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatMessageDate(date: Date) {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / 86400000);
-
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-// ─── Conversation List ───────────────────────────────────────────────────────
-
-function ConversationList({
-  conversations,
-  selectedId,
-  userId,
-  onSelect,
-}: {
-  conversations: ClientConversation[];
-  selectedId: string | null;
-  userId: string;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="space-y-1">
-      {conversations.map((conv) => {
-        const otherNames = conv.participantNames.filter(
-          (_, i) => conv.participantIds[i] !== userId
-        );
-        const displayName = otherNames.join(", ") || "Team";
-        const initial = displayName.charAt(0).toUpperCase();
-        const isSelected = conv.id === selectedId;
-
-        return (
-          <button
-            key={conv.id}
-            onClick={() => onSelect(conv.id)}
-            className={cn(
-              "w-full flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-              isSelected
-                ? "bg-primary/10"
-                : "hover:bg-accent/50"
-            )}
-          >
-            <Avatar className="h-9 w-9 border shrink-0">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                {initial}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium truncate">{displayName}</p>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {formatMessageTime(conv.lastMessageAt)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
-                {conv.lastMessage || "No messages yet"}
-              </p>
-            </div>
-            {conv.unreadCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground shrink-0">
-                {conv.unreadCount}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Message Thread ──────────────────────────────────────────────────────────
-
-function MessageThread({
-  conversationId,
-  userId,
-  displayName,
-  workspaceId,
-  onBack,
-}: {
-  conversationId: string;
-  userId: string;
-  displayName: string;
-  workspaceId: string;
-  onBack: () => void;
-}) {
-  const [messages, setMessages] = useState<ClientMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const endRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Real-time message subscription
-  useEffect(() => {
-    const msgsRef = collection(db, "messages");
-    const q = query(
-      msgsRef,
-      where("conversationId", "==", conversationId),
-      orderBy("createdAt", "asc"),
-      limit(200)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snap) => {
-        const msgs: ClientMessage[] = [];
-        snap.forEach((d) => {
-          const data = d.data();
-          msgs.push({
-            id: d.id,
-            senderId: data.senderId || "",
-            senderName: data.senderName || "Unknown",
-            body: data.body || "",
-            createdAt: (data.createdAt as Timestamp)?.toDate() ?? null,
-          });
-        });
-        setMessages(msgs);
-        setLoading(false);
-      },
-      () => {
-        setLoading(false);
-      }
-    );
-
-    return unsubscribe;
-  }, [conversationId]);
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Mark conversation as read
-  useEffect(() => {
-    const convRef = doc(db, "conversations", conversationId);
-    updateDoc(convRef, { unreadCount: 0 }).catch(() => {});
-  }, [conversationId]);
-
-  // Focus input on mount
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-
-    setInput("");
-    setSending(true);
-
-    // Optimistic: add temp message
-    const tempMsg: ClientMessage = {
-      id: `temp_${Date.now()}`,
-      senderId: userId,
-      senderName: displayName,
-      body: text,
-      createdAt: new Date(),
-      pending: true,
-    };
-    setMessages((prev) => [...prev, tempMsg]);
-
-    try {
-      const msgsRef = collection(db, "messages");
-      const docRef = await addDoc(msgsRef, {
-        conversationId,
-        workspaceId,
-        senderId: userId,
-        senderName: displayName,
-        body: text,
-        deleted: false,
-        edited: false,
-        readBy: [userId],
-        createdAt: serverTimestamp(),
-      });
-
-      // Replace temp message with real one
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempMsg.id ? { ...m, id: docRef.id, pending: false } : m))
-      );
-
-      // Update conversation's lastMessage
-      const convRef = doc(db, "conversations", conversationId);
-      updateDoc(convRef, {
-        lastMessage: text,
-        lastMessageAt: serverTimestamp(),
-      }).catch(() => {});
-    } catch {
-      // Rollback: remove temp message on failure
-      setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
-    } finally {
-      setSending(false);
-      inputRef.current?.focus();
-    }
-  }, [input, sending, userId, displayName, conversationId]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  // Group messages by date
-  const groupedMessages: { date: string; messages: ClientMessage[] }[] = [];
-  let currentGroup: { date: string; messages: ClientMessage[] } | null = null;
-
-  for (const msg of messages) {
-    if (!msg.createdAt) continue;
-    const dateKey = msg.createdAt.toDateString();
-    if (!currentGroup || currentGroup.date !== dateKey) {
-      currentGroup = { date: dateKey, messages: [] };
-      groupedMessages.push(currentGroup);
-    }
-    currentGroup.messages.push(msg);
-  }
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Thread header */}
-      <div className="flex items-center gap-3 border-b px-4 py-3">
-        <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-sm font-semibold">Messages</h2>
-      </div>
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}
-              >
-                <Skeleton className={cn("h-12 w-3/4 rounded-lg")} />
-              </div>
-            ))}
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <MessageSquare className="h-10 w-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">
-              No messages yet. Send a message to start the conversation!
-            </p>
-          </div>
-        ) : (
-          groupedMessages.map((group) => (
-            <div key={group.date}>
-              <div className="flex items-center justify-center mb-4">
-                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-                  {formatMessageDate(new Date(group.date))}
-                </span>
-              </div>
-              {group.messages.map((msg) => {
-                const isMe = msg.senderId === userId;
-                return (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "flex mb-3",
-                      isMe ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
-                        isMe
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted rounded-bl-md",
-                        msg.pending && "opacity-60"
-                      )}
-                    >
-                      {!isMe && (
-                        <p className="text-[10px] font-medium mb-1 opacity-70">
-                          {msg.senderName}
-                        </p>
-                      )}
-                      <p className="whitespace-pre-wrap break-words">{msg.body}</p>
-                      <div
-                        className={cn(
-                          "flex items-center justify-end gap-1 mt-1",
-                          isMe ? "text-primary-foreground/60" : "text-muted-foreground/60"
-                        )}
-                      >
-                        <span className="text-[10px]">
-                          {msg.createdAt
-                            ? msg.createdAt.toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })
-                            : ""}
-                        </span>
-                        {msg.pending && <Loader2 className="h-3 w-3 animate-spin" />}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))
-        )}
-        <div ref={endRef} />
-      </div>
-
-      {/* Input area */}
-      <div className="border-t p-4">
-        <div className="flex items-center gap-2">
-          <Input
-            ref={inputRef}
-            placeholder="Type a message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={sending}
-            className="flex-1"
-          />
-          <Button
-            size="icon"
-            onClick={sendMessage}
-            disabled={!input.trim() || sending}
-            className="shrink-0"
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── New Message Dialog ──────────────────────────────────────────────────────
-
-function NewMessageDialog({
-  open,
-  onOpenChange,
-  workspaceId,
-  clientId,
-  onSelectContact,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  workspaceId: string;
-  clientId: string;
-  onSelectContact: (contactId: string, contactName: string) => void;
-}) {
-  const [contacts, setContacts] = useState<WorkspaceContact[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const wsSnap = await getDoc(doc(db, "workspaces", workspaceId));
-        if (!wsSnap.exists()) {
-          setContacts([]);
-          return;
-        }
-        const memberIds: string[] = wsSnap.data()?.memberIds || [];
-        if (memberIds.length === 0) {
-          setContacts([]);
-          return;
-        }
-
-        // Batch Firestore queries to avoid "in" limit of 30
-        const batch: string[][] = [];
-        for (let i = 0; i < memberIds.length; i += 30) {
-          batch.push(memberIds.slice(i, i + 30));
-        }
-        const result: WorkspaceContact[] = [];
-        for (const ids of batch) {
-          const usersSnap = await getDocs(
-            query(collection(db, "users"), where("__name__", "in", ids))
-          );
-          usersSnap.forEach((d) => {
-            const data = d.data();
-            const role = data.workspaceRoles?.[workspaceId];
-            if (
-              d.id !== clientId &&
-              role &&
-              role !== "client"
-            ) {
-              result.push({
-                id: d.id,
-                displayName: data.displayName || "Unknown",
-                email: data.email || "",
-                photoURL: data.photoURL || null,
-              });
-            }
-          });
-        }
-        setContacts(result);
-      } catch {
-        setError("Failed to load contacts");
-        setContacts([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [open, workspaceId, clientId]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>New Message</DialogTitle>
-          <DialogDescription>
-            Select a team member to start a conversation.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="max-h-80 overflow-y-auto -mx-6 px-6">
-          {loading ? (
-            <div className="space-y-3 py-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <p className="text-sm text-destructive py-4 text-center">{error}</p>
-          ) : contacts.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">
-              No contacts available
-            </p>
-          ) : (
-            <div className="py-2 space-y-1">
-              {contacts.map((contact) => (
-                <button
-                  key={contact.id}
-                  onClick={() => onSelectContact(contact.id, contact.displayName)}
-                  className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent"
-                >
-                  <Avatar className="h-10 w-10 border shrink-0">
-                    <AvatarImage src={contact.photoURL || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                      {contact.displayName.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {contact.displayName}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {contact.email}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Main Page Content (wrapped in Suspense) ────────────────────────────────
-
-function ClientMessagesContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function ClientMessagesPage() {
   const { clientWorkspaceId, uid, displayName } = useClientUser();
 
-  const [conversations, setConversations] = useState<ClientConversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // ─── State ──────────────────────────────────────────────────────────────
 
-  // Use React state for selected conversation (not URL-dependent)
-  const initialConvId = searchParams.get("conversation");
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConvId);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [convsLoading, setConvsLoading] = useState(true);
+  const [convsError, setConvsError] = useState<string | null>(null);
 
-  // Sync URL when selection changes (for bookmarking), without causing re-render
+  const [selected, setSelected] = useState<Conversation | null>(null);
+
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([]);
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [msgsLoading, setMsgsLoading] = useState(false);
+  const [msgsError, setMsgsError] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [newMessageOpen, setNewMessageOpen] = useState(false);
+
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyPreview, setReplyPreview] = useState<string | null>(null);
+
+  const [deleteConvTarget, setDeleteConvTarget] = useState<Conversation | null>(null);
+  const [deletingConv, setDeletingConv] = useState(false);
+
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  // ─── Subscribe to conversations (real-time) ──────────────────────────────
+
   useEffect(() => {
-    if (selectedConversationId) {
-      router.replace(`/client/messages?conversation=${selectedConversationId}`, { scroll: false });
-    } else {
-      router.replace("/client/messages", { scroll: false });
-    }
-  }, [selectedConversationId, router]);
+    if (!clientWorkspaceId) return;
 
-  // Real-time conversations where client is a participant
-  useEffect(() => {
-    if (!clientWorkspaceId || !uid) return;
+    setConvsLoading(true);
+    setConvsError(null);
 
-    const convRef = collection(db, "conversations");
-    const q = query(
-      convRef,
-      where("workspaceId", "==", clientWorkspaceId),
-      orderBy("lastMessageAt", "desc"),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snap) => {
-        const filtered = snap.docs
-          .map((d) => {
-            const data = d.data() as Conversation;
-            return {
-              id: d.id,
-              participantIds: data.participantIds || [],
-              participantNames: data.participantNames || [],
-              lastMessage: data.lastMessage || "",
-              lastMessageAt: (data.lastMessageAt as Timestamp)?.toDate() ?? new Date(),
-              unreadCount: data.unreadCount || 0,
-            };
-          })
-          .filter((c) => c.participantIds.includes(uid));
-
-        setConversations(filtered);
-        setLoading(false);
+    const unsub = subscribeToConversations(
+      clientWorkspaceId,
+      (convs) => {
+        setConversations(convs);
+        setConvsLoading(false);
+        setConvsError(null);
       },
-      () => {
-        setConversations([]);
-        setLoading(false);
+      (err) => {
+        setConvsError(err.message || "Failed to load conversations");
+        setConvsLoading(false);
+        toast.error("Failed to load conversations");
       }
     );
 
-    return unsubscribe;
-  }, [clientWorkspaceId, uid]);
+    return () => unsub();
+  }, [clientWorkspaceId]);
 
-  const selectConversation = useCallback(
-    (id: string) => {
-      setSelectedConversationId(id);
+  // ─── Auto-select most recent conversation on first load ────────────────
+
+  const [initialAutoSelectDone, setInitialAutoSelectDone] = useState(false);
+
+  useEffect(() => {
+    if (initialAutoSelectDone || selected || conversations.length === 0 || !uid) return;
+
+    const myConvs = conversations.filter(
+      (c) => c.participantIds?.includes(uid)
+    );
+    if (myConvs.length === 0) return;
+
+    const sorted = [...myConvs].sort((a, b) => {
+      const aTime = a.lastMessageAt?.toMillis() || 0;
+      const bTime = b.lastMessageAt?.toMillis() || 0;
+      return bTime - aTime;
+    });
+
+    setSelected(sorted[0]);
+    setInitialAutoSelectDone(true);
+  }, [initialAutoSelectDone, selected, conversations, uid]);
+
+  // ─── Fetch workspace members (once) ─────────────────────────────────────
+
+  useEffect(() => {
+    if (!clientWorkspaceId) return;
+    getWorkspaceMembers(clientWorkspaceId)
+      .then(setWorkspaceMembers)
+      .catch(() => toast.error("Failed to load workspace members"));
+  }, [clientWorkspaceId]);
+
+  // ─── Subscribe to messages for selected conversation (real-time) ──────
+
+  useEffect(() => {
+    if (!selected) {
+      setMessages([]);
+      setMsgsLoading(false);
+      setMsgsError(null);
+      return;
+    }
+
+    setMsgsLoading(true);
+    setMsgsError(null);
+
+    if (!clientWorkspaceId) return;
+
+    const unsub = subscribeToMessages(
+      selected.id,
+      (msgs) => {
+        setMessages(msgs);
+        setMsgsLoading(false);
+        setMsgsError(null);
+      },
+      clientWorkspaceId,
+      (err) => {
+        setMsgsError(err.message || "Failed to load messages");
+        setMsgsLoading(false);
+        toast.error("Failed to load messages");
+      }
+    );
+
+    return () => unsub();
+  }, [selected, clientWorkspaceId]);
+
+  // ─── Mark conversation as read ────────────────────────────────────────
+
+  useEffect(() => {
+    if (!selected || !uid || !clientWorkspaceId) return;
+    markConversationAsRead(selected.id, uid, clientWorkspaceId);
+  }, [selected, uid, clientWorkspaceId, messages]);
+
+  // ─── Select conversation ─────────────────────────────────────────────
+
+  const handleSelectConversation = useCallback((conv: Conversation) => {
+    setSelected(conv);
+  }, []);
+
+  // ─── Send message ───────────────────────────────────────────────────
+
+  const handleSendMessage = useCallback(
+    async (body: string, _attachment?: unknown, msgReplyTo?: string, msgReplyPreview?: string) => {
+      if (!uid || !clientWorkspaceId || !selected) return;
+
+      await sendMessage({
+        workspaceId: clientWorkspaceId,
+        conversationId: selected.id,
+        senderId: uid,
+        senderName: displayName,
+        body,
+        replyTo: msgReplyTo,
+        replyPreview: msgReplyPreview,
+      });
+      setReplyTo(null);
+      setReplyPreview(null);
+    },
+    [selected, uid, displayName, clientWorkspaceId]
+  );
+
+  // ─── Edit message ──────────────────────────────────────────────────
+
+  const handleEditMessage = useCallback(
+    async (messageId: string, newBody: string) => {
+      await editMessage(messageId, newBody);
     },
     []
   );
 
-  const goBackToList = useCallback(() => {
-    setSelectedConversationId(null);
-  }, []);
+  // ─── Delete message ────────────────────────────────────────────────
 
-  const handleSelectContact = useCallback(
-    async (contactId: string, contactName: string) => {
-      setDialogOpen(false);
-      try {
-        const convId = nanoid();
-        await setDoc(doc(db, "conversations", convId), {
-          workspaceId: clientWorkspaceId,
-          participantIds: [uid, contactId],
-          participantNames: [displayName, contactName],
-          type: "member",
-          lastMessage: "",
-          createdAt: serverTimestamp(),
-          lastMessageAt: serverTimestamp(),
-          unreadCount: 0,
-        });
-        setSelectedConversationId(convId);
-      } catch {
-        toast.error("Failed to create conversation");
-      }
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      await deleteMessage(messageId);
+      toast.success("Message deleted");
     },
-    [clientWorkspaceId, uid, displayName]
+    []
   );
 
+  // ─── Reply to message ─────────────────────────────────────────────
+
+  const handleReply = useCallback((messageId: string, preview: string) => {
+    setReplyTo(messageId);
+    setReplyPreview(preview);
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyTo(null);
+    setReplyPreview(null);
+  }, []);
+
+  // ─── Toggle reaction ──────────────────────────────────────────────
+
+  const handleToggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!uid) return;
+      await toggleReaction(messageId, emoji, uid);
+    },
+    [uid]
+  );
+
+  // ─── Delete conversation ──────────────────────────────────────────
+
+  const handleDeleteConversation = useCallback(
+    (conv: Conversation) => {
+      setDeleteConvTarget(conv);
+    },
+    []
+  );
+
+  const handleConfirmDeleteConversation = useCallback(async () => {
+    if (!deleteConvTarget) return;
+    setDeletingConv(true);
+    try {
+      await deleteConversation(deleteConvTarget.id);
+      if (selected?.id === deleteConvTarget.id) {
+        setSelected(null);
+        setMessages([]);
+      }
+      toast.success("Conversation deleted");
+    } catch {
+      toast.error("Failed to delete conversation");
+    } finally {
+      setDeletingConv(false);
+      setDeleteConvTarget(null);
+    }
+  }, [deleteConvTarget, selected]);
+
+  // ─── Create new member conversation ───────────────────────────────
+
+  const handleCreateMemberConversation = useCallback(
+    async (member: WorkspaceMember) => {
+      if (!clientWorkspaceId || !uid) return;
+
+      if (member.role === "client") {
+        toast.error("Cannot start conversations with other clients");
+        return;
+      }
+
+      // Check if conversation already exists
+      const existing = conversations.find(
+        (c) =>
+          c.type === "member" &&
+          c.participantIds?.includes(uid) &&
+          c.participantIds?.includes(member.userId)
+      );
+      if (existing) {
+        setSelected(existing);
+        setNewMessageOpen(false);
+        toast.info(`Already have a conversation with ${member.displayName}`);
+        return;
+      }
+
+      await createConversation({
+        workspaceId: clientWorkspaceId,
+        type: "member",
+        participantIds: [uid, member.userId],
+        participantNames: [displayName, member.displayName],
+      });
+      toast.success(`Conversation started with ${member.displayName}`);
+    },
+    [clientWorkspaceId, uid, displayName, conversations]
+  );
+
+  // ─── Upload file to Cloudinary ────────────────────────────────────
+
+  const uploadAndAttachFile = useCallback(
+    async (file: File) => {
+      setPendingFile(file);
+      setUploadingFile(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const authHeaders = clientWorkspaceId
+          ? await getApiAuthHeaders(clientWorkspaceId)
+          : {};
+        const res = await fetch("/api/documents/upload", {
+          method: "POST",
+          headers: authHeaders,
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({ error: "Upload failed" }));
+          throw new Error(errBody.error || "Upload failed");
+        }
+
+        const data = await res.json();
+
+        return {
+          type: (file.type.startsWith("image/") ? "image" : "document") as "image" | "document",
+          url: data.url || data.cloudinaryUrl,
+          name: file.name,
+          size: file.size,
+          mimeType: file.type,
+        };
+      } finally {
+        setUploadingFile(false);
+        setPendingFile(null);
+      }
+    },
+    [clientWorkspaceId]
+  );
+
+  // Listen for file selection from MessageInput
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const file = (e as CustomEvent<File>).detail;
+      if (!file || !uid || !clientWorkspaceId || !selected) return;
+
+      try {
+        const attachment = await uploadAndAttachFile(file);
+        if (!attachment) return;
+
+        await sendMessage({
+          workspaceId: clientWorkspaceId,
+          conversationId: selected.id,
+          senderId: uid,
+          senderName: displayName,
+          body: "",
+          attachment,
+        });
+      } catch {
+        toast.error("Failed to upload file. Try again.");
+      }
+    };
+
+    window.addEventListener("message-file-selected", handler);
+    return () => window.removeEventListener("message-file-selected", handler);
+  }, [uid, clientWorkspaceId, selected, displayName, uploadAndAttachFile]);
+
+  // ─── Derived data ──────────────────────────────────────────────────────
+
+  const memberMap = useMemo(
+    () => new Map(workspaceMembers.map((m) => [m.userId, m.displayName])),
+    [workspaceMembers]
+  );
+
+  // Only show conversations where the client is a participant
+  const myConversations = conversations.filter(
+    (c) => c.participantIds?.includes(uid || "")
+  );
+
+  const filteredConversations = myConversations.filter((c) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const otherIdx = (c.participantIds || []).findIndex((id) => id !== uid);
+    const otherName = otherIdx >= 0 ? (c.participantNames || [])[otherIdx] || "" : c.groupName || "";
+    return (
+      otherName.toLowerCase().includes(q) ||
+      (c.lastMessage || "").toLowerCase().includes(q)
+    );
+  });
+
+  const conversationSections = useMemo((): ConversationSection[] => [
+    { key: "team", label: "Messages", conversations: filteredConversations },
+  ], [filteredConversations]);
+
+  // Workspace members without an existing conversation (exclude self + other clients)
+  const membersWithoutConvo = workspaceMembers.filter(
+    (m) =>
+      m.userId !== uid &&
+      m.role !== "client" &&
+      !myConversations.some(
+        (c) =>
+          c.type === "member" &&
+          c.participantIds?.includes(m.userId) &&
+          c.participantIds?.includes(uid || "")
+      )
+  );
+
+  const filteredMembers = searchQuery
+    ? membersWithoutConvo.filter(
+        (m) =>
+          m.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.email.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : membersWithoutConvo;
+
+  // ─── Render ───────────────────────────────────────────────────────────
+
   return (
-    <div className="h-[calc(100vh-8rem)] -m-4 sm:-m-6">
-      <div className="flex h-full">
-        {/* Conversation sidebar - hidden on mobile when a conversation is selected */}
-        <div
-          className={cn(
-            "w-full lg:w-80 lg:border-r flex flex-col",
-            selectedConversationId && "hidden lg:flex"
-          )}
-        >
-          <div className="border-b px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-bold">Messages</h1>
-                <p className="text-xs text-muted-foreground">
-                  {loading
-                    ? "Loading..."
-                    : `${conversations.length} conversation${conversations.length !== 1 ? "s" : ""}`}
-                </p>
+    <ModuleGuard moduleKey="messages">
+      <div className="space-y-6">
+        <div className="grid h-[calc(100vh-7rem)] grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* ─── Conversation List (Left) ─────────────────────────────────── */}
+          <div className="flex flex-col rounded-lg border bg-card lg:col-span-1">
+            {/* Search bar */}
+            <div className="border-b p-3">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
               </div>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto">
+              <ConversationList
+                sections={conversationSections}
+                members={filteredMembers}
+                clientMembers={[]}
+                selectedId={selected?.id ?? null}
+                currentUserId={uid || ""}
+                memberMap={memberMap}
+                onSelectConversation={handleSelectConversation}
+                onSelectMember={() => {}} // Handled via NewMessageDialog
+                onDeleteConversation={handleDeleteConversation}
+                loading={convsLoading}
+                error={convsError}
+              />
+            </div>
+
+            {/* New message button */}
+            <div className="border-t p-2">
               <Button
                 variant="outline"
-                size="icon"
-                onClick={() => setDialogOpen(true)}
-                className="shrink-0"
-                title="New Message"
+                className="w-full"
+                onClick={() => setNewMessageOpen(true)}
               >
-                <MessageSquarePlus className="h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
+                New Message
               </Button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            {loading ? (
-              <div className="space-y-3 p-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-40" />
-                    </div>
+
+          {/* ─── Message Thread (Right) ───────────────────────────────────── */}
+          <div className="flex flex-col overflow-hidden rounded-lg border bg-card lg:col-span-2">
+            {selected ? (
+              <>
+                {/* Conversation header */}
+                <div className="flex items-center gap-3 border-b px-4 py-3">
+                  <Avatar className="h-9 w-9 border shrink-0">
+                    <AvatarFallback className="text-xs bg-amber-500/10 text-amber-600">
+                      {getInitials(getOtherParticipantName(selected, uid || ""))}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {getOtherParticipantName(selected, uid || "")}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {selected.groupName ? `${(selected.participantIds || []).length} members` : "Workspace member"}
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <MessageSquare className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No conversations yet
-                </p>
-                <p className="text-xs text-muted-foreground/60 mt-1 mb-4">
-                  Start a conversation with a team member.
-                </p>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setDialogOpen(true)}
-                >
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
-                  Start a Conversation
-                </Button>
-              </div>
+                </div>
+
+                {/* Messages */}
+                <MessageThread
+                  messages={messages}
+                  currentUserId={uid || ""}
+                  loading={msgsLoading}
+                  error={msgsError}
+                  onEditMessage={handleEditMessage}
+                  onDeleteMessage={handleDeleteMessage}
+                  onToggleReaction={handleToggleReaction}
+                  onReply={handleReply}
+                />
+
+                {/* Input */}
+                <div className="border-t px-4 py-3">
+                  <MessageInput
+                    onSend={handleSendMessage}
+                    placeholder={`Message ${getOtherParticipantName(selected, uid || "").split(" ")[0]}...`}
+                    uploading={uploadingFile}
+                    pendingFile={pendingFile}
+                    onClearFile={() => { setPendingFile(null); }}
+                    replyTo={replyTo}
+                    replyPreview={replyPreview}
+                    onCancelReply={handleCancelReply}
+                  />
+                </div>
+              </>
             ) : (
-              <ConversationList
-                conversations={conversations}
-                selectedId={selectedConversationId}
-                userId={uid}
-                onSelect={selectConversation}
-              />
+              /* Empty state - no conversation selected */
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
+                  <Mail className="h-8 w-8 text-muted-foreground/40" />
+                </div>
+                <h3 className="mt-4 text-sm font-medium text-foreground">
+                  Select a conversation
+                </h3>
+                <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+                  Choose a conversation from the list or start a new one.
+                </p>
+                <div className="mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewMessageOpen(true)}
+                  >
+                    <Plus className="mr-2 h-3.5 w-3.5" />
+                    New Message
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Message thread */}
-        <div
-          className={cn(
-            "flex-1 flex flex-col",
-            !selectedConversationId && "hidden lg:flex"
-          )}
-        >
-          {selectedConversationId ? (
-            <MessageThread
-              conversationId={selectedConversationId}
-              userId={uid}
-              displayName={displayName}
-              workspaceId={clientWorkspaceId}
-              onBack={goBackToList}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <MessageSquare className="h-16 w-16 text-muted-foreground/20 mb-4" />
-              <h2 className="text-lg font-semibold text-muted-foreground">
-                Select a conversation
-              </h2>
-              <p className="text-sm text-muted-foreground/60 mt-1">
-                Choose a conversation from the list to start messaging.
-              </p>
-            </div>
-          )}
-        </div>
+        {/* ─── Dialogs ───────────────────────────────────────────────────── */}
+
+        <NewMemberConversationDialog
+          open={newMessageOpen}
+          onOpenChange={setNewMessageOpen}
+          workspaceId={clientWorkspaceId}
+          currentUserId={uid || ""}
+          onCreateConversation={handleCreateMemberConversation}
+        />
+
+        {/* Delete conversation dialog */}
+        <Dialog open={!!deleteConvTarget} onOpenChange={() => setDeleteConvTarget(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Delete conversation?</DialogTitle>
+              <DialogDescription>
+                This will permanently delete the chat and all messages.
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setDeleteConvTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDeleteConversation}
+                disabled={deletingConv}
+              >
+                {deletingConv ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <NewMessageDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        workspaceId={clientWorkspaceId}
-        clientId={uid}
-        onSelectContact={handleSelectContact}
-      />
-    </div>
-  );
-}
-
-// ─── Main Page Export - wrapped in Suspense for useSearchParams ─────────────
-
-function ClientMessagesPage() {
-  return (
-    <Suspense fallback={
-      <div className="h-[calc(100vh-8rem)] -m-4 sm:-m-6 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading messages...</p>
-        </div>
-      </div>
-    }>
-      <ClientMessagesContent />
-    </Suspense>
-  );
-}
-
-export default function ClientMessagesPageWrapper() {
-  return (
-    <ModuleGuard moduleKey="messages">
-      <ClientMessagesPage />
     </ModuleGuard>
   );
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────
+
+/** Get the display name of the other participant(s) in a conversation. */
+function getOtherParticipantName(conv: Conversation, currentUserId: string): string {
+  const ids = conv.participantIds || [];
+  const names = conv.participantNames || [];
+
+  // Group conversation
+  if (conv.groupName) return conv.groupName;
+
+  if (ids.length > 2) {
+    const otherNames = ids
+      .filter((id) => id !== currentUserId)
+      .map((id) => {
+        const idx = ids.indexOf(id);
+        return names[idx] || "Member";
+      });
+    const display = otherNames.slice(0, 2).join(", ");
+    const suffix = otherNames.length > 2 ? ` +${otherNames.length - 2}` : "";
+    return display + suffix;
+  }
+
+  // 1:1 conversation
+  const otherIdx = ids.findIndex((id) => id !== currentUserId);
+  return otherIdx >= 0 && names[otherIdx] ? names[otherIdx] : "Team Member";
 }
