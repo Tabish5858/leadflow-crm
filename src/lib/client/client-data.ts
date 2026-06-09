@@ -17,6 +17,11 @@ import {
   where,
 } from "firebase/firestore";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 // ─── Projects ────────────────────────────────────────────────────────────────
 
 export interface ProjectSummary {
@@ -33,6 +38,24 @@ export async function fetchClientProjects(
   userId: string,
   max = 50
 ): Promise<ProjectSummary[]> {
+  if (isDemoMode()) {
+    const { demoStore } = await import("@/lib/demo/demo-data");
+    return demoStore
+      .getProjects()
+      .filter(
+        (p: Project) =>
+          p.clients?.includes(userId) && p.workspaceId === workspaceId
+      )
+      .slice(0, max)
+      .map((p: Project) => ({
+        id: p.id,
+        name: p.name || "Untitled Project",
+        status: p.status || "active",
+        dueDate: p.dueDate?.toDate() ?? null,
+        progress: p.progress ?? 0,
+        priority: p.priority || "medium",
+      }));
+  }
   const ref = collection(db, "projects");
   const q = query(
     ref,
@@ -75,6 +98,28 @@ export async function fetchClientMeetings(
   userEmail: string,
   max = 50
 ): Promise<MeetingSummary[]> {
+  if (isDemoMode()) {
+    const { demoStore } = await import("@/lib/demo/demo-data");
+    return demoStore.meetings
+      .filter(
+        (m: Meeting) =>
+          m.workspaceId === workspaceId &&
+          m.status !== "cancelled" &&
+          (m.attendees || []).some(
+            (a) => a.email?.toLowerCase() === userEmail.toLowerCase()
+          )
+      )
+      .slice(0, max)
+      .map((m: Meeting) => ({
+        id: m.id,
+        title: m.title || "Untitled Meeting",
+        startTime: m.startTime?.toDate() ?? new Date(),
+        endTime: m.endTime?.toDate() ?? new Date(),
+        googleMeetLink: m.googleMeetLink || "",
+        status: m.status || "scheduled",
+        attendees: m.attendees || [],
+      }));
+  }
   const ref = collection(db, "meetings");
   const q = query(
     ref,
@@ -123,6 +168,24 @@ export async function fetchClientConversations(
   userId: string,
   max = 20
 ): Promise<ConversationSummary[]> {
+  if (isDemoMode()) {
+    const { demoStore } = await import("@/lib/demo/demo-data");
+    return demoStore.conversations
+      .filter(
+        (c: Conversation) =>
+          c.workspaceId === workspaceId &&
+          (c.participantIds || []).includes(userId)
+      )
+      .slice(0, max)
+      .map((c: Conversation) => ({
+        id: c.id,
+        participantIds: c.participantIds || [],
+        participantNames: c.participantNames || [],
+        lastMessage: c.lastMessage || "",
+        lastMessageAt: (c.lastMessageAt as Timestamp)?.toDate() ?? new Date(),
+        unreadCount: c.unreadCount || 0,
+      }));
+  }
   const ref = collection(db, "conversations");
   const q = query(
     ref,
@@ -167,6 +230,26 @@ export async function fetchClientInvoices(
   userId: string,
   max = 50
 ): Promise<InvoiceSummary[]> {
+  if (isDemoMode()) {
+    const { demoStore } = await import("@/lib/demo/demo-data");
+    return demoStore
+      .getInvoices()
+      .filter(
+        (inv: Invoice) =>
+          inv.workspaceId === workspaceId && inv.clientId === userId
+      )
+      .slice(0, max)
+      .map((inv: Invoice) => ({
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber || "N/A",
+        status: inv.status || "draft",
+        total: inv.total || 0,
+        currency: inv.currency || "USD",
+        issueDate: inv.issueDate?.toDate() ?? new Date(),
+        dueDate: inv.dueDate?.toDate() ?? new Date(),
+        paidDate: inv.paidDate?.toDate() ?? null,
+      }));
+  }
   const ref = collection(db, "invoices");
   const q = query(
     ref,
@@ -208,6 +291,24 @@ export async function fetchClientTimeEntries(
   userId: string,
   max = 50
 ): Promise<TimeEntrySummary[]> {
+  if (isDemoMode()) {
+    const { demoStore } = await import("@/lib/demo/demo-data");
+    return demoStore.timeEntries
+      .filter(
+        (te: TimeEntry) =>
+          te.workspaceId === workspaceId && te.userId === userId
+      )
+      .slice(0, max)
+      .map((te: TimeEntry) => ({
+        id: te.id,
+        description: te.description || "",
+        startTime: te.startTime?.toDate() ?? new Date(),
+        endTime: te.endTime?.toDate() ?? null,
+        duration: te.duration || 0,
+        billable: te.billable ?? true,
+        createdAt: te.createdAt?.toDate() ?? new Date(),
+      }));
+  }
   const ref = collection(db, "timeEntries");
   const q = query(
     ref,

@@ -159,6 +159,13 @@ interface DemoTeamMember {
   email: string;
 }
 
+export const DEMO_CLIENT_USER = {
+  id: "demo-client-001",
+  displayName: "James Thompson",
+  email: "client@demo.leadflow.dev",
+  photoURL: null,
+};
+
 export const DEMO_TEAM_MEMBERS: DemoTeamMember[] = [
   { id: "demo-member-002", displayName: "Marcus Johnson", email: "marcus@acme.dev" },
   { id: "demo-member-003", displayName: "Emily Rodriguez", email: "emily@acme.dev" },

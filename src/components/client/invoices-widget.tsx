@@ -9,6 +9,11 @@ import { Receipt, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 interface ClientInvoice {
   id: string;
   invoiceNumber: string;
@@ -49,6 +54,38 @@ export function InvoicesWidget({ workspaceId, userId }: InvoicesWidgetProps) {
 
     (async () => {
       try {
+        // Demo mode: serve from in-memory store
+        if (isDemoMode()) {
+          const { demoStore } = await import("@/lib/demo/demo-data");
+          const invoices = demoStore
+            .getInvoices()
+            .filter(
+              (inv: { clientId?: string }) => inv.clientId === userId
+            )
+            .slice(0, 4);
+          setInvoices(
+            invoices.map(
+              (inv: {
+                id: string;
+                invoiceNumber?: string;
+                status?: string;
+                total?: number;
+                currency?: string;
+                dueDate?: Timestamp;
+              }) => ({
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber || "N/A",
+                status: inv.status || "draft",
+                total: inv.total || 0,
+                currency: inv.currency || "USD",
+                dueDate: inv.dueDate?.toDate() ?? null,
+              })
+            )
+          );
+          setLoading(false);
+          return;
+        }
+
         const q = query(
           collection(db, "invoices"),
           where("workspaceId", "==", workspaceId),

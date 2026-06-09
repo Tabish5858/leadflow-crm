@@ -9,6 +9,11 @@ import { PenTool, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 interface ClientContract {
   id: string;
   contractTitle: string;
@@ -40,6 +45,36 @@ export function ContractsWidget({ workspaceId, userId }: ContractsWidgetProps) {
 
     (async () => {
       try {
+        // Demo mode: serve from in-memory store
+        if (isDemoMode()) {
+          const { demoStore } = await import("@/lib/demo/demo-data");
+          const contracts = demoStore
+            .getContracts()
+            .filter(
+              (c: { status?: string }) => c.status !== "draft"
+            )
+            .slice(0, 4);
+          setContracts(
+            contracts.map(
+              (c: {
+                id: string;
+                contractTitle?: string;
+                type?: string;
+                status?: string;
+                updatedAt?: Timestamp;
+              }) => ({
+                id: c.id,
+                contractTitle: c.contractTitle || "Untitled",
+                type: c.type || "contract",
+                status: c.status || "draft",
+                updatedAt: c.updatedAt?.toDate() ?? null,
+              })
+            )
+          );
+          setLoading(false);
+          return;
+        }
+
         const q = query(
           collection(db, "contracts"),
           where("workspaceId", "==", workspaceId),

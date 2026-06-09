@@ -9,7 +9,12 @@ import { getApiAuthHeaders } from "@/lib/api/client";
 import { db } from "@/lib/firebase/client";
 import { submitPaymentProof } from "@/lib/firebase/invoices";
 import type { Invoice } from "@/types";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 import {
   CheckCircle2,
   Clock,
@@ -72,6 +77,21 @@ export default function ClientInvoiceDetailPage() {
   useEffect(() => {
     if (!clientWorkspaceId || !id || !uid) return;
     setLoading(true);
+
+    // Demo mode: serve from in-memory store (no real-time, static snapshot)
+    if (isDemoMode()) {
+      (async () => {
+        const { demoStore } = await import("@/lib/demo/demo-data");
+        const data = demoStore.getInvoice(id) as Invoice | null;
+        if (!data || data.workspaceId !== clientWorkspaceId || data.clientId !== uid) {
+          setError(new Error("You don't have access to this invoice"));
+        } else {
+          setInvoice(data);
+        }
+        setLoading(false);
+      })();
+      return;
+    }
 
     // Verify access first
     getDoc(doc(db, "invoices", id))

@@ -9,6 +9,11 @@ import { MessageSquare, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 interface ClientConversation {
   id: string;
   participantIds: string[];
@@ -32,6 +37,39 @@ export function MessagesWidget({ workspaceId, userId }: MessagesWidgetProps) {
 
     (async () => {
       try {
+        // Demo mode: serve from in-memory store
+        if (isDemoMode()) {
+          const { demoStore } = await import("@/lib/demo/demo-data");
+          const convs = demoStore.conversations
+            .filter(
+              (c: { participantIds?: string[]; workspaceId: string }) =>
+                c.workspaceId === workspaceId &&
+                (c.participantIds || []).includes(userId)
+            )
+            .slice(0, 3);
+          setConversations(
+            convs.map(
+              (c: {
+                id: string;
+                participantIds?: string[];
+                participantNames?: string[];
+                lastMessage?: string;
+                lastMessageAt?: Timestamp;
+                unreadCount?: number;
+              }) => ({
+                id: c.id,
+                participantIds: c.participantIds || [],
+                participantNames: c.participantNames || [],
+                lastMessage: c.lastMessage || "",
+                lastMessageAt: c.lastMessageAt?.toDate() ?? new Date(),
+                unreadCount: c.unreadCount || 0,
+              })
+            )
+          );
+          setLoading(false);
+          return;
+        }
+
         const convRef = collection(db, "conversations");
         const q = query(
           convRef,

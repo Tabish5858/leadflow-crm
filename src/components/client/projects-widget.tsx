@@ -9,6 +9,11 @@ import { FolderKanban, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 interface ProjectSummary {
   id: string;
   title: string;
@@ -43,8 +48,38 @@ export function ProjectsWidget({ workspaceId, userId }: ProjectsWidgetProps) {
 
     (async () => {
       try {
+        // Demo mode: serve from in-memory store
+        if (isDemoMode()) {
+          const { demoStore } = await import("@/lib/demo/demo-data");
+          const { getProjects } = await import("@/lib/firebase/projects");
+          const projects = demoStore
+            .getProjects()
+            .filter(
+              (p: { clients?: string[] }) => p.clients?.includes(userId)
+            )
+            .slice(0, 4);
+          setProjects(
+            projects.map(
+              (p: {
+                id: string;
+                name?: string;
+                status?: string;
+                dueDate?: Timestamp | null;
+                progress?: number;
+              }) => ({
+                id: p.id,
+                title: p.name || "Untitled Project",
+                status: p.status || "active",
+                dueDate: p.dueDate?.toDate() ?? null,
+                progress: p.progress ?? 0,
+              })
+            )
+          );
+          setLoading(false);
+          return;
+        }
+
         // Try to find projects where user is in clients[] array
-        // If projects collection doesn't have clients field yet, return empty
         const projectsRef = collection(db, "projects");
         const q = query(
           projectsRef,
@@ -55,8 +90,6 @@ export function ProjectsWidget({ workspaceId, userId }: ProjectsWidgetProps) {
 
         const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as RawProject);
 
-        // Filter to projects where client is linked (clients[] array-contains userId)
-        // If projects don't have clients[] yet, show empty state
         const filtered = raw.filter(
           (p) => p.clients?.includes(userId)
         );
@@ -71,7 +104,6 @@ export function ProjectsWidget({ workspaceId, userId }: ProjectsWidgetProps) {
           }))
         );
       } catch {
-        // Projects collection might not exist yet - empty state is fine
         setProjects([]);
       } finally {
         setLoading(false);

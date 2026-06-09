@@ -10,6 +10,11 @@ import { Calendar, ExternalLink, Video, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
+
 interface ClientMeeting {
   id: string;
   title: string;
@@ -34,6 +39,52 @@ export function MeetingsWidget({ workspaceId, userEmail }: MeetingsWidgetProps) 
 
     (async () => {
       try {
+        // Demo mode: serve from in-memory store
+        if (isDemoMode()) {
+          const { demoStore } = await import("@/lib/demo/demo-data");
+          const now = Date.now();
+          const todayCutoff = now + 86400000;
+          const upcoming = demoStore.meetings
+            .filter(
+              (m: {
+                workspaceId: string;
+                status?: string;
+                startTime?: Timestamp;
+                attendees?: { email: string }[];
+              }) =>
+                m.workspaceId === workspaceId &&
+                m.status !== "cancelled" &&
+                (m.startTime?.toMillis() ?? 0) >= now &&
+                (m.attendees || []).some(
+                  (a: { email: string }) =>
+                    a.email?.toLowerCase() === userEmail.toLowerCase()
+                )
+            )
+            .slice(0, 3)
+            .map(
+              (m: {
+                id: string;
+                title?: string;
+                startTime?: Timestamp;
+                endTime?: Timestamp;
+                googleMeetLink?: string;
+                status?: string;
+                attendees?: { email: string; name: string }[];
+              }) => ({
+                id: m.id,
+                title: m.title || "Untitled Meeting",
+                startTime: m.startTime?.toDate() ?? new Date(),
+                endTime: m.endTime?.toDate() ?? new Date(),
+                googleMeetLink: m.googleMeetLink || "",
+                status: m.status || "scheduled",
+                isToday: (m.startTime?.toDate() ?? new Date()).getTime() < todayCutoff,
+              })
+            );
+          setMeetings(upcoming);
+          setLoading(false);
+          return;
+        }
+
         const meetingsRef = collection(db, "meetings");
         const q = query(
           meetingsRef,

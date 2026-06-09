@@ -130,6 +130,14 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
     return { active: false, clientId: null as string | null, clientName: "" };
   });
 
+  // Synchronous demo mode check
+  const [syncDemoMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("leadflow_demo_mode") === "true";
+    }
+    return false;
+  });
+
   // Compute visible nav items based on portal settings
   const navItems: NavItem[] = ALL_NAV_ITEMS.filter((item) => {
     if (!item.moduleKey) return true; // Dashboard and Settings always shown
@@ -204,6 +212,22 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Demo mode: bypass Firebase auth, use fake client user
+    if (syncDemoMode) {
+      setClientUser({
+        uid: "demo-client-001",
+        displayName: "James Thompson",
+        email: "client@demo.leadflow.dev",
+        photoURL: null,
+        clientWorkspaceId: "demo-workspace-001",
+        workspaceName: "Acme Corp CRM",
+        workspaceLogo: null,
+      });
+      setPortalSettings(DEFAULT_CLIENT_PORTAL_SETTINGS as ClientPortalSettings);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         router.push("/login");
@@ -268,9 +292,14 @@ function ClientLayoutInner({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [router, isAuthRoute, isPreviewing, previewClientId, previewClientName, enterPreview]);
+  }, [router, isAuthRoute, isPreviewing, previewClientId, previewClientName, enterPreview, syncDemoMode]);
 
   const handleLogout = async () => {
+    if (syncDemoMode) {
+      localStorage.removeItem("leadflow_demo_mode");
+      router.push("/login");
+      return;
+    }
     await signOut(auth);
     router.push("/login");
   };
