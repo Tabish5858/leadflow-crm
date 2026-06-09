@@ -12,7 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useClientPortal } from "@/contexts/client-portal-context";
 import { useClientUser } from "@/contexts/client-user-context";
 import { db } from "@/lib/firebase/client";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
+
+function isDemoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("leadflow_demo_mode") === "true";
+}
 import {
   Building2,
   Calendar,
@@ -90,6 +95,10 @@ export default function ClientSettingsPage() {
 
   useEffect(() => {
     if (!uid) return;
+    if (isDemoMode()) {
+      setMemberSince(new Date());
+      return;
+    }
     getDoc(doc(db, "users", uid)).then((userSnap) => {
       if (userSnap.exists()) {
         const userData = userSnap.data();
@@ -102,6 +111,7 @@ export default function ClientSettingsPage() {
 
   const handleSaveProfile = async () => {
     if (!displayName.trim() || saving) return;
+    if (isDemoMode()) { setSaved(true); setTimeout(() => setSaved(false), 2000); return; }
     setSaving(true);
     setSaved(false);
     try {
@@ -182,6 +192,7 @@ export default function ClientSettingsPage() {
                 workspaceId={clientWorkspaceId}
                 onUploaded={(url) => {
                   setPhotoURL(url);
+                  if (isDemoMode()) return;
                   // Persist immediately
                   updateDoc(doc(db, "users", uid), {
                     photoURL: url || null,
