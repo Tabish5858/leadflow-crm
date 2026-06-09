@@ -951,11 +951,115 @@ const DEMO_TEMPLATES: ContractTemplate[] = [
 
 // ─── Demo Project Deliverables ─────────────────────────────────────────────────
 
-const DEMO_PROJECT_DELIVERABLES: Record<string, unknown>[] = [
+/**
+ * Build a demo Deliverable from the old flat format.
+ * Wraps the flat fields into a versions[] array and fills in
+ * all required Deliverable fields so the DeliverablesTab doesn't crash.
+ */
+function buildDemoDeliverable(
+  id: string,
+  projectId: string,
+  data: {
+    title: string;
+    description?: string;
+    type: string;
+    status: string;
+    version: number;
+    uploadedBy: string;
+    uploadedByName: string;
+    fileUrl: string;
+    fileName: string;
+    fileSize: number;
+    fileType: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+  }
+): Record<string, unknown> {
+  const fileId = `${id}-file-1`;
+  return {
+    id,
+    projectId,
+    workspaceId: DEMO_WORKSPACE_ID,
+    title: data.title,
+    description: data.description || "",
+    status: data.status === "in_review" ? "needs_revision" : data.status === "approved" ? "approved" : data.status === "draft" ? "not_submitted" : data.status,
+    deliverableType: data.type,
+    versions: [
+      {
+        id: `${id}-v1`,
+        versionNumber: data.version,
+        files: [
+          {
+            id: fileId,
+            fileName: data.fileName,
+            originalName: data.fileName,
+            filePath: data.fileUrl,
+            cloudinaryUrl: data.fileUrl,
+            fileSize: data.fileSize,
+            mimeType: data.fileType,
+            uploadedAt: data.createdAt,
+            uploadedBy: data.uploadedBy,
+            thumbnail: null,
+            downloadCount: 0,
+            videoMoments: [],
+            imageMarkups: [],
+          },
+        ],
+        links: [],
+        notes: data.description || "",
+        uploadedAt: data.createdAt,
+        uploadedBy: data.uploadedBy,
+        status: data.status === "approved" ? "approved" : "submitted",
+        isLatest: true,
+        is_read: true,
+        commentCount: 0,
+      },
+    ],
+    comments: [],
+    invoiceSettings: { requirePaymentToView: false, requirePaymentToDownload: false },
+    revisionSettings: {
+      limitFreeRevisions: false,
+      maxFreeRevisions: 0,
+      currentRevisionCount: 0,
+      addExtraRevisionUpsell: false,
+      extraRevisionPrice: 0,
+      limitRevisionPeriod: false,
+      revisionTimeLimit: 7,
+      revisionTimeLimitUnit: "days",
+    },
+    revisions: [],
+    clientVisible: true,
+    dueDate: null,
+    paidCredits: 0,
+    approvalWorkflow: [],
+    deliveryFlowSettings: {
+      enableFeedback: true,
+      enableReferrals: true,
+      enableReviews: true,
+      enableUpsell: true,
+    },
+    deliveryProgress: {
+      completedSteps: [],
+      currentStep: "package",
+    },
+    isFinalPackage: false,
+    finalPackageDelivered: false,
+    finalPackageDeliveryStatus: "not_delivered",
+    finalPackageViewed: false,
+    clientFeedback: [],
+    referralTracking: [],
+    reviewTracking: [],
+    isDeleted: false,
+    createdBy: data.uploadedBy,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+  };
+}
+
+const _DEMO_FLAT_DELIVERABLES = [
   {
     id: "demo-deliverable-001",
     projectId: "demo-project-001",
-    workspaceId: DEMO_WORKSPACE_ID,
     title: "Homepage Mockup v2",
     description: "Updated homepage design with new hero section and CTA buttons.",
     type: "design",
@@ -973,7 +1077,6 @@ const DEMO_PROJECT_DELIVERABLES: Record<string, unknown>[] = [
   {
     id: "demo-deliverable-002",
     projectId: "demo-project-001",
-    workspaceId: DEMO_WORKSPACE_ID,
     title: "Brand Style Guide",
     description: "Complete brand guidelines including typography, colors, and logo usage.",
     type: "document",
@@ -991,7 +1094,6 @@ const DEMO_PROJECT_DELIVERABLES: Record<string, unknown>[] = [
   {
     id: "demo-deliverable-003",
     projectId: "demo-project-002",
-    workspaceId: DEMO_WORKSPACE_ID,
     title: "Analytics Dashboard Wireframe",
     description: "Initial wireframes for the analytics dashboard with 5 key metric cards.",
     type: "design",
@@ -1007,6 +1109,9 @@ const DEMO_PROJECT_DELIVERABLES: Record<string, unknown>[] = [
     updatedAt: daysAgo(5),
   },
 ];
+
+const DEMO_PROJECT_DELIVERABLES: Record<string, unknown>[] =
+  _DEMO_FLAT_DELIVERABLES.map((d) => buildDemoDeliverable(d.id, d.projectId, d as unknown as { title: string; description?: string; type: string; status: string; version: number; uploadedBy: string; uploadedByName: string; fileUrl: string; fileName: string; fileSize: number; fileType: string; createdAt: Timestamp; updatedAt: Timestamp }));
 
 // ─── Demo Spreadsheet Snapshot Builder ─────────────────────────────────────────
 
