@@ -494,7 +494,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.
 
 Workflow: Fork, branch from `develop`, conventional commits, PR to `develop`.
 
-Open issues: [github.com/Tabish5858/leadflow-crm/issues](https://github.com/Tabish5858/Leadflow-CRM/issues)
+Open issues: [github.com/Tabish5858/Leadflow-CRM/issues](https://github.com/Tabish5858/Leadflow-CRM/issues)
 
 ### Priority Contribution Areas
 
