@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | LeadFlow CRM",
   },
   description:
-    "Open-source CRM with pipeline management, project tracking, invoicing, time tracking, messaging, and client portal — all in one platform. Self-host with Docker or try instantly. No signup needed.",
+    "Open-source CRM with pipeline management, project tracking, invoicing, time tracking, messaging, and client portal — all in one platform. Self-host on any Node.js server or try instantly. No signup needed.",
   keywords: [
     "open source CRM",
     "self-hosted CRM",
@@ -134,9 +134,9 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "LeadFlow",
               applicationCategory: "BusinessApplication",
-              operatingSystem: "Web, Docker, Linux, macOS, Windows",
+              operatingSystem: "Web, Linux, macOS, Windows",
               description:
-                "Open-source CRM with pipeline management, project tracking, invoicing, time tracking, messaging, and client portal. Self-host with Docker.",
+                "Open-source CRM with pipeline management, project tracking, invoicing, time tracking, messaging, and client portal. Self-host on any Node.js server.",
               url: baseUrl,
               sameAs: [
                 "https://github.com/Tabish5858/Leadflow-CRM",

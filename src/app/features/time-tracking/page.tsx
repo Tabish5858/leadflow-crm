@@ -17,7 +17,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Time Tracking for Freelancers & Billable Hours Tracker | LeadFlow",
+    title: "Time Tracking for Freelancers & Billable Hours Tracker",
     description:
       "LeadFlow's open-source time tracking for freelancers. Track billable hours with start/stop timer, manual entry, and per-project tracking. Free CRM — self-host or try instantly.",
     keywords: [
@@ -31,7 +31,7 @@ export function generateMetadata(): Metadata {
       "work hours tracker",
     ],
     openGraph: {
-      title: "Time Tracking for Freelancers & Billable Hours Tracker | LeadFlow",
+      title: "Time Tracking for Freelancers & Billable Hours Tracker",
       description:
         "Track billable hours with start/stop timer, manual entry, and per-project tracking. Open-source CRM — self-host or try free.",
       url: `${baseUrl}/features/time-tracking`,

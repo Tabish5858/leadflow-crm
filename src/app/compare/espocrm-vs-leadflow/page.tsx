@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "EspoCRM Alternative — LeadFlow vs EspoCRM | LeadFlow CRM",
+  title: "EspoCRM Alternative — LeadFlow vs EspoCRM",
   description:
     "Comparing EspoCRM and LeadFlow: modern Next.js stack vs PHP, built-in client portal, time tracking & invoicing, and better UI/UX. LeadFlow is the modern open-source CRM alternative.",
   keywords: [
@@ -61,7 +61,7 @@ const FEATURES = [
   { name: "Meetings / Scheduling", leadflow: "Yes", espocrm: "Yes" },
   { name: "Analytics", leadflow: "Yes", espocrm: "Basic" },
   { name: "UI / UX", leadflow: "Modern, polished", espocrm: "Functional, dated" },
-  { name: "Self-hosted", leadflow: "Docker Compose", espocrm: "Docker / LAMP" },
+  { name: "Self-hosted", leadflow: "Node.js / Vercel", espocrm: "Docker / LAMP" },
   { name: "License", leadflow: "MIT", espocrm: "AGPL-3.0" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", espocrm: "Enterprises, no-code users" },
 ];

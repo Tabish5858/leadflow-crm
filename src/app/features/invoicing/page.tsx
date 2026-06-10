@@ -18,7 +18,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Free Invoicing Software & Invoice Management CRM | LeadFlow",
+    title: "Free Invoicing Software & Invoice Management CRM",
     description:
       "LeadFlow's free invoicing software with create, send, and track invoices, line items, tax handling, and status workflows. Open-source CRM — self-host or try free.",
     keywords: [
@@ -32,7 +32,7 @@ export function generateMetadata(): Metadata {
       "small business invoicing",
     ],
     openGraph: {
-      title: "Free Invoicing Software & Invoice Management CRM | LeadFlow",
+      title: "Free Invoicing Software & Invoice Management CRM",
       description:
         "Create, send, and track invoices with line items, tax, and status workflows. Free open-source CRM — self-host or try without signup.",
       url: `${baseUrl}/features/invoicing`,
@@ -79,7 +79,7 @@ const COMPARISON = [
   { label: "Line items & tax", leadflow: "Included", others: "Varies" },
   { label: "Status workflows", leadflow: "Automatic", others: "Manual or missing" },
   { label: "Client portal access", leadflow: "Built-in", others: "Separate product" },
-  { label: "Self-host option", leadflow: "Yes — Docker", others: "SaaS only" },
+  { label: "Self-host option", leadflow: "Yes — Vercel", others: "SaaS only" },
   { label: "Per-seat pricing", leadflow: "None — free", others: "$$$ per user/mo" },
 ];
 

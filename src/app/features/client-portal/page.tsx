@@ -18,7 +18,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Client Portal Software & Self-Hosted Client Portal | LeadFlow",
+    title: "Client Portal Software & Self-Hosted Client Portal",
     description:
       "LeadFlow's self-hosted client portal software with client dashboard, project visibility, invoice access, document sharing, and role-based access. Open-source CRM — try free.",
     keywords: [
@@ -32,7 +32,7 @@ export function generateMetadata(): Metadata {
       "CRM client portal",
     ],
     openGraph: {
-      title: "Client Portal Software & Self-Hosted Client Portal | LeadFlow",
+      title: "Client Portal Software & Self-Hosted Client Portal",
       description:
         "Give clients a dedicated dashboard with project visibility, invoice access, document sharing, and role-based access. Self-hosted open-source CRM.",
       url: `${baseUrl}/features/client-portal`,
@@ -79,7 +79,7 @@ const COMPARISON = [
   { label: "Role-based access", leadflow: "Granular permissions", others: "All-or-nothing" },
   { label: "Document sharing", leadflow: "Built-in file library", others: "Separate tool" },
   { label: "Invoice & project visibility", leadflow: "Automatic", others: "Manual sharing" },
-  { label: "Self-host option", leadflow: "Yes — Docker", others: "SaaS only" },
+  { label: "Self-host option", leadflow: "Yes — Vercel", others: "SaaS only" },
   { label: "Per-seat pricing", leadflow: "None — free", others: "$$$ per client" },
 ];
 

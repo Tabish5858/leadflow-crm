@@ -19,7 +19,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Sales Pipeline Software & Pipeline Management CRM | LeadFlow",
+    title: "Sales Pipeline Software & Pipeline Management CRM",
     description:
       "LeadFlow's open-source pipeline management CRM with drag-and-drop Kanban board, deal stages, probability forecasting, and deal value tracking. Self-host or try free — no signup needed.",
     keywords: [
@@ -33,7 +33,7 @@ export function generateMetadata(): Metadata {
       "deal stage management",
     ],
     openGraph: {
-      title: "Sales Pipeline Software & Pipeline Management CRM | LeadFlow",
+      title: "Sales Pipeline Software & Pipeline Management CRM",
       description:
         "Drag-and-drop Kanban pipeline with probability forecasting, deal value tracking, and stage management. Open-source CRM — self-host or try free.",
       url: `${baseUrl}/features/pipeline`,
@@ -80,7 +80,7 @@ const COMPARISON = [
   { label: "Drag-and-drop", leadflow: "Yes", others: "Varies" },
   { label: "Probability forecasting", leadflow: "Built-in", others: "Add-on or missing" },
   { label: "Pipeline analytics", leadflow: "Included", others: "Premium tier" },
-  { label: "Self-host option", leadflow: "Yes — Docker", others: "SaaS only" },
+  { label: "Self-host option", leadflow: "Yes — Vercel", others: "SaaS only" },
   { label: "Per-seat pricing", leadflow: "None — free", others: "$$$ per user/mo" },
 ];
 

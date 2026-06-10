@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "HubSpot Alternative — Free Open-Source CRM | LeadFlow vs HubSpot",
+  title: "HubSpot Alternative — LeadFlow vs HubSpot",
   description:
     "Comparing HubSpot and LeadFlow: FREE vs $45-90/seat/month, self-hosted vs cloud, no feature gates, no data sharing concerns. LeadFlow is the best open-source alternative to HubSpot.",
   keywords: [
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   { name: "Pricing", leadflow: "FREE (MIT License)", hubspot: "$45–$90/seat/month (Starter–Enterprise)" },
-  { name: "Self-Hosted", leadflow: "Yes (Docker Compose)", hubspot: "No (cloud only)" },
+  { name: "Self-Hosted", leadflow: "Yes (Node.js / Vercel)", hubspot: "No (cloud only)" },
   { name: "Per-Seat Pricing", leadflow: "None", hubspot: "Yes" },
   { name: "Data Ownership", leadflow: "100% yours", hubspot: "On HubSpot servers" },
   { name: "Feature Gates", leadflow: "None — all features included", hubspot: "Many features behind paywalls" },
@@ -67,7 +67,7 @@ const FEATURES = [
   { name: "Analytics / Reports", leadflow: "Yes", hubspot: "Requires Professional ($90/seat)" },
   { name: "Customization", leadflow: "Full (MIT license)", hubspot: "Platform-dependent" },
   { name: "Data Privacy", leadflow: "Your data, your servers", hubspot: "HubSpot accesses usage data" },
-  { name: "Setup Time", leadflow: "<10 minutes (Docker)", hubspot: "Quick (cloud) but migration is complex" },
+  { name: "Setup Time", leadflow: "<10 minutes", hubspot: "Quick (cloud) but migration is complex" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", hubspot: "Mid-market, marketing teams" },
 ];
 

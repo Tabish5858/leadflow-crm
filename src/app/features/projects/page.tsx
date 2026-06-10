@@ -18,7 +18,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Project Management CRM & Client Project Tracking | LeadFlow",
+    title: "Project Management CRM & Client Project Tracking",
     description:
       "LeadFlow's open-source project management CRM with progress tracking, budgets, priorities, deadlines, and task assignment. Manage client projects alongside your pipeline. Self-host or try free.",
     keywords: [
@@ -32,7 +32,7 @@ export function generateMetadata(): Metadata {
       "small business project software",
     ],
     openGraph: {
-      title: "Project Management CRM & Client Project Tracking | LeadFlow",
+      title: "Project Management CRM & Client Project Tracking",
       description:
         "Track client projects with budgets, priorities, deadlines, and task assignment. Open-source CRM — self-host or try free.",
       url: `${baseUrl}/features/projects`,
@@ -79,7 +79,7 @@ const COMPARISON = [
   { label: "Task assignment", leadflow: "Included", others: "Premium tier" },
   { label: "Client portal visibility", leadflow: "Automatic", others: "Separate product" },
   { label: "Time tracking per project", leadflow: "Integrated", others: "Third-party only" },
-  { label: "Self-host option", leadflow: "Yes — Docker", others: "SaaS only" },
+  { label: "Self-host option", leadflow: "Yes — Vercel", others: "SaaS only" },
   { label: "Per-seat pricing", leadflow: "None — free", others: "$$$ per user/mo" },
 ];
 

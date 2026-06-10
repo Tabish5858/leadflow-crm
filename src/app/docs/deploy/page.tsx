@@ -4,24 +4,24 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, ExternalLink, Github, Globe, Terminal, Zap } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Self-Host LeadFlow CRM with Docker | Deploy in 10 Minutes",
+  title: "Self-Host on Vercel: Deploy in 10 Minutes",
   description:
-    "Step-by-step guide to self-host LeadFlow CRM on your own VPS using Docker Compose. Requirements, environment variables, Firebase setup, and production tips.",
+    "Step-by-step guide to deploy LeadFlow CRM on Vercel or self-host on any Node.js server. Requirements, Firebase setup, environment variables, and production tips.",
   openGraph: {
-    title: "Self-Host LeadFlow CRM with Docker | Deploy in 10 Minutes",
+    title: "Self-Host on Vercel: Deploy in 10 Minutes",
     description:
-      "Step-by-step guide to self-host LeadFlow CRM on your own VPS using Docker Compose. Requirements, environment variables, Firebase setup, and production tips.",
+      "Step-by-step guide to deploy LeadFlow CRM on Vercel or self-host on any Node.js server. Requirements, Firebase setup, environment variables, and production tips.",
     url: "https://crm.tabishbinishfaq.dev/docs/deploy",
     type: "article",
   },
   keywords: [
-    "self-host CRM Docker",
-    "Docker CRM deployment",
-    "self-hosted CRM",
-    "open source CRM Docker",
+    "self-host CRM",
+    "Vercel deployment",
+    "Next.js CRM setup",
+    "deploy CRM on Vercel",
+    "open source CRM setup",
     "LeadFlow deploy",
-    "CRM VPS setup",
-    "Docker Compose CRM",
+    "Node.js CRM hosting",
     "self-host LeadFlow",
   ],
 };
@@ -30,16 +30,26 @@ const steps = [
   {
     title: "Prerequisites",
     content: [
-      "A Linux VPS or dedicated server (2 GB RAM minimum, 4 GB recommended)",
-      "Docker Engine 24+ and Docker Compose v2+ installed",
-      "A domain name pointed to your server (optional but recommended for HTTPS)",
+      "Node.js 18+ and npm installed on your development machine",
+      "A GitHub account (for Vercel deployment)",
       "A Firebase project with Authentication and Firestore enabled",
+      "A domain name (optional but recommended for custom domain on Vercel)",
     ],
   },
   {
     title: "Clone the Repository",
     code: "git clone https://github.com/Tabish5858/Leadflow-CRM.git\ncd Leadflow-CRM",
     content: [],
+  },
+  {
+    title: "Firebase Setup",
+    content: [
+      "Go to the Firebase Console and create a new project (or use an existing one).",
+      "Enable Email/Password sign-in under Authentication > Sign-in method.",
+      "Create a Firestore database in your preferred region.",
+      "Set up Firestore security rules to restrict access to authenticated users only.",
+      "Copy the web app configuration values from Project Settings > General > Your apps > Web app.",
+    ],
   },
   {
     title: "Configure Environment Variables",
@@ -83,37 +93,34 @@ const steps = [
     ],
   },
   {
-    title: "Firebase Setup",
+    title: "Deploy on Vercel",
     content: [
-      "Go to the Firebase Console and create a new project (or use an existing one).",
-      "Enable Email/Password sign-in under Authentication > Sign-in method.",
-      "Create a Firestore database in your preferred region.",
-      "Set up Firestore security rules to restrict access to authenticated users only.",
-      "Copy the web app configuration values from Project Settings > General > Your apps > Web app.",
+      "Push your forked repository to GitHub.",
+      "Go to vercel.com and import your GitHub repository.",
+      "Vercel will auto-detect Next.js — no build configuration needed.",
+      "Add all environment variables from your .env file in Vercel's project settings.",
+      "Click Deploy. Your site will be live in under 2 minutes.",
+      "Vercel provides automatic HTTPS, global CDN, and continuous deployment from Git.",
     ],
   },
   {
-    title: "Build and Start with Docker Compose",
+    title: "Self-Host on Any Node.js Server (Alternative)",
     content: [
-      "Build the Docker image and start all services:",
+      "If you prefer to self-host rather than use Vercel:",
     ],
-    code: "docker compose build\ndocker compose up -d",
+    code: "npm install\nnpm run build\nnpm start",
     contentAfter: [
-      "This starts LeadFlow, a PostgreSQL database (if configured), and any supporting services.",
-      "Your application will be available at http://localhost:3000 (or your configured domain).",
+      "Your application will be available at http://localhost:3000.",
+      "For production, set up a reverse proxy with Caddy or Nginx for HTTPS:",
     ],
   },
   {
-    title: "Configure Reverse Proxy (Optional)",
+    title: "Configure Custom Domain",
     content: [
-      "For production, set up a reverse proxy with Caddy or Nginx to handle HTTPS:",
-    ],
-    code: `# Caddyfile example
-crm.yourdomain.com {
-    reverse_proxy localhost:3000
-}`,
-    contentAfter: [
-      "Run Caddy with Docker Compose alongside LeadFlow for automatic TLS certificates.",
+      "For Vercel deployment: Go to your project dashboard > Domains and add your domain.",
+      "Update your DNS records to point to Vercel's nameservers or add a CNAME record.",
+      "Vercel automatically provisions TLS certificates via Let's Encrypt.",
+      "For self-hosted: Point your domain to your server IP and configure your reverse proxy.",
     ],
   },
   {
@@ -121,9 +128,8 @@ crm.yourdomain.com {
     content: [
       "Open your domain in a browser. You should see the LeadFlow login page.",
       "Create your first workspace account and verify that all modules load correctly.",
-      "Check the Docker logs to confirm everything is running smoothly:",
+      "Check that Firebase authentication and Firestore are working by adding a test lead.",
     ],
-    code: "docker compose logs -f app",
   },
 ];
 
@@ -188,22 +194,21 @@ export default function DeployPage() {
               <Terminal className="h-3.5 w-3.5 text-primary" />
               Deployment guide
             </div>
-            <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              Self-Host LeadFlow with Docker
-            </h1>
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-2xl">
-              Deploy LeadFlow CRM on your own infrastructure in under 10 minutes. This guide
-              covers everything from VPS requirements to Docker Compose configuration and
-              Firebase setup.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Docker Compose
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Self-hosted
+              <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+                Self-Host LeadFlow on Vercel
+              </h1>
+              <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-2xl">
+                Deploy LeadFlow CRM in under 10 minutes. This guide covers everything from
+                Firebase setup to Vercel deployment and custom domain configuration.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Vercel Deploy
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Self-hosted
               </div>
               <div className="flex items-center gap-1.5">
                 <Globe className="h-4 w-4 text-primary" />
@@ -287,12 +292,12 @@ export default function DeployPage() {
               <li className="flex items-start gap-2">
                 <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <a
-                  href="https://github.com/Tabish5858/Leadflow-CRM/blob/main/docker-compose.yml"
+                  href="https://github.com/Tabish5858/Leadflow-CRM"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors"
                 >
-                  View Docker Compose file
+                  View on GitHub
                 </a>
               </li>
             </ul>

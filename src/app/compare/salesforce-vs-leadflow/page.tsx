@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Salesforce Alternative — Free Open-Source CRM | LeadFlow vs Salesforce",
+  title: "Salesforce Alternative — LeadFlow vs Salesforce",
   description:
     "Comparing Salesforce and LeadFlow: FREE vs $25-300/seat/month, self-hosted vs cloud, no per-seat pricing, MIT license. LeadFlow is the best open-source alternative to Salesforce for SMBs.",
   keywords: [
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   { name: "Pricing", leadflow: "FREE (MIT License)", salesforce: "$25–$300/seat/month" },
-  { name: "Self-Hosted", leadflow: "Yes (Docker Compose)", salesforce: "No (cloud only)" },
+  { name: "Self-Hosted", leadflow: "Yes (Node.js / Vercel)", salesforce: "No (cloud only)" },
   { name: "Per-Seat Pricing", leadflow: "None", salesforce: "Yes" },
   { name: "Data Ownership", leadflow: "100% yours", salesforce: "On Salesforce servers" },
   { name: "Client Portal", leadflow: "Built-in", salesforce: "$75+/seat + Experience Cloud" },
@@ -64,7 +64,7 @@ const FEATURES = [
   { name: "Meetings / Scheduling", leadflow: "Yes", salesforce: "Requires add-on" },
   { name: "Analytics", leadflow: "Yes", salesforce: "Einstein Analytics ($75+/seat)" },
   { name: "Customization", leadflow: "Full (MIT license)", salesforce: "Platform-dependent" },
-  { name: "Setup Time", leadflow: "<10 minutes (Docker)", salesforce: "Weeks to months" },
+  { name: "Setup Time", leadflow: "<10 minutes", salesforce: "Weeks to months" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", salesforce: "Large enterprises" },
 ];
 
@@ -192,7 +192,7 @@ export default function SalesforceVsLeadFlow() {
                 },
                 {
                   title: "Self-Hosted, Your Data",
-                  desc: "LeadFlow runs on your infrastructure via Docker Compose. Your data never leaves your servers. Salesforce stores everything on their cloud — you're renting access to your own customer data.",
+                  desc: "LeadFlow runs on your infrastructure via Node.js or Vercel. Your data never leaves your servers. Salesforce stores everything on their cloud — you're renting access to your own customer data.",
                 },
                 {
                   title: "No Per-Seat Pricing",
@@ -204,7 +204,7 @@ export default function SalesforceVsLeadFlow() {
                 },
                 {
                   title: "Fast Setup",
-                  desc: "Deploy LeadFlow in under 10 minutes with Docker Compose. Salesforce implementations typically take weeks to months and often require consultants.",
+                  desc: "Deploy LeadFlow in under 10 minutes. Salesforce implementations typically take weeks to months and often require consultants.",
                 },
                 {
                   title: "All Essential Features Built In",

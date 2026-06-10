@@ -8,9 +8,9 @@ const featuredPosts = [
   {
     title: "How to Self-Host LeadFlow CRM on Your Own VPS",
     description:
-      "A complete walkthrough of deploying LeadFlow with Docker Compose, from VPS setup to production configuration.",
+      "A complete walkthrough of deploying LeadFlow on Vercel or any Node.js server, from repo clone to production configuration.",
     date: "Coming soon",
-    tags: ["Self-Hosting", "Docker"],
+    tags: ["Self-Hosting", "Vercel"],
     status: "Coming soon",
   },
   {

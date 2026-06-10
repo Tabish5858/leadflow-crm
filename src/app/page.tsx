@@ -48,7 +48,7 @@ const MODULES: ModuleItem[] = [
 ];
 
 const STATS = [
-  { label: "Self-hosted ready", value: "Docker" },
+  { label: "Deploy method", value: "Vercel" },
   { label: "Setup time", value: "<10 min" },
   { label: "Free & open source", value: "MIT" },
 ];
@@ -275,12 +275,12 @@ export default function LandingPage() {
                   Own your CRM. Own your data.
                 </h2>
                 <p className="text-muted-foreground">
-                  LeadFlow is fully open source under the MIT license. Self-host with Docker,
+                  LeadFlow is fully open source under the MIT license. Self-host on any Node.js server,
                   customize every module, and never worry about vendor lock-in or surprise pricing.
                 </p>
                 <div className="space-y-3">
                   {[
-                    "Self-host in under 10 minutes with Docker Compose",
+                    "Self-host on any Node.js server or deploy instantly on Vercel",
                     "Full data ownership - no data leaves your infrastructure",
                     "MIT license - fork, modify, redistribute freely",
                     "No per-seat pricing, no feature gates, no contracts",
@@ -310,7 +310,7 @@ export default function LandingPage() {
               {/* Feature highlights */}
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  { icon: Globe, title: "Self-hosted", desc: "Docker Compose, your server, your data." },
+                  { icon: Globe, title: "Self-hosted", desc: "Your server, your data. Deploy on any Node.js host." },
                   { icon: Users, title: "Role-based access", desc: "Owner, admin, member, viewer, client - each with granular permissions." },
                   { icon: ShieldCheck, title: "Audit trail", desc: "Every mutation logged. Know who did what and when." },
                   { icon: FileText, title: "Client portal", desc: "Clients see projects, invoices, and documents in a dedicated dashboard." },
@@ -390,7 +390,7 @@ export default function LandingPage() {
                     name: "Can I self-host LeadFlow on my own server?",
                     acceptedAnswer: {
                       "@type": "Answer",
-                      text: "Yes. LeadFlow is designed for self-hosting with Docker Compose. You can deploy on any VPS, dedicated server, or cloud instance in under 10 minutes. Your data never leaves your infrastructure. No telemetry, no phone-home.",
+                      text: "Yes. LeadFlow is designed for self-hosting. Clone the repo, run npm install && npm run build && npm start on any Node.js server, or deploy instantly on Vercel. Your data never leaves your infrastructure.",
                     },
                   },
                   {
@@ -414,7 +414,7 @@ export default function LandingPage() {
                     name: "What tech stack does LeadFlow use?",
                     acceptedAnswer: {
                       "@type": "Answer",
-                      text: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Docker for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
+                      text: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Vercel for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
                     },
                   },
                 ],
@@ -441,7 +441,7 @@ export default function LandingPage() {
               },
               {
                 q: "Can I self-host LeadFlow on my own server?",
-                a: "Yes. LeadFlow is designed for self-hosting with Docker Compose. You can deploy on any VPS, dedicated server, or cloud instance in under 10 minutes. Your data never leaves your infrastructure. No telemetry, no phone-home.",
+                a: "Yes. LeadFlow is designed for self-hosting. Clone the repo, run npm install && npm run build && npm start on any Node.js server, or deploy instantly on Vercel. Your data never leaves your infrastructure.",
               },
               {
                 q: "Is LeadFlow really free?",
@@ -453,7 +453,7 @@ export default function LandingPage() {
               },
               {
                 q: "What tech stack does LeadFlow use?",
-                a: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Docker for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
+                a: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Vercel for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
               },
             ].map((faq) => (
               <div

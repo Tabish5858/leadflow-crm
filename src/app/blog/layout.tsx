@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "LeadFlow Blog | Open-Source CRM Guides, Tips & Comparisons",
+  title: "Blog: Open-Source CRM Guides, Tips & Comparisons",
   description:
     "Learn about open-source CRM, self-hosting, pipeline management, and team productivity. Guides, comparisons, and best practices from the LeadFlow team.",
   openGraph: {
-    title: "LeadFlow Blog | Open-Source CRM Guides, Tips & Comparisons",
+    title: "Blog: Open-Source CRM Guides, Tips & Comparisons",
     description:
       "Learn about open-source CRM, self-hosting, pipeline management, and team productivity. Guides, comparisons, and best practices from the LeadFlow team.",
     url: "https://crm.tabishbinishfaq.dev/blog",

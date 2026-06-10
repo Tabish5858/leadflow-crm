@@ -11,7 +11,7 @@ import Link from "next/link";
 import { DemoButton } from "../demo-button";
 
 export const metadata: Metadata = {
-  title: "Twenty CRM Alternative — LeadFlow vs Twenty | LeadFlow CRM",
+  title: "Twenty CRM Alternative — LeadFlow vs Twenty",
   description:
     "Comparing Twenty CRM and LeadFlow: MIT vs AGPL-3.0 license, built-in client portal, time tracking & invoicing, 9 modules in one workspace. LeadFlow is the better open-source CRM for SMBs.",
   keywords: [
@@ -59,7 +59,7 @@ const FEATURES = [
   { name: "Messaging", leadflow: "Yes", twenty: "No" },
   { name: "Meetings / Scheduling", leadflow: "Yes", twenty: "No" },
   { name: "Analytics", leadflow: "Yes", twenty: "Basic" },
-  { name: "Self-hosted", leadflow: "Docker Compose", twenty: "Docker Compose" },
+  { name: "Self-hosted", leadflow: "Node.js / Vercel", twenty: "Docker Compose" },
   { name: "GitHub Stars", leadflow: "Growing", twenty: "45K+" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", twenty: "Developers, startups" },
 ];
@@ -186,7 +186,7 @@ export default function TwentyVsLeadFlow() {
                 },
                 {
                   title: "No Vendor Lock-In",
-                  desc: "Self-host with Docker Compose. Your data, your infrastructure. Twenty also supports self-hosting, but the AGPL license adds compliance overhead.",
+                  desc: "Self-host on any Node.js server or deploy via Vercel. Your data, your infrastructure. Twenty also supports self-hosting, but the AGPL license adds compliance overhead.",
                 },
               ].map((item) => (
                 <div

@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, CheckCircle, ExternalLink, Github, Globe, Layers, Lock, Shield, Zap } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "LeadFlow Architecture: Next.js 16, Firebase & Docker | Tech Stack",
+  title: "Architecture: Next.js 16, Firebase & Vercel",
   description:
-    "Explore the LeadFlow CRM tech stack — Next.js 16, React 19, Firebase, Docker, and UniverJS for spreadsheets. Modular design for self-hosting and customization.",
+    "Explore the LeadFlow CRM tech stack — Next.js 16, React 19, Firebase, Vercel, and UniverJS for spreadsheets. Modular design for self-hosting and customization.",
   openGraph: {
-    title: "LeadFlow Architecture: Next.js 16, Firebase & Docker | Tech Stack",
+    title: "Architecture: Next.js 16, Firebase & Vercel",
     description:
-      "Explore the LeadFlow CRM tech stack — Next.js 16, React 19, Firebase, Docker, and UniverJS for spreadsheets. Modular design for self-hosting and customization.",
+      "Explore the LeadFlow CRM tech stack — Next.js 16, React 19, Firebase, Vercel, and UniverJS for spreadsheets. Modular design for self-hosting and customization.",
     url: "https://crm.tabishbinishfaq.dev/docs/architecture",
     type: "article",
   },
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     "Next.js 16 CRM",
     "React 19 CRM",
     "Firebase CRM",
-    "Docker CRM deployment",
+    "Vercel deployment",
     "LeadFlow architecture",
     "modular CRM architecture",
   ],
@@ -78,13 +78,13 @@ const layers = [
   {
     icon: Shield,
     title: "Infrastructure & Deployment",
-    subtitle: "Docker + Reverse Proxy",
+    subtitle: "Vercel + Node.js",
     items: [
-      "Docker Compose for one-command self-hosted deployment",
-      "Multi-stage Docker builds for optimized image size",
-      "Caddy or Nginx reverse proxy with automatic TLS",
+      "Vercel for instant deployment with automatic HTTPS and global CDN",
+      "Node.js self-hosting option — clone, npm install, npm run build, npm start",
       "Environment-based configuration for dev, staging, and production",
       "Stateless architecture — scale horizontally by adding instances",
+      "Custom domain support with automatic TLS certificates",
     ],
   },
 ];
@@ -168,7 +168,7 @@ export default function ArchitecturePage() {
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                Dockerized
+                Vercel Hosted
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle className="h-4 w-4 text-green-500" />
@@ -184,7 +184,7 @@ export default function ArchitecturePage() {
           <div className="mb-10 rounded-xl border border-border/40 bg-gradient-to-br from-primary/5 via-background to-background p-6 sm:p-8 text-center">
             <h2 className="text-lg font-bold tracking-tight">System Overview</h2>
             <div className="mt-4 flex flex-wrap justify-center gap-3 text-xs">
-              {["Next.js 16 SSR", "React 19", "Firebase Auth", "Firestore DB", "UniverJS Sheets", "Docker"].map(
+              {["Next.js 16 SSR", "React 19", "Firebase Auth", "Firestore DB", "UniverJS Sheets", "Vercel"].map(
                 (item) => (
                   <span
                     key={item}
@@ -197,8 +197,8 @@ export default function ArchitecturePage() {
             </div>
             <p className="mt-4 text-sm text-muted-foreground max-w-xl mx-auto">
               The frontend communicates directly with Firebase services through the Firebase Web SDK.
-              No intermediate API server is required. Docker wraps the entire application for
-              portable, reproducible deployments.
+              No intermediate API server is required. Deploy on Vercel or any Node.js host for
+              fast, reliable hosting.
             </p>
           </div>
 

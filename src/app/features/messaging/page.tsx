@@ -17,7 +17,7 @@ const baseUrl = "https://crm.tabishbinishfaq.dev";
 
 export function generateMetadata(): Metadata {
   return {
-    title: "Team Messaging CRM & CRM Internal Messaging | LeadFlow",
+    title: "Team Messaging CRM & CRM Internal Messaging",
     description:
       "LeadFlow's open-source team messaging CRM with team inbox, read receipts, search, and per-conversation threads. Internal messaging built into your CRM. Self-host or try free.",
     keywords: [
@@ -31,7 +31,7 @@ export function generateMetadata(): Metadata {
       "conversation threads CRM",
     ],
     openGraph: {
-      title: "Team Messaging CRM & CRM Internal Messaging | LeadFlow",
+      title: "Team Messaging CRM & CRM Internal Messaging",
       description:
         "Team inbox with read receipts, search, and per-conversation threads. Internal messaging built into your open-source CRM — try free.",
       url: `${baseUrl}/features/messaging`,
@@ -78,7 +78,7 @@ const COMPARISON = [
   { label: "Read receipts", leadflow: "Built-in", others: "Often missing" },
   { label: "Search across conversations", leadflow: "Full-text", others: "Limited or missing" },
   { label: "Per-conversation threads", leadflow: "Native", others: "Varies" },
-  { label: "Self-host option", leadflow: "Yes — Docker", others: "SaaS only" },
+  { label: "Self-host option", leadflow: "Yes — Vercel", others: "SaaS only" },
   { label: "Per-seat pricing", leadflow: "None — free", others: "$$$ per user/mo" },
 ];
 
