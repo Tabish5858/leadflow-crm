@@ -61,7 +61,7 @@ const FEATURES = [
   { name: "Meetings / Scheduling", leadflow: "Yes", espocrm: "Yes" },
   { name: "Analytics", leadflow: "Yes", espocrm: "Basic" },
   { name: "UI / UX", leadflow: "Modern, polished", espocrm: "Functional, dated" },
-  { name: "Self-hosted", leadflow: "Node.js / Vercel", espocrm: "Docker / LAMP" },
+  { name: "Self-hosted", leadflow: "Node.js / Vercel", espocrm: "PHP / MySQL" },
   { name: "License", leadflow: "MIT", espocrm: "AGPL-3.0" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", espocrm: "Enterprises, no-code users" },
 ];

@@ -59,7 +59,7 @@ const FEATURES = [
   { name: "Messaging", leadflow: "Yes", twenty: "No" },
   { name: "Meetings / Scheduling", leadflow: "Yes", twenty: "No" },
   { name: "Analytics", leadflow: "Yes", twenty: "Basic" },
-  { name: "Self-hosted", leadflow: "Node.js / Vercel", twenty: "Docker Compose" },
+  { name: "Self-hosted", leadflow: "Node.js / Vercel", twenty: "Node.js / PostgreSQL" },
   { name: "GitHub Stars", leadflow: "Growing", twenty: "45K+" },
   { name: "Ideal For", leadflow: "SMBs, freelancers, teams", twenty: "Developers, startups" },
 ];
