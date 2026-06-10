@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { useEffect, useState } from "react";
 
 // ─── Module config ─────────────────────────────────────────────────────────
@@ -167,15 +168,16 @@ export default function LandingPage() {
               Open-source CRM built for modern teams
             </div>
             <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              The open-source CRM
+              Open-Source CRM
               <br />
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                your team will actually use
+                Pipeline, Projects, Invoices & More
               </span>
             </h1>
             <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-2xl mx-auto">
-              Pipeline, projects, invoices, time tracking, messaging, and client portals - all in one
-              open-source platform. Self-host or use instantly with zero signup.
+              LeadFlow is the open-source CRM your team will actually use. Pipeline management,
+              project tracking, invoicing, time tracking, messaging, and a client portal — all in one
+              self-hosted platform. No per-seat pricing, no vendor lock-in.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button
@@ -347,6 +349,131 @@ export default function LandingPage() {
                 <div className="mt-4 border-t border-border/40 pt-4">
                   <p className="text-sm font-semibold">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section
+          id="faq"
+          className="scroll-mt-20 mx-auto w-full max-w-4xl px-6 pb-16"
+        >
+          <Script
+            id="schema-faq"
+            strategy="afterInteractive"
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: "What is an open-source CRM?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "An open-source CRM is customer relationship management software whose source code is publicly available. You can view, modify, and self-host it on your own infrastructure. Unlike proprietary CRMs like Salesforce or HubSpot, there are no per-seat licensing fees, no vendor lock-in, and you retain full ownership of your data.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "How is LeadFlow different from other open-source CRMs like Twenty or SuiteCRM?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "LeadFlow combines pipeline management, project tracking, invoicing, time tracking, messaging, and a client portal in one platform — all built on a modern Next.js and React stack. Unlike Twenty (AGPL-3.0), LeadFlow is MIT licensed. We also offer built-in time tracking and a dedicated client portal, which most open-source CRMs lack.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Can I self-host LeadFlow on my own server?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. LeadFlow is designed for self-hosting with Docker Compose. You can deploy on any VPS, dedicated server, or cloud instance in under 10 minutes. Your data never leaves your infrastructure. No telemetry, no phone-home.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Is LeadFlow really free?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. LeadFlow is 100% free and open source under the MIT license. There are no paid tiers, no feature gates, no hidden costs. You can use every module — pipeline, projects, invoices, time tracking, client portal — without paying a cent.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Does LeadFlow have a client portal?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. LeadFlow includes a dedicated client portal where your clients can view their projects, invoices, documents, and time entries. Each client gets a personalized dashboard with role-based access. This is a feature most open-source CRMs charge extra for or don't offer at all.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "What tech stack does LeadFlow use?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Docker for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
+                    },
+                  },
+                ],
+              }),
+            }}
+          />
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Frequently asked questions
+            </h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+              Everything you need to know about open-source CRM and self-hosting.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {[
+              {
+                q: "What is an open-source CRM?",
+                a: "An open-source CRM is customer relationship management software whose source code is publicly available. You can view, modify, and self-host it on your own infrastructure. Unlike proprietary CRMs like Salesforce or HubSpot, there are no per-seat licensing fees, no vendor lock-in, and you retain full ownership of your data.",
+              },
+              {
+                q: "How is LeadFlow different from other open-source CRMs like Twenty or SuiteCRM?",
+                a: "LeadFlow combines pipeline management, project tracking, invoicing, time tracking, messaging, and a client portal in one platform — all built on a modern Next.js and React stack. Unlike Twenty (AGPL-3.0), LeadFlow is MIT licensed. We also offer built-in time tracking and a dedicated client portal, which most open-source CRMs lack.",
+              },
+              {
+                q: "Can I self-host LeadFlow on my own server?",
+                a: "Yes. LeadFlow is designed for self-hosting with Docker Compose. You can deploy on any VPS, dedicated server, or cloud instance in under 10 minutes. Your data never leaves your infrastructure. No telemetry, no phone-home.",
+              },
+              {
+                q: "Is LeadFlow really free?",
+                a: "Yes. LeadFlow is 100% free and open source under the MIT license. There are no paid tiers, no feature gates, no hidden costs. You can use every module — pipeline, projects, invoices, time tracking, client portal — without paying a cent.",
+              },
+              {
+                q: "Does LeadFlow have a client portal?",
+                a: "Yes. LeadFlow includes a dedicated client portal where your clients can view their projects, invoices, documents, and time entries. Each client gets a personalized dashboard with role-based access. This is a feature most open-source CRMs charge extra for or don't offer at all.",
+              },
+              {
+                q: "What tech stack does LeadFlow use?",
+                a: "LeadFlow is built with Next.js 16 and React 19 on the frontend, Firebase for authentication and data, and Docker for deployment. The spreadsheet module uses UniverJS. It runs on a modern, developer-friendly stack that's easy to customize and extend.",
+              },
+            ].map((faq) => (
+              <div
+                key={faq.q}
+                className="rounded-xl border border-border/40 bg-background/50 p-5"
+                itemScope
+                itemProp="mainEntity"
+                itemType="https://schema.org/Question"
+              >
+                <h3 itemProp="name" className="font-semibold text-sm">
+                  {faq.q}
+                </h3>
+                <div
+                  itemScope
+                  itemProp="acceptedAnswer"
+                  itemType="https://schema.org/Answer"
+                >
+                  <div itemProp="text" className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                    {faq.a}
+                  </div>
                 </div>
               </div>
             ))}
