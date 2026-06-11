@@ -66,88 +66,6 @@ These are the actual free-tier limits. A solo freelancer or small team will hit 
 
 ---
 
-## Who Is This For
-
-| Audience           | Why LeadFlow Fits                                                                          |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| **Freelancers**    | Track leads, manage projects, send invoices, time track--- all in one place. Free to host. |
-| **Small Agencies** | Multi-workspace support, role-based access (Owner/Admin/Member/Viewer), shared pipeline.   |
-| **Developers**     | Full TypeScript, clean architecture, Firebase backend, easy to customize and extend.       |
-| **Startups**       | Ship a complete CRM without building from scratch. MIT license means no restrictions.      |
-
----
-
-## Features
-
-### Core CRM
-
-| Module                  | What You Get                                                                                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lead Management**     | Full CRUD with real-time sync, Kanban board, advanced filters, lead scoring (0-100), CSV import, bulk operations, duplicate detection, custom fields |
-| **Pipeline Management** | Drag-and-drop Kanban with customizable stages, colors, win probabilities, WIP limits                                                                 |
-| **Contact Management**  | Store contacts, companies, deal- all linked together with activity history                                                                           |
-
-### Sales & Communication
-
-| Module                    | What You Get                                                                                                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Email**                 | Resend integration (primary), Brevo fallback, open/click tracking (tracking pixel + link rewrite), email history per lead, draft management                                                      |
-| **Messaging**             | Real-time chat (lead + team), reply threading, read receipts (double checkmarks), reactions, file attachments, auto-open last conversation                                                     |
-| **Meetings & Scheduling** | Public booking pages with timezone-aware slot selection, configurable meeting types (30/45/60 min), Google Meet creation, conflict detection, custom booking questions, confirmation redirects |
-| **Calendar**              | Month/week/day views, create/edit/delete events, Google Calendar OAuth sync, upcoming events on dashboard                                                                                      |
-
-### Operations
-
-| Module            | What You Get                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard**     | Drag-and-drop reorderable cards for each module (Tasks, Projects, Invoices, Contracts, Meetings, Messages). Permission-gated visibility. Card order persists per user. |
-| **Time Tracking** | Live stopwatch, manual entries, per-lead association, billable tracking, daily grouped view, real-time sync                           |
-| **Documents**     | Cloudinary upload (drag-and-drop), preview, type icons, 10MB limit, per-lead and per-workspace organization, delete with confirmation |
-| **Analytics**     | KPI cards, time-series charts, pipeline/revenue/source distributions, conversion funnel, industry breakdown, PDF export               |
-| **Notifications** | Real-time in-app notification bell with unread count badge, mark all read, delete, color-coded icons by type                          |
-
-### Team & Automation
-
-| Module              | What You Get                                                                                             |
-| ------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Workspaces**      | Multi-workspace membership, 4 roles (Owner/Admin/Member/Viewer), email invite system, full audit logging |
-| **Automation**      | Trigger/action engine (5 triggers, 5 actions), enable/disable per rule, full CRUD                        |
-| **User Management** | Editable profiles (name, photo), synced across workspace member views, role-based permissions            |
-
-### Client Portal
-
-| Module              | What You Get                                                                                             |
-| ------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Projects**        | Clients view assigned projects with status and progress tracking                                         |
-| **Invoices**        | Clients view their invoices with status badges (paid, overdue, sent)                                     |
-| **Contracts**       | Clients view and sign contracts/proposals shared with them                                               |
-| **Meetings**        | Clients view upcoming meetings they're invited to                                                        |
-| **Messages**        | Real-time messaging between clients and team members                                                     |
-| **Portal Settings** | Welcome cards, onboarding checklists, helpful links/files configurable per workspace                     |
-
-### Customization
-
-| Feature                | Details                                      |
-| ---------------------- | -------------------------------------------- |
-| **Accent Colors**      | 18 color themes applied across the entire UI |
-| **Theme**              | Dark mode + light mode                       |
-| **Pipeline Stages**    | Fully customizable per workspace             |
-| **Custom Lead Fields** | Define your own data model for leads         |
-
----
-
-## Demo (No Signup)
-
-Visit the live demo to see everything in action without creating an account:
-
-```
-https://crm.tabishbinishfaq.dev
-```
-
-The demo is pre-loaded with sample data so you can test every feature immediately.
-
----
-
 ## Screenshots
 
 ### Dashboard
@@ -259,6 +177,88 @@ The demo is pre-loaded with sample data so you can test every feature immediatel
   <br />
   <em>Accent color themes (18 options), dark/light mode, and interface preferences.</em>
 </p>
+
+---
+
+## Who Is This For
+
+| Audience           | Why LeadFlow Fits                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| **Freelancers**    | Track leads, manage projects, send invoices, time track--- all in one place. Free to host. |
+| **Small Agencies** | Multi-workspace support, role-based access (Owner/Admin/Member/Viewer), shared pipeline.   |
+| **Developers**     | Full TypeScript, clean architecture, Firebase backend, easy to customize and extend.       |
+| **Startups**       | Ship a complete CRM without building from scratch. MIT license means no restrictions.      |
+
+---
+
+## Features
+
+### Core CRM
+
+| Module                  | What You Get                                                                                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lead Management**     | Full CRUD with real-time sync, Kanban board, advanced filters, lead scoring (0-100), CSV import, bulk operations, duplicate detection, custom fields |
+| **Pipeline Management** | Drag-and-drop Kanban with customizable stages, colors, win probabilities, WIP limits                                                                 |
+| **Contact Management**  | Store contacts, companies, deal- all linked together with activity history                                                                           |
+
+### Sales & Communication
+
+| Module                    | What You Get                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Email**                 | Resend integration (primary), Brevo fallback, open/click tracking (tracking pixel + link rewrite), email history per lead, draft management                                                      |
+| **Messaging**             | Real-time chat (lead + team), reply threading, read receipts (double checkmarks), reactions, file attachments, auto-open last conversation                                                     |
+| **Meetings & Scheduling** | Public booking pages with timezone-aware slot selection, configurable meeting types (30/45/60 min), Google Meet creation, conflict detection, custom booking questions, confirmation redirects |
+| **Calendar**              | Month/week/day views, create/edit/delete events, Google Calendar OAuth sync, upcoming events on dashboard                                                                                      |
+
+### Operations
+
+| Module            | What You Get                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**     | Drag-and-drop reorderable cards for each module (Tasks, Projects, Invoices, Contracts, Meetings, Messages). Permission-gated visibility. Card order persists per user. |
+| **Time Tracking** | Live stopwatch, manual entries, per-lead association, billable tracking, daily grouped view, real-time sync                           |
+| **Documents**     | Cloudinary upload (drag-and-drop), preview, type icons, 10MB limit, per-lead and per-workspace organization, delete with confirmation |
+| **Analytics**     | KPI cards, time-series charts, pipeline/revenue/source distributions, conversion funnel, industry breakdown, PDF export               |
+| **Notifications** | Real-time in-app notification bell with unread count badge, mark all read, delete, color-coded icons by type                          |
+
+### Team & Automation
+
+| Module              | What You Get                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Workspaces**      | Multi-workspace membership, 4 roles (Owner/Admin/Member/Viewer), email invite system, full audit logging |
+| **Automation**      | Trigger/action engine (5 triggers, 5 actions), enable/disable per rule, full CRUD                        |
+| **User Management** | Editable profiles (name, photo), synced across workspace member views, role-based permissions            |
+
+### Client Portal
+
+| Module              | What You Get                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Projects**        | Clients view assigned projects with status and progress tracking                                         |
+| **Invoices**        | Clients view their invoices with status badges (paid, overdue, sent)                                     |
+| **Contracts**       | Clients view and sign contracts/proposals shared with them                                               |
+| **Meetings**        | Clients view upcoming meetings they're invited to                                                        |
+| **Messages**        | Real-time messaging between clients and team members                                                     |
+| **Portal Settings** | Welcome cards, onboarding checklists, helpful links/files configurable per workspace                     |
+
+### Customization
+
+| Feature                | Details                                      |
+| ---------------------- | -------------------------------------------- |
+| **Accent Colors**      | 18 color themes applied across the entire UI |
+| **Theme**              | Dark mode + light mode                       |
+| **Pipeline Stages**    | Fully customizable per workspace             |
+| **Custom Lead Fields** | Define your own data model for leads         |
+
+---
+
+## Demo (No Signup)
+
+Visit the live demo to see everything in action without creating an account:
+
+```
+https://crm.tabishbinishfaq.dev
+```
+
+The demo is pre-loaded with sample data so you can test every feature immediately.
 
 ---
 
