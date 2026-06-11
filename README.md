@@ -53,14 +53,14 @@ Most CRMs lock you into monthly subscriptions, limit your data portability, and 
 
 LeadFlow runs entirely on **free tiers** of best-in-class services. Your only cost is your domain.
 
-| Service | Free Tier Limit | What It Powers |
-|---------|----------------|----------------|
-| **Firebase Spark** | 50k reads/day, 20k writes/day, 1GB storage | Auth, database, storage |
-| **Vercel Hobby** | 100GB bandwidth, 100k function invocations/month | Next.js deployment |
-| **Cloudinary Free** | 25GB storage, 25GB bandwidth | File/image storage |
-| **Resend Free** | 3,000 emails/month, 100/day | Transactional emails |
-| **Google APIs** | Free within quota | Google Login, Calendar sync |
-| **Sentry Free** | 5k errors/month | Error monitoring |
+| Service             | Free Tier Limit                                  | What It Powers              |
+| ------------------- | ------------------------------------------------ | --------------------------- |
+| **Firebase Spark**  | 50k reads/day, 20k writes/day, 1GB storage       | Auth, database, storage     |
+| **Vercel Hobby**    | 100GB bandwidth, 100k function invocations/month | Next.js deployment          |
+| **Cloudinary Free** | 25GB storage, 25GB bandwidth                     | File/image storage          |
+| **Resend Free**     | 3,000 emails/month, 100/day                      | Transactional emails        |
+| **Google APIs**     | Free within quota                                | Google Login, Calendar sync |
+| **Sentry Free**     | 5k errors/month                                  | Error monitoring            |
 
 These are the actual free-tier limits. A solo freelancer or small team will hit none of them in normal use. When you outgrow them, each service offers a cheap paid upgrade with no lock-in.
 
@@ -271,15 +271,15 @@ The demo is pre-loaded with sample data so you can test every feature immediatel
 | Authentication   | Firebase Auth (Email, Google, GitHub) + Firebase Admin SDK |
 | File Storage     | Cloudinary (documents), Firebase Storage (fallback)        |
 | Email            | Resend (primary, transactional with open/click tracking), Brevo (optional fallback) |
-| Calendar         | Google Calendar API / Google Meet integration              |
-| Scheduling       | n8n Workflow SDK (meeting booking workflows)               |
-| Charts           | Recharts 2 (line, bar, pie, donut, funnel)                 |
-| Drag and Drop    | @dnd-kit (core, sortable, utilities)                       |
-| Tables           | TanStack Table 8                                           |
-| Forms            | React Hook Form 7 + Zod 3 validation                       |
-| Testing          | Vitest 4 + Testing Library                                 |
-| CI/CD            | GitHub Actions (lint, typecheck, build, Firestore deploy)  |
-| Deploy           | Vercel (frontend + serverless functions)                   |
+| Calendar         | Google Calendar API / Google Meet integration                                       |
+| Scheduling       | n8n Workflow SDK (meeting booking workflows)                                        |
+| Charts           | Recharts 2 (line, bar, pie, donut, funnel)                                          |
+| Drag and Drop    | @dnd-kit (core, sortable, utilities)                                                |
+| Tables           | TanStack Table 8                                                                    |
+| Forms            | React Hook Form 7 + Zod 3 validation                                                |
+| Testing          | Vitest 4 + Testing Library                                                          |
+| CI/CD            | GitHub Actions (lint, typecheck, build, Firestore deploy)                           |
+| Deploy           | Vercel (frontend + serverless functions)                                            |
 
 ---
 
@@ -312,14 +312,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Environment Variables
 
-| Variable                          | Purpose                           |
-| --------------------------------- | --------------------------------- |
-| `NEXT_PUBLIC_FIREBASE_*` (6 vars) | Firebase Auth, Firestore, Storage |
-| `FIREBASE_ADMIN_*` (3 vars)       | Admin SDK for API routes          |
-| `NEXT_PUBLIC_APP_URL`             | OAuth redirects, invite links     |
+| Variable                              | Purpose                                        |
+| ------------------------------------- | ---------------------------------------------- |
+| `NEXT_PUBLIC_FIREBASE_*` (6 vars)     | Firebase Auth, Firestore, Storage              |
+| `FIREBASE_ADMIN_*` (3 vars)           | Admin SDK for API routes                       |
+| `NEXT_PUBLIC_APP_URL`                 | OAuth redirects, invite links                  |
 | `RESEND_API_KEY` (or `BREVO_API_KEY`) | Email sending (Resend primary, Brevo fallback) |
-| `CLOUDINARY_*` (3 vars)           | Document/file storage             |
-| `GOOGLE_*` (4 vars)               | Calendar integration, Google Meet |
+| `CLOUDINARY_*` (3 vars)               | Document/file storage                          |
+| `GOOGLE_*` (4 vars)                   | Calendar integration, Google Meet              |
 
 ### Firebase Setup
 
@@ -409,33 +409,33 @@ leadflow/
 
 ## Firestore Collections
 
-| Collection              | Description                                                        |
-| ----------------------- | ------------------------------------------------------------------ |
-| `leads`                 | Lead records with value, source                                    |
-| `activities`            | Per-lead activity timeline                                         |
-| `audit_logs`            | Workspace audit trail                                              |
-| `emails`                | Email history with tracking                                        |
-| `email_events`          | Open/click tracking events                                         |
-| `documents`             | Cloudinary document metadata                                       |
-| `timeEntries`           | Time tracking records                                              |
-| `conversations`         | Message conversations with unread counts                           |
-| `messages`              | Individual messages with reactions, read receipts, reply threading |
-| `meetings`              | Meeting records (Google Meet, internal, public booking)            |
-| `meeting_types`         | Reusable meeting type templates                                    |
-| `notifications`         | In-app notifications                                               |
-| `workspaces`            | Workspace configuration, member roles                              |
-| `workspace_invites`     | Pending invitations                                                |
-| `users`                 | User profiles                                                      |
-| `password_reset_tokens` | Self-managed password reset tokens                                 |
-| `projects`              | Project records                                                    |
-| `project_tasks`         | Project-scoped tasks with assignee, priority, due dates            |
-| `project_milestones`    | Milestone tracking per project                                     |
-| `project_deliverables`  | Deliverable submission and approval workflow                       |
-| `invoices`              | Invoice records with line items, payments, proof of payment        |
-| `contracts`             | Contract/proposal records with e-signatures and activity log       |
-| `contract_templates`    | Reusable contract templates                                        |
-| `client_documents`      | Client-facing document metadata                                    |
-| `client_portal_settings`| Per-workspace client portal configuration (modules, welcome card)  |
+| Collection               | Description                                                        |
+| ------------------------ | ------------------------------------------------------------------ |
+| `leads`                  | Lead records with value, source                                    |
+| `activities`             | Per-lead activity timeline                                         |
+| `audit_logs`             | Workspace audit trail                                              |
+| `emails`                 | Email history with tracking                                        |
+| `email_events`           | Open/click tracking events                                         |
+| `documents`              | Cloudinary document metadata                                       |
+| `timeEntries`            | Time tracking records                                              |
+| `conversations`          | Message conversations with unread counts                           |
+| `messages`               | Individual messages with reactions, read receipts, reply threading |
+| `meetings`               | Meeting records (Google Meet, internal, public booking)            |
+| `meeting_types`          | Reusable meeting type templates                                    |
+| `notifications`          | In-app notifications                                               |
+| `workspaces`             | Workspace configuration, member roles                              |
+| `workspace_invites`      | Pending invitations                                                |
+| `users`                  | User profiles                                                      |
+| `password_reset_tokens`  | Self-managed password reset tokens                                 |
+| `projects`               | Project records                                                    |
+| `project_tasks`          | Project-scoped tasks with assignee, priority, due dates            |
+| `project_milestones`     | Milestone tracking per project                                     |
+| `project_deliverables`   | Deliverable submission and approval workflow                       |
+| `invoices`               | Invoice records with line items, payments, proof of payment        |
+| `contracts`              | Contract/proposal records with e-signatures and activity log       |
+| `contract_templates`     | Reusable contract templates                                        |
+| `client_documents`       | Client-facing document metadata                                    |
+| `client_portal_settings` | Per-workspace client portal configuration (modules, welcome card)  |
 
 ---
 
