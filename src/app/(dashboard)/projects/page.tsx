@@ -198,7 +198,7 @@ export default function ProjectsPage() {
         {/* Content */}
         {loading ? (
           viewMode === "grid" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i}>
                   <CardContent className="p-5 space-y-3">
@@ -267,7 +267,7 @@ export default function ProjectsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((project) => {
               const statusCfg = STATUS_CONFIG[project.status] || STATUS_CONFIG.active;
               const clientNames = project.clients

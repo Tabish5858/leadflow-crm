@@ -50,7 +50,7 @@ export function DashboardCard({
     >
       <Card
         className={cn(
-          "group relative flex h-[400px] flex-col border-border/60",
+          "group relative flex h-[350px] sm:h-[400px] flex-col border-border/60",
           "transition-shadow hover:shadow-md",
           className
         )}
@@ -102,7 +102,7 @@ export function DashboardCard({
 /** Skeleton placeholder for a dashboard card */
 export function DashboardCardSkeleton() {
   return (
-    <Card className="h-[400px] animate-pulse">
+    <Card className="h-[350px] sm:h-[400px] animate-pulse">
       <CardHeader className="pb-3 pt-5">
         <div className="h-5 w-1/3 rounded bg-muted" />
         <div className="mt-1 h-3 w-1/2 rounded bg-muted/60" />

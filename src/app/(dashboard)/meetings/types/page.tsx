@@ -222,7 +222,7 @@ export default function MeetingTypesPage() {
       )}
 
       {!loading && !error && types.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {types.map((type) => {
             const bookingUrl = type.slug
               ? `${BOOKING_BASE_URL}/schedule/${type.slug}`

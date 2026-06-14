@@ -154,7 +154,7 @@ export default function InvoicesPage() {
 
         {/* Stats */}
         {!loading && invoices.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground mb-1">Total Invoices</p>

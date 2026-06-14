@@ -62,7 +62,7 @@ export default function ClientDashboardPage() {
         {/* Welcome card skeleton */}
         <Skeleton className="h-32 w-full rounded-xl" />
         {/* Widget grid skeleton */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-44 w-full rounded-xl" />
           ))}
@@ -136,7 +136,7 @@ export default function ClientDashboardPage() {
       )}
 
       {/* Widget Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {showProjects && (
           <ProjectsWidget
             workspaceId={clientWorkspaceId}

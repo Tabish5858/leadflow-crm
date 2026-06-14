@@ -170,7 +170,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-auto">
           <div className="p-6 space-y-6">
             <Skeleton className="h-8 w-48" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-32 w-full" />
               ))}

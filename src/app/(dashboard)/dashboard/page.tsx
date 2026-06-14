@@ -56,7 +56,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Loading your workspace...</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <DashboardCardSkeleton key={i} />
           ))}
@@ -89,7 +89,7 @@ export default function DashboardPage() {
               items={visibleCards}
               strategy={rectSortingStrategy}
             >
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleCards.map((cardId) => (
                   <div key={cardId}>{CARD_COMPONENTS[cardId]}</div>
                 ))}

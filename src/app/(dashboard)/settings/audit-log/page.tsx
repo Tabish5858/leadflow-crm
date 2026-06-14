@@ -271,7 +271,7 @@ export default function AuditLogPage() {
 
             {showFilters && (
               <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
