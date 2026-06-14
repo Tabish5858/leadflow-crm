@@ -1,371 +1,202 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, ExternalLink, Github, Globe, Terminal, Zap } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Self-Host on Vercel: Deploy in 10 Minutes",
+  title: "Deploy to Vercel · Self-Host LeadFlow CRM",
   description:
-    "Step-by-step guide to deploy LeadFlow CRM on Vercel or self-host on any Node.js server. Requirements, Firebase setup, environment variables, and production tips.",
+    "Step-by-step guide to deploy LeadFlow CRM on Vercel, configure environment variables, set up a custom domain, and verify your deployment. Self-hosting on any Node.js server alternative included.",
   openGraph: {
-    title: "Self-Host on Vercel: Deploy in 10 Minutes",
+    title: "Deploy to Vercel · Self-Host LeadFlow CRM",
     description:
-      "Step-by-step guide to deploy LeadFlow CRM on Vercel or self-host on any Node.js server. Requirements, Firebase setup, environment variables, and production tips.",
+      "Deploy LeadFlow CRM on Vercel in 5 minutes: import from GitHub, configure environment variables, deploy, and verify.",
     url: "https://crm.tabishbinishfaq.dev/docs/deploy",
     type: "article",
   },
-  keywords: [
-    "self-host CRM",
-    "Vercel deployment",
-    "Next.js CRM setup",
-    "deploy CRM on Vercel",
-    "open source CRM setup",
-    "LeadFlow deploy",
-    "Node.js CRM hosting",
-    "self-host LeadFlow",
-  ],
 };
 
-const steps = [
-  {
-    title: "Prerequisites",
-    content: [
-      "Node.js 18+ and npm installed on your development machine",
-      "A GitHub account (for Vercel deployment)",
-      "A Firebase project with Authentication and Firestore enabled",
-      "A domain name (optional but recommended for custom domain on Vercel)",
-    ],
-  },
-  {
-    title: "Clone the Repository",
-    code: "git clone https://github.com/Tabish5858/Leadflow-CRM.git\ncd Leadflow-CRM",
-    content: [],
-  },
-  {
-    title: "Firebase Setup",
-    content: [
-      "Go to the Firebase Console and create a new project (or use an existing one).",
-      "Enable Email/Password sign-in under Authentication > Sign-in method.",
-      "Create a Firestore database in your preferred region.",
-      "Set up Firestore security rules to restrict access to authenticated users only.",
-      "Copy the web app configuration values from Project Settings > General > Your apps > Web app.",
-    ],
-  },
-  {
-    title: "Configure Environment Variables",
-    content: [
-      "Copy the example environment file and fill in your values:",
-    ],
-    code: "cp .env.example .env\nnano .env",
-    subContent: [
-      {
-        label: "NEXT_PUBLIC_FIREBASE_API_KEY",
-        desc: "From Firebase Project Settings > General > Web API Key",
-      },
-      {
-        label: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-        desc: "Your Firebase auth domain (e.g. your-project.firebaseapp.com)",
-      },
-      {
-        label: "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-        desc: "Your Firebase project ID",
-      },
-      {
-        label: "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-        desc: "Your Firebase storage bucket URL",
-      },
-      {
-        label: "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-        desc: "From Firebase Project Settings",
-      },
-      {
-        label: "NEXT_PUBLIC_FIREBASE_APP_ID",
-        desc: "From Firebase Project Settings",
-      },
-      {
-        label: "NEXTAUTH_SECRET",
-        desc: "Generate with: openssl rand -base64 32",
-      },
-      {
-        label: "NEXTAUTH_URL",
-        desc: "Your public URL (e.g. https://crm.yourdomain.com)",
-      },
-    ],
-  },
-  {
-    title: "Deploy on Vercel",
-    content: [
-      "Push your forked repository to GitHub.",
-      "Go to vercel.com and import your GitHub repository.",
-      "Vercel will auto-detect Next.js — no build configuration needed.",
-      "Add all environment variables from your .env file in Vercel's project settings.",
-      "Click Deploy. Your site will be live in under 2 minutes.",
-      "Vercel provides automatic HTTPS, global CDN, and continuous deployment from Git.",
-    ],
-  },
-  {
-    title: "Self-Host on Any Node.js Server (Alternative)",
-    content: [
-      "If you prefer to self-host rather than use Vercel:",
-    ],
-    code: "npm install\nnpm run build\nnpm start",
-    contentAfter: [
-      "Your application will be available at http://localhost:3000.",
-      "For production, set up a reverse proxy with Caddy or Nginx for HTTPS:",
-    ],
-  },
-  {
-    title: "Configure Custom Domain",
-    content: [
-      "For Vercel deployment: Go to your project dashboard > Domains and add your domain.",
-      "Update your DNS records to point to Vercel's nameservers or add a CNAME record.",
-      "Vercel automatically provisions TLS certificates via Let's Encrypt.",
-      "For self-hosted: Point your domain to your server IP and configure your reverse proxy.",
-    ],
-  },
-  {
-    title: "Verify Your Deployment",
-    content: [
-      "Open your domain in a browser. You should see the LeadFlow login page.",
-      "Create your first workspace account and verify that all modules load correctly.",
-      "Check that Firebase authentication and Firestore are working by adding a test lead.",
-    ],
-  },
-];
+function Callout({ type, children }: { type: "tip" | "warning" | "info"; children: React.ReactNode }) {
+  const colors = {
+    tip: "border-primary/20 bg-white/[3%]",
+    warning: "border-amber-500/20 bg-white/[3%]",
+    info: "border-blue-500/20 bg-white/[3%]",
+  };
+  return (
+    <div className={`not-prose my-6 flex items-start gap-3 rounded-lg border p-4 ${colors[type]}`}>
+      <span className="mt-0.5 shrink-0 text-base">{type === "tip" ? "💡" : type === "warning" ? "⚠️" : "ℹ️"}</span>
+      <div className="text-sm text-neutral-300 [&_strong]:text-white [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2">{children}</div>
+    </div>
+  );
+}
 
 export default function DeployPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      {/* Background Effects */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute -top-32 right-[-10%] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-32 left-[-10%] h-96 w-96 rounded-full bg-primary/8 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.03)_0%,transparent_50%)]" />
+    <div>
+      <h1>Deploy to Vercel</h1>
+      <p className="lead">
+        Deploy your LeadFlow instance to Vercel in under 5 minutes. Vercel provides
+        automatic HTTPS, a global CDN, continuous deployment from Git, and a generous
+        free tier (100 GB bandwidth, 100k function invocations per month).
+      </p>
+
+      <Callout type="info">
+        <strong>Prerequisites:</strong> Before deploying, complete the service setup guides:
+        <a href="/docs/firebase-setup">Firebase</a>,{" "}
+        <a href="/docs/cloudinary-setup">Cloudinary</a>,{" "}
+        <a href="/docs/resend-setup">Resend</a>,{" "}
+        <a href="/docs/google-calendar-setup">Google Calendar</a>, and{" "}
+        <a href="/docs/env-variables">environment variables</a>.
+      </Callout>
+
+      <hr />
+
+      <h2>Prerequisite: Push Your Fork to GitHub</h2>
+
+      <p>
+        If you haven&apos;t already, push your forked repository to GitHub:
+      </p>
+
+      <pre>
+        <code>{`# If you cloned your fork locally and made changes
+git push origin main`}</code>
+      </pre>
+
+      <p>
+        Your repository should contain all the LeadFlow source code with your
+        configuration changes committed.
+      </p>
+
+      <hr />
+
+      <h2>Step-by-Step Deployment Guide</h2>
+      <p>Follow this interactive walkthrough to deploy LeadFlow CRM on Vercel — covers importing from GitHub, configuring environment variables, and deploying:</p>
+
+      <div className="not-prose my-6 overflow-hidden rounded-lg border border-neutral-800 bg-black">
+        <iframe
+          src="https://scribehow.com/embed/Deploy_on_Vercel__UWaF5DsOTjyScz5BA8YnLQ"
+          className="w-full"
+          style={{ height: "600px" }}
+          allow="fullscreen"
+        />
       </div>
 
-      {/* Nav */}
-      <header className="sticky top-0 z-20 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-3.5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold text-xs shadow-sm">
-              LF
-            </div>
-            <span className="text-base font-bold tracking-tight">LeadFlow</span>
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex" aria-label="Primary">
-            <Link className="hover:text-foreground transition-colors" href="/docs/architecture">
-              Architecture
-            </Link>
-            <Link className="hover:text-foreground transition-colors" href="/blog">
-              Blog
-            </Link>
-            <a
-              href="https://github.com/Tabish5858/Leadflow-CRM"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-            >
-              <Github className="h-4 w-4" />
-              GitHub
-            </a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="default" size="sm" className="gap-1.5">
-              <Link href="/">
-                <Zap className="h-3.5 w-3.5" />
-                Try Demo
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Callout type="warning">
+        <strong>Build fails?</strong> The most common causes are missing environment variables,
+        especially <code>NEXT_PUBLIC_FIREBASE_*</code> and <code>FIREBASE_ADMIN_PRIVATE_KEY</code>.
+        Check the build logs in Vercel for the specific error.
+      </Callout>
 
-      <main className="relative z-10">
-        {/* Hero */}
-        <section className="mx-auto w-full max-w-4xl px-6 pb-8 pt-16 md:pt-24">
-          <div className="mx-auto max-w-3xl">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-            >
-              &larr; Back to home
-            </Link>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-background/60 px-3.5 py-1 text-xs text-muted-foreground mb-4">
-              <Terminal className="h-3.5 w-3.5 text-primary" />
-              Deployment guide
-            </div>
-              <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-                Self-Host LeadFlow on Vercel
-              </h1>
-              <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-2xl">
-                Deploy LeadFlow CRM in under 10 minutes. This guide covers everything from
-                Firebase setup to Vercel deployment and custom domain configuration.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Vercel Deploy
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Self-hosted
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe className="h-4 w-4 text-primary" />
-                Your data, your server
-              </div>
-            </div>
-          </div>
-        </section>
+      <hr />
 
-        {/* Steps */}
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <div className="space-y-10">
-            {steps.map((step, i) => (
-              <div key={step.title} className="rounded-xl border border-border/40 bg-background/40 p-6 sm:p-8">
-                <div className="flex items-start gap-4">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary text-sm font-bold">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1 space-y-4">
-                    <h2 className="text-xl font-bold tracking-tight">{step.title}</h2>
+      <h2>Set Up a Custom Domain (Optional)</h2>
+      <p>Follow this walkthrough to add and configure a custom domain for your Vercel deployment:</p>
 
-                    {step.content.length > 0 && (
-                      <ul className="space-y-2">
-                        {step.content.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+      <div className="not-prose my-6 overflow-hidden rounded-lg border border-neutral-800 bg-black">
+        <iframe
+          src="https://scribehow.com/embed/How_to_Add_and_Edit_Custom_Domain__hnzSw1ZMTOaELuv1ZH3Nyg"
+          className="w-full"
+          style={{ height: "600px" }}
+          allow="fullscreen"
+        />
+      </div>
 
-                    {"subContent" in step && step.subContent && (
-                      <div className="space-y-2">
-                        {step.subContent.map((item) => (
-                          <div key={item.label} className="rounded-lg border border-border/30 bg-background/60 p-3">
-                            <code className="text-xs font-mono text-primary">{item.label}</code>
-                            <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+      <Callout type="tip">
+        After adding a custom domain, update <code>NEXT_PUBLIC_APP_URL</code> in your
+        Vercel environment variables to match your new domain, then redeploy.
+      </Callout>
 
-                    {"code" in step && step.code && (
-                      <pre className="overflow-x-auto rounded-lg border border-border/30 bg-black/5 p-4 text-xs font-mono leading-relaxed dark:bg-white/5">
-                        <code>{step.code}</code>
-                      </pre>
-                    )}
+      <hr />
 
-                    {"contentAfter" in step && step.contentAfter && (
-                      <ul className="space-y-2">
-                        {step.contentAfter.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <h2>Continuous Deployment</h2>
 
-          {/* Additional resources */}
-          <div className="mt-10 rounded-xl border border-border/40 bg-background/40 p-6">
-            <h2 className="text-lg font-bold tracking-tight">Additional Resources</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <a
-                  href="https://github.com/Tabish5858/Leadflow-CRM"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Star on GitHub
-                </a>
-              </li>
-              <li className="flex items-start gap-2">
-                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <a
-                  href="https://github.com/Tabish5858/Leadflow-CRM"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  View on GitHub
-                </a>
-              </li>
-            </ul>
-          </div>
-        </section>
+      <p>
+        Vercel automatically deploys every time you push to your GitHub repository&apos;s
+        default branch. The workflow is:
+      </p>
 
-        {/* CTA */}
-        <section className="mx-auto w-full max-w-6xl px-6 pb-20">
-          <div className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/5 via-background to-background p-8 text-center sm:p-12">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Try LeadFlow Before You Deploy
-            </h2>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto text-sm">
-              Click one button and explore a fully-loaded workspace with real demo data.
-              No account, no credit card, no setup.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="gap-2 text-base h-12 px-6">
-                <Link href="/">
-                  <Zap className="h-5 w-5" />
-                  Launch Live Demo
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="gap-2 text-base h-12 px-6">
-                <a href="https://github.com/Tabish5858/Leadflow-CRM" target="_blank" rel="noopener noreferrer">
-                  <Github className="h-5 w-5" />
-                  View on GitHub
-                </a>
-              </Button>
-            </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              No account needed. Just click and explore.
-            </p>
-          </div>
-        </section>
-      </main>
+      <ol>
+        <li>Make changes locally</li>
+        <li>Commit and push to GitHub: <code>git push origin main</code></li>
+        <li>Vercel detects the push, builds, and deploys automatically</li>
+        <li>Your site updates in under 2 minutes</li>
+      </ol>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10 text-sm md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold text-[10px]">
-              LF
-            </div>
-            <span className="font-semibold">LeadFlow</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground">Open-source CRM</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
-            <Link href="/docs/architecture" className="hover:text-foreground transition-colors">
-              Architecture
-            </Link>
-            <Link href="/blog" className="hover:text-foreground transition-colors">
-              Blog
-            </Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">
-              Terms
-            </Link>
-            <a href="mailto:contact@tabishbinishfaq.dev" className="hover:text-foreground transition-colors">
-              Contact
-            </a>
-            <span className="text-muted-foreground/60">MIT License</span>
-          </div>
-        </div>
-      </footer>
+      <p>
+        You can also create <strong>Preview Deployments</strong> for pull requests ·
+        Vercel automatically deploys each PR to a unique preview URL for testing.
+      </p>
+
+      <hr />
+
+      <h2>Alternative: Self-Host on Any Node.js Server</h2>
+
+      <p>
+        If you prefer to self-host rather than use Vercel, LeadFlow runs on any Node.js server:
+      </p>
+
+      <pre>
+        <code>{`# Clone your fork on the server
+git clone https://github.com/Tabish5858/Leadflow-CRM.git
+cd Leadflow-CRM
+
+# Install dependencies
+npm install
+
+# Create and configure .env file
+cp .env.example .env
+# Edit .env with your service credentials
+
+# Build for production
+npm run build
+
+# Start the server
+npm start`}</code>
+      </pre>
+
+      <p>
+        The production server runs on <code>http://localhost:3000</code> by default.
+        Use a reverse proxy (nginx, Caddy) with automatic HTTPS in front of it.
+      </p>
+
+      <Callout type="info">
+        <strong>Requirements:</strong> Node.js 22+ and npm 10+. LeadFlow stores all data
+        in Firebase, so no database setup is needed on the server.
+      </Callout>
+
+      <hr />
+
+      <h2>Verify the Deployment</h2>
+
+      <p>
+        After deploying, verify everything works:
+      </p>
+
+      <ul>
+        <li><strong>Landing page loads</strong> · Visit your deployment URL</li>
+        <li><strong>Authentication works</strong> · Register a new account or sign in</li>
+        <li><strong>Demo mode loads</strong> · Click &ldquo;Try Demo&rdquo; on the landing page</li>
+        <li><strong>Firestore operations work</strong> · Create a test lead or project</li>
+        <li><strong>Documents upload</strong> · Upload a file in the Documents section</li>
+        <li><strong>Emails send</strong> · Check the Resend dashboard for sent emails</li>
+      </ul>
+
+      <p>
+        If something isn&apos;t working, check the Vercel deployment logs or the
+        browser console for error messages.
+      </p>
+
+      <hr />
+
+      <h2>Next Steps</h2>
+
+      <ul>
+        <li>
+          <a href="/docs/architecture">Explore the architecture</a> · understand how the
+          modules, data layer, and services fit together.
+        </li>
+        <li>
+          Review the <a href="https://github.com/Tabish5858/Leadflow-CRM/blob/main/CONTRIBUTING.md">contributing guide</a>{" "}
+          if you want to customize or extend the platform.
+        </li>
+      </ul>
     </div>
   );
 }

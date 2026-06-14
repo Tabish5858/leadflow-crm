@@ -5,6 +5,7 @@ import { auth } from "@/lib/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   BarChart3,
+  BookOpen,
   Calendar,
   CheckCircle,
   Clock,
@@ -126,6 +127,7 @@ export default function LandingPage() {
             <a className="hover:text-foreground transition-colors" href="#modules">Modules</a>
             <a className="hover:text-foreground transition-colors" href="#open-source">Open Source</a>
             <a className="hover:text-foreground transition-colors" href="#testimonials">Testimonials</a>
+            <Link className="hover:text-foreground transition-colors" href="/docs">Docs</Link>
             <a
               href="https://github.com/Tabish5858/Leadflow-CRM"
               target="_blank"
@@ -198,6 +200,12 @@ export default function LandingPage() {
                   View on GitHub
                   <ExternalLink className="h-3.5 w-3.5 opacity-60" />
                 </a>
+              </Button>
+              <Button asChild variant="ghost" size="lg" className="gap-2 text-base h-12 px-6">
+                <Link href="/docs">
+                  <BookOpen className="h-5 w-5" />
+                  Read the Docs
+                </Link>
               </Button>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
@@ -500,6 +508,12 @@ export default function LandingPage() {
                   Star on GitHub
                 </a>
               </Button>
+              <Button asChild variant="ghost" size="lg" className="gap-2 text-base h-12 px-6">
+                <Link href="/docs">
+                  <BookOpen className="h-5 w-5" />
+                  Read the Docs
+                </Link>
+              </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
               No account. No credit card. Just click and explore.
@@ -520,6 +534,9 @@ export default function LandingPage() {
             <span className="text-muted-foreground">Open-source CRM</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+            <Link href="/docs" className="hover:text-foreground transition-colors">
+              Docs
+            </Link>
             <a
               href="https://github.com/Tabish5858/Leadflow-CRM"
               target="_blank"

@@ -18,7 +18,7 @@ LeadFlow is a full-featured customer relationship management platform built with
   <a href="#features">Features</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#why-leadflow">Why LeadFlow</a> •
-  <a href="#docs">Docs</a>
+  <a href="#documentation">Documentation</a>
 </p>
 
 ---
@@ -309,6 +309,28 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Documentation
+
+Complete setup guides for self-hosting LeadFlow CRM:
+
+| Guide                          | What It Covers                                                   |
+| ------------------------------ | ---------------------------------------------------------------- |
+| [Getting Started](https://crm.tabishbinishfaq.dev/docs/getting-started) | Fork, clone, and install dependencies                    |
+| [Firebase Setup](https://crm.tabishbinishfaq.dev/docs/firebase-setup)   | Auth, Firestore, Storage configuration                  |
+| [Cloudinary Setup](https://crm.tabishbinishfaq.dev/docs/cloudinary-setup) | File and document storage                               |
+| [Resend Setup](https://crm.tabishbinishfaq.dev/docs/resend-setup)       | Transactional email with domain verification             |
+| [Google Calendar](https://crm.tabishbinishfaq.dev/docs/google-calendar-setup) | Calendar API, OAuth, and credentials                    |
+| [Environment Variables](https://crm.tabishbinishfaq.dev/docs/env-variables) | Full reference for all config values                     |
+| [Sentry Setup](https://crm.tabishbinishfaq.dev/docs/sentry-setup)       | Error tracking and performance monitoring                |
+| [Deploy to Production](https://crm.tabishbinishfaq.dev/docs/deploy)     | Deploy on Vercel or your own Node.js server              |
+| [Architecture](https://crm.tabishbinishfaq.dev/docs/architecture)       | System overview, data flow, and security model           |
+
+View all guides at **[crm.tabishbinishfaq.dev/docs](https://crm.tabishbinishfaq.dev/docs)**.
+
+---
 
 ### Environment Variables
 

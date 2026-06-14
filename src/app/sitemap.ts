@@ -25,8 +25,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Documentation
   const docs = [
+    { url: `${baseUrl}/docs`, priority: 0.7, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/getting-started`, priority: 0.7, freq: "monthly" as const },
     { url: `${baseUrl}/docs/deploy`, priority: 0.7, freq: "monthly" as const },
     { url: `${baseUrl}/docs/architecture`, priority: 0.5, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/firebase-setup`, priority: 0.6, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/cloudinary-setup`, priority: 0.6, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/resend-setup`, priority: 0.6, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/google-calendar-setup`, priority: 0.6, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/sentry-setup`, priority: 0.5, freq: "monthly" as const },
+    { url: `${baseUrl}/docs/env-variables`, priority: 0.6, freq: "monthly" as const },
   ];
 
   // Comparison pages

@@ -60,6 +60,9 @@ export default function BlogPage() {
             <span className="text-base font-bold tracking-tight">LeadFlow</span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex" aria-label="Primary">
+            <Link className="hover:text-foreground transition-colors" href="/docs">
+              Docs
+            </Link>
             <Link className="hover:text-foreground transition-colors" href="/docs/deploy">
               Deployment
             </Link>
@@ -190,6 +193,9 @@ export default function BlogPage() {
             <span className="text-muted-foreground">Open-source CRM</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+            <Link href="/docs" className="hover:text-foreground transition-colors">
+              Docs
+            </Link>
             <Link href="/docs/deploy" className="hover:text-foreground transition-colors">
               Deployment
             </Link>

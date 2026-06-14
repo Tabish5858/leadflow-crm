@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
+  BookOpen,
   CheckCircle,
   ExternalLink,
   Github,
@@ -229,6 +230,12 @@ export default function EspoVsLeadFlow() {
                   Star on GitHub
                 </a>
               </Button>
+              <Button asChild variant="ghost" size="lg" className="gap-2 text-base h-12 px-6">
+                <Link href="/docs">
+                  <BookOpen className="h-5 w-5" />
+                  Setup Guide
+                </Link>
+              </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
               No account. No credit card. Just click and explore.
@@ -249,6 +256,9 @@ export default function EspoVsLeadFlow() {
             <span className="text-muted-foreground">Open-source CRM</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+            <Link href="/docs" className="hover:text-foreground transition-colors">
+              Docs
+            </Link>
             <a
               href="https://github.com/Tabish5858/Leadflow-CRM"
               target="_blank"

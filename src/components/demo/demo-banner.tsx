@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useDemoMode } from "@/lib/demo/demo-context";
-import { ExternalLink, LogOut, AlertTriangle, Users, LayoutDashboard } from "lucide-react";
+import { BookOpen, ExternalLink, LogOut, AlertTriangle, Users, LayoutDashboard } from "lucide-react";
 
 export function DemoBanner() {
   const { isDemoMode, exitDemo } = useDemoMode();
@@ -38,6 +39,13 @@ export function DemoBanner() {
             <span className="hidden sm:inline">GitHub</span>
             <ExternalLink className="h-3 w-3" />
           </a>
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-300 shrink-0"
+          >
+            <BookOpen className="h-3 w-3" />
+            <span className="hidden sm:inline">Docs</span>
+          </Link>
         </div>
 
         {/* Right: action buttons */}
