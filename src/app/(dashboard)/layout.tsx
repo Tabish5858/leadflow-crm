@@ -190,7 +190,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <HeaderActionsProvider setHeaderActions={setHeaderActions}>
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-x-hidden">
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div

@@ -41,7 +41,7 @@ import { toast } from "@/lib/toast";
 import { getInitials } from "@/lib/utils";
 import type { Conversation, Message, WorkspaceMember } from "@/types";
 import { Timestamp } from "firebase/firestore";
-import { Mail, Plus, Search, Settings, Users, Video } from "lucide-react";
+import { ChevronLeft, Mail, Plus, Search, Settings, Users, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Show the OTHER participant's name for member conversations. */
@@ -118,6 +118,9 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [msgsLoading, setMsgsLoading] = useState(false);
   const [msgsError, setMsgsError] = useState<string | null>(null);
+
+  // Mobile view toggle
+  const [mobileView, setMobileView] = useState<"list" | "thread">("list");
 
   // Search & dialogs
   const [searchQuery, setSearchQuery] = useState("");
@@ -272,6 +275,7 @@ export default function MessagesPage() {
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelected(conv);
     setDraftMember(null);
+    setMobileView("thread");
   }, []);
 
   // ─── Select member (show draft until first message creates convo) ──────
@@ -355,6 +359,7 @@ export default function MessagesPage() {
       if (selected?.id === deleteConvTarget.id) {
         setSelected(null);
         setMessages([]);
+        setMobileView("list");
       }
       toast.success("Conversation deleted");
     } catch {
@@ -818,9 +823,9 @@ export default function MessagesPage() {
   return (
     <RequireModuleAccess moduleId="messages">
       <div className="space-y-6">
-        <div className="grid h-[calc(100vh-7rem)] grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="relative grid h-[calc(100vh-7rem)] grid-cols-1 gap-4 lg:grid-cols-3">
           {/* ─── Conversation List (Left) ─────────────────────────────────── */}
-          <div className="flex flex-col rounded-lg border bg-card lg:col-span-1">
+          <div className={`flex flex-col rounded-lg border bg-card lg:col-span-1 ${mobileView === "thread" ? "hidden lg:flex" : ""}`}>
             {/* Search bar + group create */}
             <div className="border-b p-3">
               <div className="flex items-center gap-2">
@@ -886,7 +891,7 @@ export default function MessagesPage() {
           </div>
 
           {/* ─── Message Thread (Right) ───────────────────────────────────── */}
-          <div className="flex flex-col overflow-hidden rounded-lg border bg-card lg:col-span-2">
+          <div className={`flex flex-col overflow-hidden rounded-lg border bg-card lg:col-span-2 ${mobileView === "list" ? "hidden lg:flex" : ""}`}>
             {selected ? (
               <>
                 {/* Conversation header */}
@@ -903,7 +908,16 @@ export default function MessagesPage() {
                     const otherPhotoURL = otherId ? memberMap.get(otherId)?.photoURL : undefined;
                     return (
                       <>
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => setMobileView("list")}
+                            className="lg:hidden mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            aria-label="Back to conversations"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <div className="flex items-center gap-3 min-w-0">
                           <Avatar className={`h-9 w-9 border shrink-0 ${isGroup ? "rounded-xl" : ""}`}>
                             {!isGroup && <AvatarImage src={otherPhotoURL || undefined} />}
                             <AvatarFallback className={`text-xs ${isGroup
@@ -923,6 +937,7 @@ export default function MessagesPage() {
                             <p className="truncate text-sm font-medium">{name}</p>
                             <p className="truncate text-xs text-muted-foreground">{detail}</p>
                           </div>
+                        </div>
                         </div>
                         {canManage && (
                           <TooltipButton
@@ -981,9 +996,18 @@ export default function MessagesPage() {
             ) : draftMember ? (
               /* Draft mode - member selected, no conversation yet */
               <>
-                <div className="border-b px-4 py-3">
+              <div className="border-b px-4 py-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setMobileView("list")}
+                    className="lg:hidden mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    aria-label="Back to conversations"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border">
+                  <Avatar className="h-9 w-9 border">
                       <AvatarImage src={draftMember.photoURL || undefined} />
                       <AvatarFallback className="text-xs bg-amber-500/10 text-amber-600">
                         {getInitials(draftMember.displayName)}
@@ -999,6 +1023,7 @@ export default function MessagesPage() {
                     </div>
                   </div>
                 </div>
+              </div>
 
                 <MessageThread
                   messages={[]}

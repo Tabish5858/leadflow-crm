@@ -219,7 +219,7 @@ export default function LandingPage() {
 
         {/* ── Stats strip ── */}
         <section className="mx-auto w-full max-w-5xl px-6 pb-12">
-          <div className="grid grid-cols-3 gap-4 rounded-2xl border border-border/40 bg-background/50 p-6">
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-border/40 bg-background/50 p-6 sm:grid-cols-3">
             {STATS.map((s) => (
               <div key={s.label} className="text-center">
                 <p className="text-lg font-bold text-foreground">{s.value}</p>

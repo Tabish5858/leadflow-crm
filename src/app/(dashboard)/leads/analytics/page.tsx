@@ -1250,7 +1250,7 @@ export default function SpreadsheetAnalyticsPage() {
 
               {/* Non-KPI cards */}
               {activeCards.filter((c) => c.type !== "kpi").length > 0 && (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {activeCards
                     .filter((c) => c.type !== "kpi")
                     .map((card) => (

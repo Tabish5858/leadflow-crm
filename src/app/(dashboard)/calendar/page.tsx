@@ -257,8 +257,9 @@ export default function CalendarPage() {
           <Button variant="ghost" size="icon" onClick={goPrev}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium min-w-[180px] text-center">
-            {headerLabel}
+          <span className="text-xs font-medium min-w-[100px] text-center sm:text-sm sm:min-w-[180px]">
+            <span className="sm:hidden">{headerLabel.length > 20 ? headerLabel.replace(/ \d{4}$/, '') : headerLabel}</span>
+            <span className="hidden sm:inline">{headerLabel}</span>
           </span>
           <Button variant="ghost" size="icon" onClick={goNext}>
             <ChevronRight className="h-4 w-4" />
@@ -356,7 +357,7 @@ function MonthView({
               return (
                 <div
                   key={`empty-${i}`}
-                  className="h-28 border-r border-b last:border-r-0 bg-muted/20"
+                  className="h-16 border-r border-b last:border-r-0 bg-muted/20 sm:h-20 lg:h-28"
                 />
               );
             }
@@ -368,7 +369,7 @@ function MonthView({
             return (
               <div
                 key={`day-${day}`}
-                className="h-28 border-r border-b last:border-r-0 p-1 overflow-hidden hover:bg-accent/30 transition-colors"
+                className="h-16 border-r border-b last:border-r-0 p-1 overflow-hidden hover:bg-accent/30 transition-colors sm:h-20 lg:h-28"
               >
                 <div
                   className={`text-xs font-medium mb-1 ${
@@ -437,26 +438,26 @@ function WeekView({
 
   return (
     <Card>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-x-auto">
         {/* Day headers */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b min-w-[700px]">
           <div className="border-r" />
           {weekDates.map((date, i) => {
             const isToday = isSameDay(date, today);
             return (
               <div
                 key={i}
-                className={`text-center py-2 border-r last:border-r-0 ${
+                className={`text-center py-1 sm:py-2 border-r last:border-r-0 ${
                   isToday ? "bg-primary/5" : ""
                 }`}
               >
-                <div className="text-xs text-muted-foreground">
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
                   {date.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
                 <div
-                  className={`text-lg font-semibold ${
+                  className={`text-sm sm:text-lg font-semibold ${
                     isToday
-                      ? "flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground mx-auto"
+                      ? "flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-primary-foreground mx-auto"
                       : ""
                   }`}
                 >
@@ -468,7 +469,7 @@ function WeekView({
         </div>
 
         {/* Time grid */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[600px] overflow-y-auto">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[600px] overflow-y-auto min-w-[700px]">
           {hours.map((hour) => (
             <div key={hour} className="contents">
               <div className="border-r border-b px-1 py-2 text-[10px] text-muted-foreground text-right">

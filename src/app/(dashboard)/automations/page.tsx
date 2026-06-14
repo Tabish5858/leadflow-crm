@@ -127,7 +127,7 @@ export default function AutomationsPage() {
     <RequireModuleAccess moduleId="automations">
       <div className="space-y-6">
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-40" />
             ))}
@@ -141,7 +141,7 @@ export default function AutomationsPage() {
             onAction={() => setBuilderOpen(true)}
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {automations.map((automation) => (
               <AutomationCard
                 key={automation.id}
